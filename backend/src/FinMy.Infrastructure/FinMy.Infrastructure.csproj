@@ -5,6 +5,7 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="MailKit" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers" />
   </ItemGroup>
 
   <ItemGroup>
