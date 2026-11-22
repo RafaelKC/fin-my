@@ -19,17 +19,6 @@ public sealed class TestFinMyDbContext : FinMyDbContext
 
     public DbSet<ProbeItem> Items => Set<ProbeItem>();
 
-    /// <summary>
-    /// Atribui o Espaço à entidade pelo estado do EF. Os interceptors (T010) farão isso sozinhos;
-    /// até lá, os testes de banco precisam informar o Espaço por conta própria.
-    /// </summary>
-    public T InTenant<T>(T entity, Guid tenantId)
-        where T : class
-    {
-        Entry(entity).Property(nameof(ProbeParent.TenantId)).CurrentValue = tenantId;
-        return entity;
-    }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ProbeParent>().ToTable("probe_parents");
