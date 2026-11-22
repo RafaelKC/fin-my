@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FinMy.Api/FinMy.Api.csproj" />
+    <Project Path="src/FinMy.Application/FinMy.Application.csproj" />
+    <Project Path="src/FinMy.Domain/FinMy.Domain.csproj" />
+    <Project Path="src/FinMy.Infrastructure/FinMy.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FinMy.Api.Tests/FinMy.Api.Tests.csproj" />
+    <Project Path="tests/FinMy.Application.Tests/FinMy.Application.Tests.csproj" />
+    <Project Path="tests/FinMy.Architecture.Tests/FinMy.Architecture.Tests.csproj" />
+    <Project Path="tests/FinMy.Domain.Tests/FinMy.Domain.Tests.csproj" />
+  </Folder>
+</Solution>
