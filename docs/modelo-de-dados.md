@@ -112,6 +112,7 @@ erDiagram
         timestamptz last_used_at
         timestamptz expires_at
         timestamptz revoked_at
+        text revoked_reason
         uuid replaced_by_id
     }
     PASSWORD_RESET_TOKENS {
@@ -346,6 +347,7 @@ v1: `UNIQUE (user_id)` (um Espaço por usuário) e `UNIQUE (tenant_id)` (um part
 | created_at, last_used_at | timestamptz | não | |
 | expires_at | timestamptz | não | `last_used_at + 90 dias` |
 | revoked_at | timestamptz | sim | |
+| revoked_reason | text | sim | `logout, rotated, reuse_detected, password_changed, password_reset` |
 | replaced_by_id | uuid | sim | |
 
 ### `password_reset_tokens` — 001 FR-011

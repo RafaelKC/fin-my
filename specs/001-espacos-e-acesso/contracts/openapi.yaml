@@ -1,0 +1,327 @@
+openapi: 3.1.0
+info:
+  title: Fin-My API — 001 Contas e Espaços
+  version: 1.0.0
+  description: |
+    Contrato da feature 001. Convenções gerais em docs/arquitetura.md §6–§7.
+    Erros seguem application/problem+json com `code` estável e `detail` em pt-BR.
+    O refresh token NUNCA aparece no corpo: vai no cookie `finmy_rt`
+    (HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth).
+servers:
+  - url: /api/v1
+tags:
+  - name: auth
+  - name: me
+paths:
+  /auth/signup:
+    post:
+      tags: [auth]
+      summary: Criar conta (US1) — cria Usuário, Espaço e Participação e já entra
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SignUpRequest' }
+      responses:
+        '201':
+          description: Conta criada; cookie de sessão definido
+          headers:
+            Set-Cookie: { $ref: '#/components/headers/RefreshCookie' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionResponse' }
+        '409': { $ref: '#/components/responses/EmailAlreadyRegistered' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Entrar (US2)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Autenticado
+          headers:
+            Set-Cookie: { $ref: '#/components/headers/RefreshCookie' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionResponse' }
+        '401':
+          description: "code=invalid_credentials — detail: \"E-mail ou senha incorretos\" (FR-014)"
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '429':
+          description: "code=login_locked (FR-010) ou rate_limited"
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/LockedProblem' }
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Renovar o access token usando o cookie de sessão (rotação)
+      parameters:
+        - in: cookie
+          name: finmy_rt
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Novo access token; novo cookie (o anterior fica inválido)
+          headers:
+            Set-Cookie: { $ref: '#/components/headers/RefreshCookie' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionResponse' }
+        '401':
+          description: "code=session_expired | session_revoked | refresh_reused (família revogada)"
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Sair neste aparelho (US5)
+      responses:
+        '204':
+          description: Sessão encerrada; cookie apagado. Idempotente (204 mesmo sem sessão).
+
+  /auth/password-reset/request:
+    post:
+      tags: [auth]
+      summary: Pedir link de redefinição (US4) — resposta idêntica exista ou não a conta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, maxLength: 254 }
+      responses:
+        '202':
+          description: "Sempre 202 com detail \"Se houver conta com este e-mail, enviaremos um link\" (FR-011)"
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/password-reset/confirm:
+    post:
+      tags: [auth]
+      summary: Definir nova senha com o token do e-mail (US4)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token: { type: string }
+                newPassword: { type: string, minLength: 8, maxLength: 128 }
+      responses:
+        '204': { description: Senha trocada; todas as sessões encerradas (FR-012) }
+        '410':
+          description: "code=reset_token_invalid — expirado, já usado ou inexistente (cenário 4.4)"
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /me:
+    get:
+      tags: [me]
+      summary: Usuário e Espaço do contexto
+      security: [{ bearer: [] }]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MeResponse' }
+          description: OK
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    patch:
+      tags: [me]
+      summary: Alterar nome do usuário (US5, FR-013)
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 60 }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MeResponse' }
+          description: OK
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /me/password:
+    post:
+      tags: [me]
+      summary: Trocar senha informando a atual (US5); encerra as OUTRAS sessões
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string }
+                newPassword: { type: string, minLength: 8, maxLength: 128 }
+      responses:
+        '204': { description: Senha trocada }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422':
+          description: "code=current_password_incorrect ou validação"
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /tenant:
+    patch:
+      tags: [me]
+      summary: Renomear o Espaço do contexto (US5, FR-013)
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 60 }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TenantDto' }
+          description: OK
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /health:
+    get:
+      summary: Saúde (servidor e banco) — fora de /api/v1 no deploy (GET /health)
+      responses:
+        '200': { description: Saudável }
+        '503': { description: Banco indisponível }
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Access token de 15 min. Claims: sub (UserId), tid (TenantId), sid (sessão), name, channel=app.
+        401 com code=token_expired → o cliente faz /auth/refresh e repete.
+        401 com code=session_revoked → voltar ao login.
+  headers:
+    RefreshCookie:
+      description: "finmy_rt=<token>; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth; Max-Age=7776000"
+      schema: { type: string }
+  responses:
+    Unauthorized:
+      description: "code=token_expired | session_revoked | unauthorized"
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    ValidationError:
+      description: "code=validation_failed; errors por campo com mensagens pt-BR"
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ValidationProblem' }
+    EmailAlreadyRegistered:
+      description: "code=email_already_registered — detail: \"Este e-mail já tem conta. Entrar ou recuperar senha?\""
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    RateLimited:
+      description: "code=rate_limited"
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    SignUpRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        email: { type: string, maxLength: 254 }
+        password: { type: string, minLength: 8, maxLength: 128 }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string }
+    SessionResponse:
+      type: object
+      required: [accessToken, accessTokenExpiresAt, user, tenant]
+      properties:
+        accessToken: { type: string }
+        accessTokenExpiresAt: { type: string, format: date-time }
+        user: { $ref: '#/components/schemas/UserDto' }
+        tenant: { $ref: '#/components/schemas/TenantDto' }
+    MeResponse:
+      type: object
+      required: [user, tenant]
+      properties:
+        user: { $ref: '#/components/schemas/UserDto' }
+        tenant: { $ref: '#/components/schemas/TenantDto' }
+    UserDto:
+      type: object
+      required: [id, name, email]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        email: { type: string }
+    TenantDto:
+      type: object
+      required: [id, name, role]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        role: { type: string, enum: [owner] }
+    Problem:
+      type: object
+      required: [type, title, status, code, detail]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        code: { type: string }
+        detail: { type: string, description: Mensagem pronta para exibir, em pt-BR }
+        traceId: { type: string }
+    LockedProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          properties:
+            retryAfterSeconds: { type: integer }
+    ValidationProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          properties:
+            errors:
+              type: object
+              additionalProperties:
+                type: array
+                items: { type: string }

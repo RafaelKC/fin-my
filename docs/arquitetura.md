@@ -208,8 +208,11 @@ GET/PUT/DELETE de id de A como B → 404; POST de B referenciando id de A → 40
 ## 7. Autenticação (001)
 
 - Senha: hash com `PasswordHasher<T>` do ASP.NET Core Identity (PBKDF2), sem o resto do Identity.
-- Access token JWT assinado, validade 15 min, claims `sub`, `tid`, `name`. Guardado só em memória no
-  front.
+- Access token JWT assinado, validade 15 min, claims `sub`, `tid`, `sid` (sessão = `family_id` do
+  refresh token), `name`, `channel`. Guardado só em memória no front.
+- A cada requisição autenticada, um middleware confere se a sessão `sid` está ativa (cache em memória
+  invalidado na hora quando a sessão é revogada), para que logout/troca de senha valham na próxima ação
+  (001 research R3). Válido para uma instância de API; com várias, usar cache distribuído.
 - Refresh token opaco de 256 bits, guardado **hash** (SHA-256) em `refresh_tokens`, enviado em cookie
   `HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth`. Validade deslizante de 90 dias desde o
   último uso (001 FR-009); **rotação** a cada uso, com detecção de reuso (reuso de token já trocado
