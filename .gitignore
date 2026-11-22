@@ -1,0 +1,10 @@
+# Dados financeiros pessoais (planilha original) — não versionar
+*.xlsx
+*.ods
+
+# Local
+.claude/settings.local.json
+.env
+.DS_Store
+.idea/
+.vscode/
