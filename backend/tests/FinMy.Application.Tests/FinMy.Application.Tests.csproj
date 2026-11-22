@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FinMy.Application\FinMy.Application.csproj" />
+    <ProjectReference Include="..\..\src\FinMy.Infrastructure\FinMy.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
