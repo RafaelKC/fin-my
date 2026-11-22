@@ -30,7 +30,7 @@ verdes localmente e no CI (a partir da T005).
 - [ ] T003 [P] Criar `backend/Dockerfile` (multi-stage sdk→aspnet, usuário não-root, `HEALTHCHECK` em `/health`), `frontend/Dockerfile` (multi-stage node→nginx) e `frontend/nginx.conf` (SPA fallback para `index.html`, proxy de `/api`, `/mcp` e `/health` para `api:8080`, cabeçalhos de segurança básicos) conforme `docs/arquitetura.md` §13
 - [ ] T004 Criar `docker-compose.yml` (serviços `db` PostgreSQL 17 com volume e healthcheck; `api` dependente de `db` saudável e executando `migrate` antes de subir; `web` única porta exposta 8080), `docker-compose.dev.yml` (Mailpit em 8025/1025, porta do Postgres exposta para debug) e `.env.example` (connection string, chave JWT, SMTP, `APP_URL`); `.env` no `.gitignore`
 - [ ] T005 Criar `.github/workflows/ci.yml` com jobs `backend` (`dotnet format --verify-no-changes`, build, `dotnet test` com Testcontainers), `frontend` (lint, test, build), `docker` (build das duas imagens) e `e2e` (sobe o compose e roda Playwright nos dois projetos); disparo em PR e push na `main`
-- [ ] T006 [P] Criar `shared/test-vectors/README.md` explicando o formato JSON dos vetores compartilhados (usados a partir da 002, `docs/arquitetura.md` §5)
+- [x] T006 [P] Criar `shared/test-vectors/README.md` explicando o formato JSON dos vetores compartilhados (usados a partir da 002, `docs/arquitetura.md` §5)
 
 **Checkpoint**: `docker compose up` sobe `db`, `api` (com `/health` respondendo após T013) e `web`; CI verde.
 
