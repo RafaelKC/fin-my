@@ -11,8 +11,8 @@ public class CompositeForeignKeyTests(PostgresFixture postgres)
     {
         var tenant = Guid.CreateVersion7();
         await using var db = postgres.CreateContext(tenant);
-        var parent = db.InTenant(new ProbeParent { Name = "pai" }, tenant);
-        var item = db.InTenant(new ProbeItem { ParentId = parent.Id, Label = "filho" }, tenant);
+        var parent = new ProbeParent { Name = "pai" };
+        var item = new ProbeItem { ParentId = parent.Id, Label = "filho" };
         db.AddRange(parent, item);
 
         await db.SaveChangesAsync();
@@ -29,14 +29,14 @@ public class CompositeForeignKeyTests(PostgresFixture postgres)
         Guid parentOfB;
         await using (var dbB = postgres.CreateContext(tenantB))
         {
-            var parentB = dbB.InTenant(new ProbeParent { Name = "pai de B" }, tenantB);
+            var parentB = new ProbeParent { Name = "pai de B" };
             dbB.Add(parentB);
             await dbB.SaveChangesAsync();
             parentOfB = parentB.Id;
         }
 
         await using var dbA = postgres.CreateContext(tenantA);
-        var item = dbA.InTenant(new ProbeItem { ParentId = parentOfB, Label = "intruso" }, tenantA);
+        var item = new ProbeItem { ParentId = parentOfB, Label = "intruso" };
         dbA.Add(item);
 
         var ex = await Should.ThrowAsync<DbUpdateException>(() => dbA.SaveChangesAsync());

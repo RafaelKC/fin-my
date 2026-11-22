@@ -12,7 +12,7 @@ public class TenantFilterTests(PostgresFixture postgres)
         var tenant = Guid.CreateVersion7();
         await using (var seed = postgres.CreateContext(tenant))
         {
-            seed.Add(seed.InTenant(new ProbeParent { Name = "existe" }, tenant));
+            seed.Add(new ProbeParent { Name = "existe" });
             await seed.SaveChangesAsync();
         }
 
@@ -29,13 +29,13 @@ public class TenantFilterTests(PostgresFixture postgres)
         var tenantB = Guid.CreateVersion7();
         await using (var seed = postgres.CreateContext(tenantA))
         {
-            seed.Add(seed.InTenant(new ProbeParent { Name = "de A" }, tenantA));
+            seed.Add(new ProbeParent { Name = "de A" });
             await seed.SaveChangesAsync();
         }
 
         await using (var seed = postgres.CreateContext(tenantB))
         {
-            seed.Add(seed.InTenant(new ProbeParent { Name = "de B" }, tenantB));
+            seed.Add(new ProbeParent { Name = "de B" });
             await seed.SaveChangesAsync();
         }
 
@@ -51,11 +51,12 @@ public class TenantFilterTests(PostgresFixture postgres)
     {
         var tenant = Guid.CreateVersion7();
         await using var db = postgres.CreateContext(tenant);
-        var viva = db.InTenant(new ProbeParent { Name = "viva" }, tenant);
-        var morta = db.InTenant(new ProbeParent { Name = "morta" }, tenant);
+        var viva = new ProbeParent { Name = "viva" };
+        var morta = new ProbeParent { Name = "morta" };
         db.AddRange(viva, morta);
         await db.SaveChangesAsync();
-        await db.Parents.Where(p => p.Id == morta.Id).ExecuteUpdateAsync(s => s.SetProperty(p => p.DeletedAt, DateTimeOffset.UtcNow));
+        db.Remove(morta);
+        await db.SaveChangesAsync();
 
         (await db.Parents.Select(p => p.Name).ToListAsync()).ShouldBe(["viva"]);
     }
@@ -68,10 +69,11 @@ public class TenantFilterTests(PostgresFixture postgres)
         foreach (var tenant in new[] { tenantA, tenantB })
         {
             await using var seed = postgres.CreateContext(tenant);
-            var morta = seed.InTenant(new ProbeParent { Name = $"morta {tenant}" }, tenant);
+            var morta = new ProbeParent { Name = $"morta {tenant}" };
             seed.Add(morta);
             await seed.SaveChangesAsync();
-            await seed.Parents.Where(p => p.Id == morta.Id).ExecuteUpdateAsync(s => s.SetProperty(p => p.DeletedAt, DateTimeOffset.UtcNow));
+            seed.Remove(morta);
+            await seed.SaveChangesAsync();
         }
 
         await using var dbA = postgres.CreateContext(tenantA);
@@ -86,7 +88,7 @@ public class TenantFilterTests(PostgresFixture postgres)
     {
         var tenant = Guid.CreateVersion7();
         await using var seed = postgres.CreateContext(tenant);
-        var parent = seed.InTenant(new ProbeParent { Name = "v1" }, tenant);
+        var parent = new ProbeParent { Name = "v1" };
         seed.Add(parent);
         await seed.SaveChangesAsync();
 
@@ -106,7 +108,7 @@ public class TenantFilterTests(PostgresFixture postgres)
     {
         var tenant = Guid.CreateVersion7();
         await using var db = postgres.CreateContext(tenant);
-        db.Add(db.InTenant(new ProbeParent { Name = "x" }, tenant));
+        db.Add(new ProbeParent { Name = "x" });
         await db.SaveChangesAsync();
 
         var via = await db.Database.SqlQueryRaw<string>("SELECT created_via AS \"Value\" FROM probe_parents WHERE tenant_id = {0}", tenant).SingleAsync();

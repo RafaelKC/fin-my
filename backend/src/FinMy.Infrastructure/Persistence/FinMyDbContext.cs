@@ -23,6 +23,9 @@ public class FinMyDbContext : DbContext
         _currentContext = currentContext;
     }
 
+    /// <summary>Contexto ambiente da requisição/job, lido pelos interceptors de gravação.</summary>
+    public ICurrentContext CurrentContext => _currentContext;
+
     /// <summary>Espaço do contexto ou <see cref="Guid.Empty"/>; referenciado pelo filtro nomeado <c>Tenant</c>.</summary>
     public Guid TenantIdOrEmpty => _currentContext.TenantIdOrEmpty;
 

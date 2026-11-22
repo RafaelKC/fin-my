@@ -3,6 +3,7 @@ using DotNet.Testcontainers.Containers;
 using FinMy.Application.Abstractions;
 using FinMy.Infrastructure.Context;
 using FinMy.Infrastructure.Persistence;
+using FinMy.Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -53,21 +54,24 @@ public sealed class PostgresFixture : IAsyncLifetime
 
     public Task DisposeAsync() => _container.DisposeAsync().AsTask();
 
-    /// <summary>Contexto de testes com o <see cref="ICurrentContext"/> informado.</summary>
-    public TestFinMyDbContext CreateContext(ICurrentContext currentContext)
+    /// <summary>Relógio fixo usado pelos interceptors quando o teste não informa outro.</summary>
+    public static FakeClock DefaultClock { get; } = new(new DateTimeOffset(2026, 3, 10, 12, 0, 0, TimeSpan.Zero));
+
+    /// <summary>Contexto de testes com os interceptors reais e o <see cref="ICurrentContext"/> informado.</summary>
+    public TestFinMyDbContext CreateContext(ICurrentContext currentContext, IClock? clock = null)
     {
         var builder = new DbContextOptionsBuilder<TestFinMyDbContext>();
-        builder.UseFinMyNpgsql(ConnectionString);
+        builder.UseFinMyNpgsql(ConnectionString).AddFinMyInterceptors(clock ?? DefaultClock);
 
         return new TestFinMyDbContext(builder.Options, currentContext);
     }
 
     /// <summary>Contexto atuando como usuário do Espaço informado.</summary>
-    public TestFinMyDbContext CreateContext(Guid tenantId)
+    public TestFinMyDbContext CreateContext(Guid tenantId, Guid? userId = null, IClock? clock = null)
     {
         var current = new CurrentContext();
-        current.Populate(Guid.CreateVersion7(), tenantId, Domain.Common.Channel.App);
-        return CreateContext(current);
+        current.Populate(userId ?? Guid.CreateVersion7(), tenantId, Domain.Common.Channel.App);
+        return CreateContext(current, clock);
     }
 }
 
