@@ -1,0 +1,19 @@
+# Sobreposição de desenvolvimento: Mailpit (captura e-mails) e Postgres exposto para debug.
+# Uso: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+services:
+  db:
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  mailpit:
+    image: docker.io/axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025" # interface web
+      - "127.0.0.1:1025:1025" # SMTP
+
+  api:
+    depends_on:
+      mailpit:
+        condition: service_started
