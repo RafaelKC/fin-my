@@ -41,7 +41,11 @@ Palavras MUST / MUST NOT / SHOULD / MAY no sentido da RFC 2119.
   docker-compose.yml
   ```
 - Dependências entre camadas: `Api → Application → Domain`; `Infrastructure → Application, Domain`;
-  `Domain` não depende de nada (nem de EF Core). Verificado por teste de arquitetura.
+  `Api → Infrastructure` apenas como raiz de composição (registro de DI e comando `migrate`; endpoints
+  não usam tipos da Infrastructure); `Domain` não depende de nada (nem de EF Core). Verificado por
+  teste de arquitetura.
+- Ambiente local sem Docker: usar podman (`DOCKER_HOST=unix:///run/user/$UID/podman/podman.sock`,
+  `TESTCONTAINERS_RYUK_DISABLED=true`) e `podman compose`/`podman-compose`. O CI usa Docker.
 
 ## 2. Stack
 
