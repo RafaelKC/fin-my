@@ -1,3 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="FinMy.Infrastructure" />
+    <InternalsVisibleTo Include="FinMy.Domain.Tests" />
+  </ItemGroup>
+
 </Project>
