@@ -8,3 +8,9 @@
 .DS_Store
 .idea/
 .vscode/
+
+# .NET
+bin/
+obj/
+*.user
+TestResults/
