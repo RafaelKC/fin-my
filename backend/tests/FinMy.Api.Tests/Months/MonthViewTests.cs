@@ -242,6 +242,29 @@ public class MonthViewTests(PostgresFixture postgres) : ApiTestBase(postgres)
     }
 
     [Fact]
+    public async Task Pendencias_ignoram_o_filtro_de_carteiras()
+    {
+        var (http, lia) = await NewUserAsync("Lia");
+        var thisMonth = YearMonth.From(_clock.Today);
+        var past = thisMonth.AddMonths(-2).FirstDay;
+        var azul = NewWallet("Azul", 0, new DateOnly(2026, 1, 1), primary: true);
+        var verde = NewWallet("Verde", 0, new DateOnly(2026, 1, 1));
+        await Factory.SeedAsync(
+            lia,
+            azul,
+            verde,
+            NewEntry(EntryKind.Income, "Carla atrasado", 25000, past, azul.Id, EntryStatus.Planned),
+            NewEntry(EntryKind.Expense, "Tim", 4499, past, verde.Id, EntryStatus.Planned));
+
+        var view = await GetOkAsync(http, $"/api/v1/months/{thisMonth}?walletIds={azul.Id}");
+
+        var pending = view.GetProperty("pending");
+        pending.GetProperty("count").GetInt32().ShouldBe(2);
+        Cents(pending, "toReceiveCents").ShouldBe(25000);
+        Cents(pending, "toPayCents").ShouldBe(4499);
+    }
+
+    [Fact]
     public async Task Nao_mostra_dados_de_outro_Espaco()
     {
         var (_, lia) = await NewUserAsync("Lia");

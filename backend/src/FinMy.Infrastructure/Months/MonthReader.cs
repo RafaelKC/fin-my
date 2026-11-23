@@ -66,7 +66,8 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
                 t.CreatedAt, EF.Property<uint>(t, "xmin")))
             .ToListAsync(cancellationToken);
 
-        var pending = await entries
+        // Pendências (research R9) ignoram o filtro de carteiras: valem para o Espaço todo.
+        var pending = await db.Set<Entry>().AsNoTracking()
             .Where(e => e.Status == EntryStatus.Planned && e.ReferenceMonth < currentMonth)
             .GroupBy(e => e.Kind)
             .Select(g => new { Kind = g.Key, Count = g.Count(), Cents = g.Sum(e => e.AmountCents) })
