@@ -11,9 +11,9 @@ namespace FinMy.Api.Tests.Months;
 
 /// <summary>
 /// SC-003 (research R5): a soma dos saldos atuais das Carteiras é igual ao Saldo final Realizado (todas as Carteiras)
-/// do último mês que contém um lançamento efetivado ou uma data de saldo inicial. O saldo atual de cada Carteira vem da
-/// fórmula da R5 aplicada aos próprios dados gerados (independente do resumo); quando <c>GET /wallets</c> (T006) estiver
-/// integrado, a mesma verificação pode ler <c>currentBalanceCents</c> dele.
+/// do último mês que contém um lançamento efetivado ou uma data de saldo inicial. Os saldos atuais vêm de
+/// <c>GET /wallets</c> (<c>currentBalanceCents</c>) e também da fórmula da R5 aplicada aos próprios dados gerados,
+/// que não depende de nenhuma das duas consultas.
 /// </summary>
 public class WalletConsistencyTests(PostgresFixture postgres) : ApiTestBase(postgres)
 {
@@ -80,6 +80,9 @@ public class WalletConsistencyTests(PostgresFixture postgres) : ApiTestBase(post
             .Concat(data.Wallets.Select(w => YearMonth.From(w.InitialBalanceDate)))
             .Max();
         var expected = data.Wallets.Sum(w => CurrentBalance(data, w));
+
+        var wallets = await http.GetFromJsonAsync<JsonElement>("/api/v1/wallets?archived=all");
+        wallets.EnumerateArray().Sum(w => w.GetProperty("currentBalanceCents").GetInt64()).ShouldBe(expected);
 
         var response = await http.GetAsync($"/api/v1/months/{lastRelevant}");
         response.EnsureSuccessStatusCode();
