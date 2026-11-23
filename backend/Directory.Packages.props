@@ -21,6 +21,8 @@
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <!-- Autenticação (001): JwtBearer (o PasswordHasher já vem no framework compartilhado) -->
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.15" />
+    <!-- OpenAPI gerado pela própria API (docs/arquitetura.md §2); a suíte de isolamento descobre as operações por ele -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.15" />
     <!-- Testes -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />

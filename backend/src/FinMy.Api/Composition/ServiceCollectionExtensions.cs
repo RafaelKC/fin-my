@@ -49,6 +49,9 @@ public static class ServiceCollectionExtensions
             ProblemFactory.AddTraceId(problem, context.HttpContext);
         });
 
+        // Documento OpenAPI gerado a partir dos endpoints (docs/arquitetura.md §2); servido fora de produção.
+        services.AddOpenApi();
+
         services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
         services.AddFinMyRateLimiting(configuration);
 
