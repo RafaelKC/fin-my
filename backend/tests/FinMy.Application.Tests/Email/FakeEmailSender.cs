@@ -9,8 +9,16 @@ public sealed class FakeEmailSender : IEmailSender
 
     public IReadOnlyList<EmailMessage> Sent => _sent;
 
+    /// <summary>Quando definido, o envio falha com esta exceção (SMTP fora do ar).</summary>
+    public Exception? Failure { get; set; }
+
     public Task SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
     {
+        if (Failure is not null)
+        {
+            throw Failure;
+        }
+
         _sent.Add(message);
         return Task.CompletedTask;
     }

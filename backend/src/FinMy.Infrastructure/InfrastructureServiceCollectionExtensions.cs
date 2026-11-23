@@ -2,6 +2,7 @@ using FinMy.Application.Abstractions;
 using FinMy.Infrastructure.Auth;
 using FinMy.Infrastructure.Context;
 using FinMy.Infrastructure.Email;
+using FinMy.Infrastructure.Jobs;
 using FinMy.Infrastructure.Persistence;
 using FinMy.Infrastructure.Persistence.Interceptors;
 using FinMy.Infrastructure.Time;
@@ -45,6 +46,9 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IRefreshTokenStore, RefreshTokenStore>();
         services.AddScoped<IAccountStore, AccountStore>();
         services.AddScoped<IPasswordResetStore, PasswordResetStore>();
+
+        // Envio do e-mail de redefinição: na própria requisição (padrão); AddFinMyHangfire troca por job em segundo plano.
+        services.TryAddScoped<IPasswordResetDispatcher, InlinePasswordResetDispatcher>();
 
         return services;
     }

@@ -61,6 +61,21 @@ public class PasswordResetEndpointsTests(PostgresFixture postgres) : ApiTestBase
     }
 
     [Fact]
+    public async Task Pedido_com_SMTP_fora_do_ar_ainda_responde_202_igual_ao_de_conta_inexistente()
+    {
+        var user = await SeedUserAsync();
+        Factory.Emails.Failure = new IOException("SMTP fora do ar");
+
+        var existing = await Client.PostAsJsonAsync(Request, new { email = user.Email });
+        var missing = await Client.PostAsJsonAsync(Request, new { email = "ninguem@exemplo.com" });
+
+        existing.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        missing.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        (await existing.Content.ReadAsStringAsync()).ShouldBe(await missing.Content.ReadAsStringAsync());
+        Factory.Emails.Sent.ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task Pedido_sem_e_mail_e_422_validation_failed()
     {
         var response = await Client.PostAsJsonAsync(Request, new { });

@@ -5,9 +5,11 @@ using FinMy.Domain.Common;
 using FinMy.Domain.Identity;
 using FinMy.Infrastructure.Auth;
 using FinMy.Infrastructure.Context;
+using FinMy.Infrastructure.Jobs;
 using FinMy.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinMy.Application.Tests.Auth;
 
@@ -33,7 +35,10 @@ public class PasswordResetHandlersTests(PostgresFixture postgres) : IAsyncLifeti
 
     public async Task DisposeAsync() => await _db.DisposeAsync();
 
-    private RequestPasswordResetHandler NewRequest() => new(new PasswordResetStore(_db), _emails, _clock, App);
+    private RequestPasswordResetHandler NewRequest()
+        => new(new InlinePasswordResetDispatcher(
+            new PasswordResetMailer(new PasswordResetStore(_db), _emails, _clock, App),
+            NullLogger<InlinePasswordResetDispatcher>.Instance));
 
     private ConfirmPasswordResetHandler NewConfirm() => new(new PasswordResetStore(_db), _hasher, _sessions, _clock);
 
@@ -98,6 +103,31 @@ public class PasswordResetHandlersTests(PostgresFixture postgres) : IAsyncLifeti
 
         _emails.Sent.ShouldBeEmpty();
         (await _db.Set<PasswordResetToken>().CountAsync()).ShouldBe(before);
+    }
+
+    [Fact]
+    public async Task Falha_de_SMTP_nao_aparece_no_pedido_nem_muda_o_resultado()
+    {
+        var user = await SeedUserAsync();
+        _emails.Failure = new IOException("SMTP fora do ar");
+
+        await Should.NotThrowAsync(() => NewRequest().HandleAsync(new RequestPasswordResetCommand(user.Email), CancellationToken.None));
+
+        _emails.Sent.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Job_do_Hangfire_propaga_a_falha_de_SMTP_para_o_Hangfire_tentar_de_novo()
+    {
+        var user = await SeedUserAsync();
+        _emails.Failure = new IOException("SMTP fora do ar");
+        var job = new PasswordResetEmailJob(new PasswordResetMailer(new PasswordResetStore(_db), _emails, _clock, App));
+
+        await Should.ThrowAsync<IOException>(() => job.RunAsync(user.Email));
+
+        _emails.Failure = null;
+        await job.RunAsync(user.Email);
+        _emails.Sent.ShouldHaveSingleItem();
     }
 
     [Theory]
