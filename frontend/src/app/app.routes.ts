@@ -38,6 +38,21 @@ export const routes: Routes = [
         loadComponent: () => import('./features/mes/mes.page').then((m) => m.MesPage),
       },
       {
+        path: 'carteiras',
+        loadComponent: () =>
+          import('./features/carteiras/carteiras.page').then((m) => m.CarteirasPage),
+      },
+      {
+        path: 'carteiras/nova',
+        loadComponent: () =>
+          import('./features/carteiras/carteira-form.page').then((m) => m.CarteiraFormPage),
+      },
+      {
+        path: 'carteiras/:id',
+        loadComponent: () =>
+          import('./features/carteiras/carteira-form.page').then((m) => m.CarteiraFormPage),
+      },
+      {
         path: 'perfil',
         loadComponent: () => import('./features/perfil/perfil.page').then((m) => m.PerfilPage),
       },

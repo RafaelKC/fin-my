@@ -1,0 +1,128 @@
+<main class="pagina">
+  <h1>{{ edicao ? 'Carteira' : 'Nova carteira' }}</h1>
+
+  @if (erro(); as mensagem) {
+    <div class="aviso" role="alert" data-testid="erro-carteira">{{ mensagem }}</div>
+  }
+
+  @if (carregando()) {
+    <p role="status">Carregando…</p>
+  } @else if (!edicao || carteira()) {
+    @if (carteira(); as c) {
+      <p class="situacao">
+        @if (c.isPrimary) {
+          <span class="selo" data-testid="principal">Principal</span>
+        }
+        @if (c.archived) {
+          <span class="selo cinza" data-testid="arquivada">Arquivada</span>
+        }
+        <span
+          >Saldo atual:
+          <strong data-testid="saldo-atual">{{ c.currentBalanceCents | brl }}</strong></span
+        >
+      </p>
+    }
+
+    <form class="form" [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+      <div class="campo">
+        <label for="nome">Nome</label>
+        <input
+          id="nome"
+          type="text"
+          formControlName="name"
+          [attr.maxlength]="nomeMax"
+          [attr.aria-invalid]="erroDoNome() ? 'true' : null"
+          [attr.aria-describedby]="erroDoNome() ? 'nome-erro' : null"
+        />
+        @if (erroDoNome(); as mensagem) {
+          <span class="erro" id="nome-erro">{{ mensagem }}</span>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="tipo">Tipo</label>
+        <select id="tipo" formControlName="type">
+          @for (t of tipos; track t.value) {
+            <option [value]="t.value">{{ t.label }}</option>
+          }
+        </select>
+      </div>
+
+      <fieldset class="campo cores">
+        <legend>Cor</legend>
+        <div class="paleta" role="radiogroup" aria-label="Cor">
+          @for (cor of cores; track cor.value) {
+            <button
+              type="button"
+              role="radio"
+              class="amostra"
+              [style.background]="cor.value"
+              [attr.aria-checked]="form.controls.color.value === cor.value"
+              [attr.aria-label]="cor.label"
+              [class.escolhida]="form.controls.color.value === cor.value"
+              (click)="escolherCor(cor.value)"
+            ></button>
+          }
+        </div>
+      </fieldset>
+
+      <div class="campo">
+        <label for="saldo">Saldo inicial</label>
+        <input
+          id="saldo"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          formControlName="initialBalance"
+          [attr.aria-invalid]="previa().ok ? null : 'true'"
+          aria-describedby="saldo-previa"
+        />
+        <span
+          id="saldo-previa"
+          [class.erro]="!previa().ok"
+          [class.ajuda]="previa().ok"
+          data-testid="saldo-previa"
+          >{{ previa().texto }}</span
+        >
+      </div>
+
+      <div class="campo">
+        <label for="data-saldo">Data do saldo inicial</label>
+        <input id="data-saldo" type="date" formControlName="initialBalanceDate" />
+      </div>
+
+      <button type="submit" class="enviar" [disabled]="ocupado()">
+        {{ ocupado() ? 'Salvando…' : 'Salvar' }}
+      </button>
+      <a class="voltar" routerLink="/carteiras">Voltar</a>
+    </form>
+
+    @if (carteira(); as c) {
+      <section class="acoes" aria-label="Ações da carteira">
+        @if (!c.archived && !c.isPrimary) {
+          <button type="button" class="acao" [disabled]="ocupado()" (click)="tornarPrincipal()">
+            Tornar principal
+          </button>
+        }
+        @if (c.archived) {
+          <button type="button" class="acao" [disabled]="ocupado()" (click)="desarquivar()">
+            Desarquivar
+          </button>
+        } @else {
+          <button type="button" class="acao" [disabled]="ocupado()" (click)="arquivar()">
+            Arquivar
+          </button>
+        }
+        @if (c.hasEntries) {
+          <p class="ajuda" data-testid="so-arquivar">
+            Esta carteira tem lançamentos: não pode ser excluída, apenas arquivada.
+          </p>
+        } @else {
+          <button type="button" class="acao perigo" [disabled]="ocupado()" (click)="excluir()">
+            Excluir
+          </button>
+        }
+      </section>
+    }
+  }
+</main>
