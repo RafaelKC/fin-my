@@ -14,6 +14,20 @@ export const routes: Routes = [
       import('./features/auth/criar-conta/criar-conta.page').then((m) => m.CriarContaPage),
   },
   {
+    path: 'esqueci-senha',
+    canActivate: [publicGuard],
+    loadComponent: () =>
+      import('./features/auth/esqueci-senha/esqueci-senha.page').then((m) => m.EsqueciSenhaPage),
+  },
+  {
+    // Sem publicGuard: o link do e-mail precisa funcionar mesmo com outra sessão aberta.
+    path: 'redefinir-senha',
+    loadComponent: () =>
+      import('./features/auth/redefinir-senha/redefinir-senha.page').then(
+        (m) => m.RedefinirSenhaPage,
+      ),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./shell/shell').then((m) => m.Shell),

@@ -1,0 +1,57 @@
+<main class="pagina">
+  <h1>Redefinir senha</h1>
+
+  @if (concluido()) {
+    <div class="confirmacao" role="status" data-testid="senha-redefinida">
+      <p>Senha alterada. Suas outras sessões foram encerradas.</p>
+    </div>
+    <p class="acao"><a class="enviar" routerLink="/entrar">Entrar</a></p>
+  } @else if (tokenInvalido()) {
+    <div class="aviso" role="alert" data-testid="link-invalido">
+      <p>Este link expirou ou já foi usado. Peça um novo link.</p>
+    </div>
+    <p class="acao"><a class="enviar" routerLink="/esqueci-senha">Pedir novo link</a></p>
+  } @else {
+    <p class="intro">Escolha a nova senha da sua conta.</p>
+
+    <form class="form" [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+      @if (erroGeral(); as mensagem) {
+        <div class="aviso" role="alert" data-testid="erro-geral">{{ mensagem }}</div>
+      }
+
+      <div class="campo">
+        <label for="senha">Nova senha</label>
+        <div class="senha">
+          <input
+            id="senha"
+            [type]="senhaVisivel() ? 'text' : 'password'"
+            formControlName="password"
+            autocomplete="new-password"
+            [attr.maxlength]="senhaMax"
+            [attr.aria-invalid]="erro() ? 'true' : null"
+            aria-describedby="senha-ajuda senha-erro"
+          />
+          <button
+            type="button"
+            class="mostrar"
+            [attr.aria-label]="senhaVisivel() ? 'Ocultar senha' : 'Mostrar senha'"
+            [attr.aria-pressed]="senhaVisivel()"
+            (click)="alternarSenha()"
+          >
+            <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{
+              senhaVisivel() ? 'visibility_off' : 'visibility'
+            }}</mat-icon>
+          </button>
+        </div>
+        <span class="ajuda" id="senha-ajuda">Mínimo de {{ senhaMin }} caracteres.</span>
+        @if (erro(); as mensagem) {
+          <span class="erro" id="senha-erro">{{ mensagem }}</span>
+        }
+      </div>
+
+      <button type="submit" class="enviar" [disabled]="enviando()">
+        {{ enviando() ? 'Salvando…' : 'Salvar' }}
+      </button>
+    </form>
+  }
+</main>
