@@ -1,0 +1,47 @@
+<div class="amount">
+  <label class="amount__label" [attr.for]="'amount-field'">{{ label() }}</label>
+  <input
+    id="amount-field"
+    class="amount__field"
+    type="text"
+    autocomplete="off"
+    spellcheck="false"
+    enterkeyhint="done"
+    [attr.inputmode]="keypad() ? 'none' : 'decimal'"
+    [readOnly]="keypad()"
+    [maxLength]="maxLength"
+    [disabled]="disabled()"
+    [value]="text()"
+    [attr.aria-invalid]="preview()?.ok === false"
+    aria-describedby="amount-preview"
+    placeholder="0,00"
+    (input)="onInput($event)"
+    (blur)="touch()"
+  />
+  <p
+    id="amount-preview"
+    class="amount__preview"
+    [class.amount__preview--error]="preview()?.ok === false"
+    role="status"
+    aria-live="polite"
+  >
+    {{ preview()?.text }}
+  </p>
+
+  @if (keypad()) {
+    <div class="keypad" role="group" aria-label="Teclado numérico">
+      @for (k of keys; track k.label) {
+        <button
+          type="button"
+          class="keypad__key"
+          [class.keypad__key--wide]="k.wide"
+          [attr.aria-label]="k.ariaLabel"
+          [disabled]="disabled()"
+          (click)="isBackspace(k) ? backspace() : press(k)"
+        >
+          {{ k.label }}
+        </button>
+      }
+    </div>
+  }
+</div>
