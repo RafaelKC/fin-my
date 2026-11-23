@@ -1,3 +1,4 @@
+using FinMy.Api.Endpoints.Transfers;
 using FinMy.Application.Abstractions;
 using FinMy.Application.Entries;
 
@@ -65,3 +66,23 @@ public sealed record EntryResponse(
 
 /// <summary>Item de <c>GET /entries/suggestions</c>.</summary>
 public sealed record EntrySuggestionResponse(string Description, int Uses, Guid? WalletId);
+
+/// <summary>Corpo de <c>POST /entries/{id}/duplicate</c>: só a nova data.</summary>
+public sealed record EntryDuplicateRequest(DateOnly? Date);
+
+/// <summary>Item de <c>GET /entries/search</c> (<c>LedgerItem</c>): <c>type</c> diz qual dos dois objetos veio preenchido.</summary>
+public sealed record LedgerItemResponse(string Type, EntryResponse? Entry, TransferResponse? Transfer)
+{
+    public static LedgerItemResponse From(LedgerItemView item) => new(
+        item.Type switch
+        {
+            LedgerItemKind.Income => "income",
+            LedgerItemKind.Expense => "expense",
+            _ => "transfer",
+        },
+        item.Entry is null ? null : EntryResponse.From(item.Entry),
+        item.Transfer is null ? null : TransferResponse.From(item.Transfer));
+}
+
+/// <summary>Resposta de <c>GET /entries/search</c>; os totais valem para todos os resultados, não só a página.</summary>
+public sealed record LedgerSearchResponse(IReadOnlyList<LedgerItemResponse> Items, long TotalCents, int TotalCount, string? NextCursor);

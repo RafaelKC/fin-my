@@ -29,6 +29,7 @@ public static class OperationSamples
             ["POST /api/v1/entries"] = _ => new { kind = "expense", description = "Tim", amount = "44,99", date = "2026-03-10", walletId = Guid.NewGuid() },
             ["PUT /api/v1/entries/{id}"] = _ => new { kind = "expense", description = "Tim", amount = "44,99", date = "2026-03-10", walletId = Guid.NewGuid(), status = "settled", version = 1 },
             ["PATCH /api/v1/entries/{id}/status"] = _ => new { status = "planned" },
+            ["POST /api/v1/entries/{id}/duplicate"] = _ => new { date = "2026-04-10" },
             ["POST /api/v1/transfers"] = _ => new { fromWalletId = Guid.NewGuid(), toWalletId = Guid.NewGuid(), amount = "20,00", date = "2026-06-29" },
             ["PUT /api/v1/transfers/{id}"] = _ => new { fromWalletId = Guid.NewGuid(), toWalletId = Guid.NewGuid(), amount = "20,00", date = "2026-06-29", version = 1 },
         };
