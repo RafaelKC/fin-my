@@ -1,0 +1,350 @@
+openapi: 3.1.0
+info:
+  title: Fin-My API — 003 Cartões, Compras e Faturas
+  version: 1.0.0
+  description: |
+    Convenções da 001/002 (bearer, Problem, 404 not_found entre Espaços, valores como texto RT-05,
+    Idempotency-Key nos POST de criação, `version` nos PUT, DeletionResult nos DELETE de lançamentos).
+    Fatura é identificada por cartão + mês de vencimento (research R2).
+servers:
+  - url: /api/v1
+security:
+  - bearer: []
+paths:
+  /credit-cards:
+    get:
+      summary: Lista cartões com fatura atual, próxima, faturas em aberto e limite (FR-025, FR-026)
+      parameters:
+        - name: archived
+          in: query
+          schema: { type: string, enum: ['false', 'true', 'all'], default: 'false' }
+      responses:
+        '200': { content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/CreditCardOverview' } } } } }
+    post:
+      summary: Cria cartão (US1)
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreditCardInput' } } } }
+      responses:
+        '201': { content: { application/json: { schema: { $ref: '#/components/schemas/CreditCard' } } } }
+        '409': { description: 'code=credit_card.name_taken — "Já existe um cartão com esse nome."' }
+        '422': { description: 'validação; wallet.archived para carteira de pagamento arquivada' }
+  /credit-cards/{id}:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    get:
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/CreditCardOverview' } } } }
+    put:
+      summary: Edita; mudar dias redistribui faturas futuras (research R3)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CreditCardInput'
+                - { type: object, required: [version], properties: { version: { type: integer } } }
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/CreditCard' } } } }
+        '409': { description: 'credit_card.name_taken | concurrency_conflict' }
+    delete:
+      summary: Exclui só se nunca teve compras nem pagamentos (RT-11)
+      responses:
+        '204': { description: excluído }
+        '409': { description: 'code=credit_card.has_purchases_archive_instead' }
+  /credit-cards/{id}/archive:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post: { responses: { '200': { content: { application/json: { schema: { $ref: '#/components/schemas/CreditCard' } } } } } }
+  /credit-cards/{id}/unarchive:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post: { responses: { '200': { content: { application/json: { schema: { $ref: '#/components/schemas/CreditCard' } } } }, '409': { description: credit_card.name_taken } } }
+  /credit-cards/{id}/invoice-for:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    get:
+      summary: Em qual fatura cai uma compra nesta data (conveniência; o front também calcula pela porta TS)
+      parameters: [{ name: date, in: query, required: true, schema: { type: string, format: date } }]
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/InvoiceRef' } } } }
+
+  /credit-cards/{id}/invoices/{month}:
+    parameters: [{ $ref: '#/components/parameters/Id' }, { $ref: '#/components/parameters/Month' }]
+    get:
+      summary: Fatura (US5, US6.2), exista a linha ou não
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Invoice' } } } }
+  /credit-cards/{id}/invoices/{month}/payments:
+    parameters: [{ $ref: '#/components/parameters/Id' }, { $ref: '#/components/parameters/Month' }]
+    post:
+      summary: Registra pagamento (FR-017); corpo vazio = padrões (caixinha da visão do mês)
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount: { type: string, description: 'padrão = Restante' }
+                date: { type: string, format: date, description: 'padrão = hoje' }
+                walletId: { type: string, format: uuid, description: 'padrão = carteira de pagamento do cartão' }
+      responses:
+        '201': { content: { application/json: { schema: { $ref: '#/components/schemas/Invoice' } } } }
+        '422': { description: 'invoice.payment_exceeds_remaining ("O valor em aberto é R$ X") | invoice.nothing_to_pay | wallet.archived' }
+    delete:
+      summary: Exclui todos os pagamentos da fatura (desmarcar a caixinha, FR-019)
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/DeletionResult' } } } }
+        '422': { description: 'invoice.no_payments' }
+  /credit-cards/{id}/invoices/{month}/carry-over:
+    parameters: [{ $ref: '#/components/parameters/Id' }, { $ref: '#/components/parameters/Month' }]
+    post:
+      summary: Leva o restante para a próxima fatura (FR-020, US5.4)
+      responses:
+        '201': { content: { application/json: { schema: { $ref: '#/components/schemas/Invoice' } } } }
+        '422': { description: 'invoice.carry_over_not_available — antes do fechamento ou restante 0' }
+  /invoice-payments/{id}:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    put:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, date, walletId, version]
+              properties:
+                amount: { type: string }
+                date: { type: string, format: date }
+                walletId: { type: string, format: uuid }
+                version: { type: integer }
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/InvoicePayment' } } } }
+        '422': { description: invoice.payment_exceeds_remaining }
+    delete:
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/DeletionResult' } } } }
+
+  /card-purchases:
+    post:
+      summary: Cria compra à vista, parcelada ou parcelamento em andamento (US2–US4)
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CardPurchaseCreate' } } } }
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [purchases, warnings]
+                properties:
+                  purchases: { type: array, items: { $ref: '#/components/schemas/CardPurchase' } }
+                  warnings: { type: array, items: { type: string, enum: [recorded_as_credit] } }
+        '409': { description: 'card_purchase.invoice_paid_confirmation_required (repetir com confirmPaidInvoice=true)' }
+        '422': { description: 'card_purchase.credit_must_be_single | card_purchase.invalid_next_installment | credit_card.archived | validação' }
+  /card-purchases/{id}:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    get:
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/CardPurchase' } } } }
+    put:
+      summary: Edita (FR-015). Em parcela, `scope` vale para descrição e observação; valor/conferida só esta; cartão/data todas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [description, amount, nature, date, creditCardId, version]
+              properties:
+                description: { type: string }
+                amount: { type: string }
+                nature: { type: string, enum: [debit, credit] }
+                date: { type: string, format: date }
+                creditCardId: { type: string, format: uuid }
+                notes: { type: [string, 'null'] }
+                scope: { type: string, enum: [this, all], default: this }
+                confirmPaidInvoice: { type: boolean }
+                version: { type: integer }
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/CardPurchase' } } } }
+        '409': { description: 'concurrency_conflict | card_purchase.invoice_paid_confirmation_required' }
+    delete:
+      parameters:
+        - { name: scope, in: query, schema: { type: string, enum: [this, this_and_following, all], default: this } }
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/DeletionResult' } } } }
+  /card-purchases/{id}/reconciled:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    patch:
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [reconciled], properties: { reconciled: { type: boolean } } } } } }
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/CardPurchase' } } } }
+  /card-purchases/{id}/move:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post:
+      summary: Move para a fatura anterior/seguinte (FR-028)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [direction]
+              properties:
+                direction: { type: string, enum: [previous, next] }
+                scope: { type: string, enum: [this, this_and_following], default: this }
+      responses:
+        '200': { content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/CardPurchase' } } } } }
+  /installment-plans/{id}:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    put:
+      summary: Altera N ou valor total — recria as parcelas (FR-015)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [installmentTotal, amount, amountMode]
+              properties:
+                installmentTotal: { type: integer, minimum: 1, maximum: 48 }
+                amount: { type: string }
+                amountMode: { type: string, enum: [total_amount, installment_amount] }
+      responses:
+        '200': { content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/CardPurchase' } } } } }
+        '409': { description: installment_plan.has_paid_invoice }
+
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    Id: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    Month: { name: month, in: path, required: true, schema: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$' } }
+    IdempotencyKey: { name: Idempotency-Key, in: header, required: false, schema: { type: string, format: uuid } }
+  schemas:
+    DeletionResult: { type: object, required: [deletionBatchId], properties: { deletionBatchId: { type: string, format: uuid } } }
+    CreditCardInput:
+      type: object
+      required: [name, closingDay, dueDay, paymentWalletId, color]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 40 }
+        closingDay: { type: integer, minimum: 1, maximum: 31 }
+        dueDay: { type: integer, minimum: 1, maximum: 31 }
+        paymentWalletId: { type: string, format: uuid }
+        color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+        limit: { type: [string, 'null'], description: 'expressão RT-05; vazio = sem limite' }
+    CreditCard:
+      type: object
+      required: [id, name, closingDay, dueDay, paymentWalletId, color, archived, hasPurchases, version]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        closingDay: { type: integer }
+        dueDay: { type: integer }
+        paymentWalletId: { type: string, format: uuid }
+        color: { type: string }
+        limitCents: { type: [integer, 'null'] }
+        archived: { type: boolean }
+        hasPurchases: { type: boolean }
+        version: { type: integer }
+    InvoiceRef:
+      type: object
+      required: [creditCardId, dueMonth, closingDate, dueDate]
+      properties:
+        creditCardId: { type: string, format: uuid }
+        dueMonth: { type: string }
+        closingDate: { type: string, format: date }
+        dueDate: { type: string, format: date }
+    InvoiceSummary:
+      allOf:
+        - $ref: '#/components/schemas/InvoiceRef'
+        - type: object
+          required: [status, totalCents, paidCents, remainingCents]
+          properties:
+            id: { type: [string, 'null'], format: uuid }
+            status: { type: string, enum: [no_amount_due, paid, open, closed, overdue] }
+            totalCents: { type: integer }
+            paidCents: { type: integer }
+            remainingCents: { type: integer }
+    CreditCardOverview:
+      allOf:
+        - $ref: '#/components/schemas/CreditCard'
+        - type: object
+          required: [currentInvoice, nextInvoice, openPastInvoices]
+          properties:
+            currentInvoice: { $ref: '#/components/schemas/InvoiceSummary' }
+            nextInvoice: { $ref: '#/components/schemas/InvoiceSummary' }
+            openPastInvoices: { type: array, items: { $ref: '#/components/schemas/InvoiceSummary' } }
+            availableLimitCents: { type: [integer, 'null'] }
+    Invoice:
+      allOf:
+        - $ref: '#/components/schemas/InvoiceSummary'
+        - type: object
+          required: [reconciledCents, canCarryOver, purchases, payments, previousMonth, nextMonth]
+          properties:
+            reconciledCents: { type: integer, description: 'FR-027' }
+            canCarryOver: { type: boolean }
+            purchases: { type: array, items: { $ref: '#/components/schemas/CardPurchase' } }
+            payments: { type: array, items: { $ref: '#/components/schemas/InvoicePayment' } }
+            previousMonth: { type: string }
+            nextMonth: { type: string }
+    InvoicePayment:
+      type: object
+      required: [id, creditCardId, dueMonth, walletId, amountCents, date, version]
+      properties:
+        id: { type: string, format: uuid }
+        creditCardId: { type: string, format: uuid }
+        dueMonth: { type: string }
+        walletId: { type: string, format: uuid }
+        amountCents: { type: integer }
+        date: { type: string, format: date }
+        version: { type: integer }
+    CardPurchaseCreate:
+      type: object
+      required: [description, amount, date, creditCardId]
+      properties:
+        description: { type: string }
+        amount: { type: string, description: 'negativo → crédito (research R6)' }
+        nature: { type: string, enum: [debit, credit], default: debit }
+        date: { type: string, format: date }
+        creditCardId: { type: string, format: uuid }
+        notes: { type: [string, 'null'] }
+        installments:
+          type: object
+          description: ausente = à vista
+          required: [total, mode]
+          properties:
+            total: { type: integer, minimum: 1, maximum: 48 }
+            mode: { type: string, enum: [total_amount, installment_amount, in_progress] }
+            nextNumber: { type: integer, description: 'só in_progress (p)' }
+            firstInvoiceMonth: { type: string, description: 'só in_progress; padrão = fatura atual' }
+        confirmPaidInvoice: { type: boolean }
+    CardPurchase:
+      type: object
+      required: [id, creditCardId, dueMonth, description, displayDescription, amountCents, nature, date, origin, reconciled, manuallyMoved, createdAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        creditCardId: { type: string, format: uuid }
+        dueMonth: { type: string, description: fatura }
+        description: { type: string }
+        displayDescription: { type: string, description: '"Casa China 1/3"' }
+        amountCents: { type: integer }
+        nature: { type: string, enum: [debit, credit] }
+        date: { type: string, format: date }
+        origin: { type: string, enum: [manual, installment, carry_over] }
+        reconciled: { type: boolean }
+        manuallyMoved: { type: boolean }
+        notes: { type: [string, 'null'] }
+        installmentPlanId: { type: [string, 'null'], format: uuid }
+        installmentNumber: { type: [integer, 'null'] }
+        installmentTotal: { type: [integer, 'null'] }
+        createdAt: { type: string, format: date-time }
+        version: { type: integer }
+    MonthInvoiceLine:
+      description: 'item novo em MonthView.invoices (GET /months/{m}); valores já no recorte do filtro de carteiras (research R8)'
+      allOf:
+        - $ref: '#/components/schemas/InvoiceSummary'
+        - type: object
+          required: [creditCardName, plannedCents, actualCents]
+          properties:
+            creditCardName: { type: string }
+            plannedCents: { type: integer }
+            actualCents: { type: integer }
