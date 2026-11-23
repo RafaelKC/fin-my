@@ -51,6 +51,7 @@ public class EmailRegistrationTests
         {
             builder.UseSetting("ConnectionStrings:Default", "Host=localhost;Database=x;Username=x;Password=x");
             builder.UseSetting("Hangfire:Enabled", "false");
+            builder.UseSetting("Jwt:SigningKey", ApiFactory.TestSigningKey);
             builder.UseSetting("Email:Host", "smtp.teste.local");
             builder.UseSetting("Email:Port", "587");
             builder.UseSetting("Email:UseTls", "true");

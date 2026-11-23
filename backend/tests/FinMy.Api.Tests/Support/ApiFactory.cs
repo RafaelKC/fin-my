@@ -19,6 +19,9 @@ namespace FinMy.Api.Tests.Support;
 public sealed class ApiFactory(string connectionString, IReadOnlyDictionary<string, string?>? settings = null, params IEndpointModule[] extraEndpoints)
     : WebApplicationFactory<Program>
 {
+    /// <summary>Chave de assinatura dos tokens nos testes (a API real exige <c>Jwt__SigningKey</c>).</summary>
+    public const string TestSigningKey = "chave-de-teste-chave-de-teste-chave-de-teste-0123456789";
+
     /// <summary>E-mails "enviados" pela API durante o teste.</summary>
     public FakeEmailSender Emails { get; } = new();
 
@@ -27,6 +30,7 @@ public sealed class ApiFactory(string connectionString, IReadOnlyDictionary<stri
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:Default", connectionString);
         builder.UseSetting("Hangfire:Enabled", "false");
+        builder.UseSetting("Jwt:SigningKey", TestSigningKey);
 
         foreach (var (key, value) in settings ?? new Dictionary<string, string?>())
         {
