@@ -27,7 +27,7 @@ export class Shell {
   private readonly lancamento = inject(LancamentoLauncher);
 
   protected readonly itens: readonly ItemDeMenu[] = [
-    { rotulo: 'Mês', icone: 'calendar_month', rota: '/' },
+    { rotulo: 'Mês', icone: 'calendar_month', rota: '/mes' },
     { rotulo: 'Carteiras', icone: 'account_balance_wallet', rota: '/carteiras' },
     { rotulo: 'Perfil', icone: 'person', rota: '/perfil' },
   ];
