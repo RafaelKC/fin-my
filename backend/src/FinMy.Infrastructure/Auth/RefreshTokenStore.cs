@@ -116,6 +116,22 @@ public sealed class RefreshTokenStore(FinMyDbContext db, IClock clock, ISessionR
         sessions.Forget(sessionId);
     }
 
+    public async Task RevokeUserSessionsAsync(Guid userId, RefreshTokenRevocationReason reason, CancellationToken cancellationToken)
+    {
+        var sessionIds = await Tokens
+            .AsNoTracking()
+            .Where(r => r.UserId == userId && r.RevokedAt == null)
+            .Select(r => r.FamilyId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        // Pela revogação de sessão única, que também esquece o cache de cada `sid`.
+        foreach (var sessionId in sessionIds)
+        {
+            await RevokeSessionAsync(sessionId, reason, cancellationToken);
+        }
+    }
+
     private async Task<RefreshRotation> RejectRevokedAsync(RefreshToken current, CancellationToken cancellationToken)
     {
         if (current.RevokedReason != RefreshTokenRevocationReason.Rotated)

@@ -2,6 +2,7 @@ using FinMy.Application.Abstractions;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace FinMy.Infrastructure.Jobs;
 
@@ -26,6 +27,8 @@ public static class JobsServiceCollectionExtensions
         services.AddFinMyTenantJobRunner();
         services.AddFinMyTokenCleanup();
         services.AddScoped<ITenantIdSource, EfTenantIdSource>();
+        services.AddTransient<PasswordResetEmailJob>();
+        services.Replace(ServiceDescriptor.Scoped<IPasswordResetDispatcher, HangfirePasswordResetDispatcher>());
         services.AddHangfire(config => config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
             .UseSimpleAssemblyNameTypeSerializer()

@@ -15,6 +15,20 @@ public class IdentityEntitiesTests
     }
 
     [Fact]
+    public void Trocar_a_senha_guarda_o_novo_hash_renova_o_stamp_e_atualiza_a_data()
+    {
+        var user = new User("Maria", "maria@exemplo.com", "hash-antigo", Now);
+        var stamp = user.SecurityStamp;
+
+        user.ChangePassword("hash-novo", Now.AddDays(1));
+
+        user.PasswordHash.ShouldBe("hash-novo");
+        user.SecurityStamp.ShouldNotBe(stamp);
+        user.UpdatedAt.ShouldBe(Now.AddDays(1));
+        user.CreatedAt.ShouldBe(Now);
+    }
+
+    [Fact]
     public void Usuario_novo_guarda_email_como_digitado_e_normalizado_e_gera_stamp()
     {
         var user = new User("  Maria ", " Maria@Exemplo.com ", "hash", Now);

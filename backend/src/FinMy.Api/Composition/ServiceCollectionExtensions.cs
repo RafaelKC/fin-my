@@ -1,6 +1,7 @@
 using FinMy.Api.Endpoints;
 using FinMy.Api.Errors;
 using FinMy.Application;
+using FinMy.Application.Auth;
 using FinMy.Infrastructure;
 using FinMy.Infrastructure.Email;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -27,6 +28,9 @@ public static class ServiceCollectionExtensions
         services.AddApplication();
         services.AddFinMyInfrastructure(configuration);
         services.AddFinMyAuthentication(configuration);
+
+        // URL pública do app (links dos e-mails); APP_URL vem do compose.
+        services.AddSingleton(new AppUrl(configuration["APP_URL"] is { Length: > 0 } appUrl ? appUrl : "http://localhost:8080"));
 
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
