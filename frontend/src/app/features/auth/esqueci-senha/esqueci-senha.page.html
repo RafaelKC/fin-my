@@ -1,0 +1,39 @@
+<main class="pagina">
+  <h1>Esqueci minha senha</h1>
+
+  @if (enviado()) {
+    <div class="confirmacao" role="status" data-testid="link-enviado">
+      <p>{{ mensagemConfirmacao }}</p>
+    </div>
+  } @else {
+    <p class="intro">Informe seu e-mail para receber um link de redefinição de senha.</p>
+
+    <form class="form" [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+      @if (erroGeral(); as mensagem) {
+        <div class="aviso" role="alert" data-testid="erro-geral">{{ mensagem }}</div>
+      }
+
+      <div class="campo">
+        <label for="email">E-mail</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          inputmode="email"
+          [attr.aria-invalid]="erro() ? 'true' : null"
+          [attr.aria-describedby]="erro() ? 'email-erro' : null"
+        />
+        @if (erro(); as mensagem) {
+          <span class="erro" id="email-erro">{{ mensagem }}</span>
+        }
+      </div>
+
+      <button type="submit" class="enviar" [disabled]="enviando()">
+        {{ enviando() ? 'Enviando…' : 'Enviar link' }}
+      </button>
+    </form>
+  }
+
+  <p class="rodape"><a routerLink="/entrar">Voltar para entrar</a></p>
+</main>
