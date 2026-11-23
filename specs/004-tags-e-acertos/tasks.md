@@ -17,7 +17,7 @@ description: "Tarefas da feature 004 — Tags e acerto de contas"
 
 ## Phase 2: US1/US5 — Tags
 
-- [ ] T002 [US1] API `/tags*` (listar com `uses90d` e `inUse`, criar com `existingTagId` no 409, editar com troca de `isSettlement` movendo ligações e conflito `tag.settlement_conflict`, arquivar, desarquivar, excluir só sem uso, juntar) — research R2, R7; testes HTTP de US1.2, US1.3, US5.1–US5.4. Depende de T001
+- [x] T002 [US1] API `/tags*` (listar com `uses90d` e `inUse`, criar com `existingTagId` no 409, editar com troca de `isSettlement` movendo ligações e conflito `tag.settlement_conflict`, arquivar, desarquivar, excluir só sem uso, juntar) — research R2, R7; testes HTTP de US1.2, US1.3, US5.1–US5.4. Depende de T001
 - [ ] T003 [US1] `tagIds` em entradas, saídas e compras (criar, editar, parcela com `scope`), `settlementTagId` nas respostas, sugestões com `tagIds`, filtros `tagIds` em `GET /months/{m}` (com `purchases[]` e `filterTotals`), na fatura (`filteredTotalCents`) e na busca (compras entram como `card_purchase`), `settlementSubtotals` na fatura — research R1, R6; testes HTTP de US1.4, US1.5, US2.4 e SC-004. Depende de T002
 - [ ] T004 [P] [US1] Componente `TagPicker` (`frontend/src/app/shared/tag-picker/`) e campo Tags no formulário rápido (Entrada/Saída/Cartão; sugestão aplica tags; edição de parcela pergunta escopo) e filtros por tag na visão do mês, na fatura e na busca (contracts/ui-rotas.md); e2e `tags.spec.ts` e `filtro-tags.spec.ts` (US1.1–US1.5; SC-001). Depende de T003
 - [ ] T005 [P] [US5] Tela `/tags` (contracts/ui-rotas.md), item na casca; e2e `gerenciar-tags.spec.ts` (US5.1–US5.4). Depende de T002
