@@ -37,6 +37,7 @@ public sealed record MonthData(
     IReadOnlyList<WalletOpening> Wallets,
     IReadOnlyList<EntryTotal> EntryTotals,
     IReadOnlyList<TransferTotal> TransferTotals,
+    IReadOnlyList<InvoiceAmount> InvoicePayments,
     IReadOnlyList<MonthEntryItem> Entries,
     IReadOnlyList<MonthTransferItem> Transfers,
     PendingSummary Pending);

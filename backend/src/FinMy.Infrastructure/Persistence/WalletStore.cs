@@ -1,5 +1,6 @@
 using FinMy.Application.Abstractions;
 using FinMy.Application.Wallets;
+using FinMy.Domain.Cards;
 using FinMy.Domain.Common;
 using FinMy.Domain.Entries;
 using FinMy.Domain.Transfers;
@@ -27,7 +28,9 @@ public sealed class WalletStore(FinMyDbContext db) : IWalletStore
     public async Task<bool> HasEntriesAsync(Guid id, CancellationToken cancellationToken) =>
         await db.Set<Entry>().IgnoreQueryFilters([ModelBuilderExtensions.SoftDeleteFilter]).AnyAsync(e => e.WalletId == id, cancellationToken)
         || await db.Set<Transfer>().IgnoreQueryFilters([ModelBuilderExtensions.SoftDeleteFilter])
-            .AnyAsync(t => t.FromWalletId == id || t.ToWalletId == id, cancellationToken);
+            .AnyAsync(t => t.FromWalletId == id || t.ToWalletId == id, cancellationToken)
+        || await db.Set<InvoicePayment>().IgnoreQueryFilters([ModelBuilderExtensions.SoftDeleteFilter])
+            .AnyAsync(p => p.WalletId == id, cancellationToken);
 
     public async Task<WalletView?> GetAsync(Guid id, CancellationToken cancellationToken) =>
         (await ViewsAsync(db.Set<Wallet>().Where(w => w.Id == id), cancellationToken)).SingleOrDefault();
@@ -85,7 +88,7 @@ public sealed class WalletStore(FinMyDbContext db) : IWalletStore
 
         var ids = rows.Select(r => r.Wallet.Id).ToList();
 
-        // Saldo atual (FR-003): entradas recebidas − saídas pagas + transferências recebidas − enviadas, sem filtro de data.
+        // Saldo atual (FR-003): entradas recebidas − saídas pagas + transferências recebidas − enviadas − pagamentos de fatura, sem filtro de data.
         var settled = await db.Set<Entry>().AsNoTracking()
             .Where(e => ids.Contains(e.WalletId) && e.Status == EntryStatus.Settled)
             .GroupBy(e => new { e.WalletId, e.Kind })
@@ -102,6 +105,13 @@ public sealed class WalletStore(FinMyDbContext db) : IWalletStore
             .Select(g => new { WalletId = g.Key, Total = g.Sum(t => t.AmountCents) })
             .ToListAsync(cancellationToken);
 
+        // Pagamentos de fatura saem da carteira usada (003 FR-024).
+        var invoicePaid = await db.Set<InvoicePayment>().AsNoTracking()
+            .Where(p => ids.Contains(p.WalletId))
+            .GroupBy(p => p.WalletId)
+            .Select(g => new { WalletId = g.Key, Total = g.Sum(p => p.AmountCents) })
+            .ToListAsync(cancellationToken);
+
         // "Tem lançamentos" conta também as linhas excluídas e ainda não expurgadas (research R6).
         var withEntries = (await db.Set<Entry>().AsNoTracking().IgnoreQueryFilters([ModelBuilderExtensions.SoftDeleteFilter])
             .Where(e => ids.Contains(e.WalletId)).Select(e => e.WalletId).Distinct().ToListAsync(cancellationToken)).ToHashSet();
@@ -109,6 +119,8 @@ public sealed class WalletStore(FinMyDbContext db) : IWalletStore
             .Where(t => ids.Contains(t.FromWalletId)).Select(t => t.FromWalletId).Distinct().ToListAsync(cancellationToken));
         withEntries.UnionWith(await db.Set<Transfer>().AsNoTracking().IgnoreQueryFilters([ModelBuilderExtensions.SoftDeleteFilter])
             .Where(t => ids.Contains(t.ToWalletId)).Select(t => t.ToWalletId).Distinct().ToListAsync(cancellationToken));
+        withEntries.UnionWith(await db.Set<InvoicePayment>().AsNoTracking().IgnoreQueryFilters([ModelBuilderExtensions.SoftDeleteFilter])
+            .Where(p => ids.Contains(p.WalletId)).Select(p => p.WalletId).Distinct().ToListAsync(cancellationToken));
 
         return rows.Select(r =>
         {
@@ -116,7 +128,8 @@ public sealed class WalletStore(FinMyDbContext db) : IWalletStore
             var balance = w.InitialBalanceCents
                 + settled.Where(s => s.WalletId == w.Id).Sum(s => s.Kind == EntryKind.Income ? s.Total : -s.Total)
                 + received.Where(t => t.WalletId == w.Id).Sum(t => t.Total)
-                - sent.Where(t => t.WalletId == w.Id).Sum(t => t.Total);
+                - sent.Where(t => t.WalletId == w.Id).Sum(t => t.Total)
+                - invoicePaid.Where(p => p.WalletId == w.Id).Sum(p => p.Total);
 
             return new WalletView(
                 w.Id, w.Name, w.Type, w.Color, w.InitialBalanceCents, w.InitialBalanceDate,

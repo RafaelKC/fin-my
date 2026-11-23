@@ -1,5 +1,6 @@
 using FinMy.Application.Abstractions;
 using FinMy.Application.Months;
+using FinMy.Domain.Cards;
 using FinMy.Domain.Entries;
 using FinMy.Domain.Monetary;
 using FinMy.Domain.Months;
@@ -49,6 +50,16 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
             .Select(r => new TransferTotal(YearMonth.Of(r.Year, r.Month), r.FromWalletId, r.ToWalletId, r.Cents))
             .ToList();
 
+        // Pagamentos de fatura das carteiras selecionadas, por mês de vencimento da fatura (RT-04, RT-07).
+        var invoicePayments = (await db.Set<InvoicePayment>().AsNoTracking()
+                .Where(p => selected.Contains(p.WalletId))
+                .Join(db.Set<Invoice>().AsNoTracking().Where(i => i.DueMonth <= first), p => p.InvoiceId, i => i.Id, (p, i) => new { i.DueMonth, p.AmountCents })
+                .GroupBy(r => r.DueMonth)
+                .Select(g => new { DueMonth = g.Key, Cents = g.Sum(r => r.AmountCents) })
+                .ToListAsync(cancellationToken))
+            .Select(r => new InvoiceAmount(YearMonth.From(r.DueMonth), r.Cents))
+            .ToList();
+
         // RT-12: data crescente; empate pela ordem de criação (o id é UUIDv7, também cronológico).
         var entryItems = await entries
             .Where(e => e.ReferenceMonth == first)
@@ -77,6 +88,7 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
             wallets,
             entryTotals,
             transferTotals,
+            invoicePayments,
             entryItems,
             transferItems,
             new PendingSummary(

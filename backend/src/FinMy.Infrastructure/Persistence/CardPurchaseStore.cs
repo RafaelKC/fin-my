@@ -88,7 +88,7 @@ public sealed class CardPurchaseStore(FinMyDbContext db) : ICardPurchaseStore
     public async Task<ICardTransaction> BeginTransactionAsync(CancellationToken cancellationToken) =>
         new CardTransaction(await db.Database.BeginTransactionAsync(cancellationToken));
 
-    private static CardPurchaseView ToView(CardPurchase p, YearMonth dueMonth, uint version) => new(
+    internal static CardPurchaseView ToView(CardPurchase p, YearMonth dueMonth, uint version) => new(
         p.Id,
         p.CreditCardId,
         dueMonth,
