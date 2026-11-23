@@ -30,7 +30,7 @@ decisões da 002 (`specs/002-carteiras-e-lancamentos/research.md`).
 
 ## Phase 4: US5/US7 — Fatura e pagamento
 
-- [ ] T008 [US5] API de fatura: `GET /credit-cards/{id}/invoices/{month}` (compras RT-12, totais, situação, `reconciledCents`, `canCarryOver`, pagamentos, meses vizinhos), pagamentos (`POST`/`DELETE` em `…/payments`, `PUT`/`DELETE /invoice-payments/{id}`, bloqueio `FOR UPDATE`, research R4), `carry-over` (FR-020, inclusive sentido inverso com total negativo); saldo atual da carteira descontando pagamentos e `WalletConsistencyTests` atualizado; `InvoiceExampleTests` com o exemplo numérico da US5 e US5.1–US5.7, US7.1. Depende de T006
+- [x] T008 [US5] API de fatura: `GET /credit-cards/{id}/invoices/{month}` (compras RT-12, totais, situação, `reconciledCents`, `canCarryOver`, pagamentos, meses vizinhos), pagamentos (`POST`/`DELETE` em `…/payments`, `PUT`/`DELETE /invoice-payments/{id}`, bloqueio `FOR UPDATE`, research R4), `carry-over` (FR-020, inclusive sentido inverso com total negativo); saldo atual da carteira descontando pagamentos e `WalletConsistencyTests` atualizado; `InvoiceExampleTests` com o exemplo numérico da US5 e US5.1–US5.7, US7.1. Depende de T006
 - [ ] T009 [US5] Tela `/cartoes/:id/faturas/:mes` (contracts/ui-rotas.md): navegação entre faturas, totais e situação, conferido, lista com caixinha de conferida e ações (editar abre o formulário, mover, excluir com escopo e Desfazer), pagamentos (pagar com valor/data/carteira, editar, excluir), levar restante; e2e `fatura.spec.ts` (US5.2–US5.5, US6.2, US7.1–US7.3). Depende de T005, T008
 
 ## Phase 5: Integração com o mês
