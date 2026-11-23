@@ -224,7 +224,11 @@ test.describe('cartões (US1, US6) — API simulada', () => {
     ]);
     await page.goto('/cartoes');
 
-    await page.getByTestId('cartao').filter({ hasText: 'Azul' }).getByRole('link').click();
+    await page
+      .getByTestId('cartao')
+      .filter({ hasText: 'Azul' })
+      .getByRole('link', { name: /Editar/ })
+      .click();
     await expect(page.getByRole('button', { name: 'Excluir' })).toHaveCount(0);
     await expect(page.getByTestId('so-arquivar')).toBeVisible();
     await page.getByRole('button', { name: 'Arquivar' }).click();

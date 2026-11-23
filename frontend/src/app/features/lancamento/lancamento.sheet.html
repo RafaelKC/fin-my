@@ -1,7 +1,7 @@
 <div class="folha">
   <header class="topo">
     <h2 class="titulo" id="lancamento-titulo">
-      {{ editando ? 'Editar lançamento' : 'Novo lançamento' }}
+      {{ editandoCompra ? 'Editar compra' : editando ? 'Editar lançamento' : 'Novo lançamento' }}
     </h2>
     <button type="button" class="fechar" aria-label="Fechar" (click)="fechar()">
       <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">close</mat-icon>
@@ -9,48 +9,50 @@
   </header>
 
   <div class="corpo" role="group" aria-labelledby="lancamento-titulo">
-    <div class="tipos" role="radiogroup" aria-label="Tipo de lançamento">
-      @if (!editando) {
+    @if (!editandoCompra) {
+      <div class="tipos" role="radiogroup" aria-label="Tipo de lançamento">
+        @if (!editando) {
+          <button
+            type="button"
+            role="radio"
+            class="tipo"
+            [attr.aria-checked]="kind() === 'card'"
+            (click)="escolherTipo('card')"
+          >
+            Cartão
+          </button>
+        }
         <button
           type="button"
           role="radio"
           class="tipo"
-          [attr.aria-checked]="kind() === 'card'"
-          (click)="escolherTipo('card')"
+          [attr.aria-checked]="kind() === 'expense'"
+          (click)="escolherTipo('expense')"
         >
-          Cartão
+          Saída
         </button>
-      }
-      <button
-        type="button"
-        role="radio"
-        class="tipo"
-        [attr.aria-checked]="kind() === 'expense'"
-        (click)="escolherTipo('expense')"
-      >
-        Saída
-      </button>
-      <button
-        type="button"
-        role="radio"
-        class="tipo"
-        [attr.aria-checked]="kind() === 'income'"
-        (click)="escolherTipo('income')"
-      >
-        Entrada
-      </button>
-      @if (!editando) {
         <button
           type="button"
           role="radio"
           class="tipo"
-          [attr.aria-checked]="kind() === 'transfer'"
-          (click)="escolherTipo('transfer')"
+          [attr.aria-checked]="kind() === 'income'"
+          (click)="escolherTipo('income')"
         >
-          Transferência
+          Entrada
         </button>
-      }
-    </div>
+        @if (!editando) {
+          <button
+            type="button"
+            role="radio"
+            class="tipo"
+            [attr.aria-checked]="kind() === 'transfer'"
+            (click)="escolherTipo('transfer')"
+          >
+            Transferência
+          </button>
+        }
+      </div>
+    }
 
     <app-amount-input
       label="Valor"
@@ -149,7 +151,7 @@
         }
       </div>
 
-      @if (cartaoEscolhido() !== null) {
+      @if (cartaoEscolhido() !== null && !editandoCompra) {
         <div class="campo">
           <label for="lancamento-parcelas">{{
             emAndamento() ? 'Total de parcelas' : 'Parcelas'
@@ -437,7 +439,7 @@
       >
         Salvar e lançar outro
       </button>
-    } @else {
+    } @else if (!editandoCompra) {
       <button
         type="button"
         class="botao secundario"

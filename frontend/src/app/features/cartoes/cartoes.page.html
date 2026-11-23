@@ -47,14 +47,22 @@
 
           <dl class="faturas">
             <div data-testid="fatura-atual">
-              <dt>Fatura de {{ nomeDoMes(c.currentInvoice.dueMonth) }}</dt>
+              <dt>
+                <a [routerLink]="['/cartoes', c.id, 'faturas', c.currentInvoice.dueMonth]"
+                  >Fatura de {{ nomeDoMes(c.currentInvoice.dueMonth) }}</a
+                >
+              </dt>
               <dd>
                 <strong>{{ c.currentInvoice.totalCents | brl }}</strong>
                 <span class="ajuda">fecha em {{ diaEMes(c.currentInvoice.closingDate) }}</span>
               </dd>
             </div>
             <div data-testid="proxima-fatura">
-              <dt>Próxima ({{ nomeDoMes(c.nextInvoice.dueMonth) }})</dt>
+              <dt>
+                <a [routerLink]="['/cartoes', c.id, 'faturas', c.nextInvoice.dueMonth]"
+                  >Próxima ({{ nomeDoMes(c.nextInvoice.dueMonth) }})</a
+                >
+              </dt>
               <dd>
                 <strong>{{ c.nextInvoice.totalCents | brl }}</strong>
               </dd>
@@ -65,7 +73,9 @@
             <ul class="abertas" aria-label="Faturas em aberto">
               @for (f of c.openPastInvoices; track f.dueMonth) {
                 <li [class.vencida]="vencida(f)" data-testid="fatura-aberta">
-                  Fatura de {{ nomeDoMes(f.dueMonth) }}: {{ f.remainingCents | brl }} em aberto
+                  <a [routerLink]="['/cartoes', c.id, 'faturas', f.dueMonth]"
+                    >Fatura de {{ nomeDoMes(f.dueMonth) }}</a
+                  >: {{ f.remainingCents | brl }} em aberto
                   <span class="ajuda">
                     {{ vencida(f) ? 'venceu' : 'vence' }} em {{ diaEMes(f.dueDate) }}
                   </span>

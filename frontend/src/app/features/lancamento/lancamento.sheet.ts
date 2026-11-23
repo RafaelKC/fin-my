@@ -35,7 +35,13 @@ import { WalletsService } from '../carteiras/wallets.service';
 import { ConfirmarData, ConfirmarDialog, ConfirmarResultado } from '../carteiras/confirmar.dialog';
 import { CreditCardOverview } from '../cartoes/card.models';
 import { CardsService } from '../cartoes/cards.service';
-import { AVISO_CREDITO, CODIGO_FATURA_PAGA, CardPurchaseCreate } from './card-purchase.models';
+import {
+  AVISO_CREDITO,
+  CODIGO_FATURA_PAGA,
+  CardPurchase,
+  CardPurchaseCreate,
+  CardPurchaseUpdate,
+} from './card-purchase.models';
 import { CardPurchasesService } from './card-purchases.service';
 import { PARCELAS_MAX, parseValorCartao, previaCompra } from './compra-cartao-logic';
 import { EntriesService } from './entries.service';
@@ -53,7 +59,7 @@ import {
   OBSERVACAO_MAX,
   TransferCreate,
 } from './entry.models';
-import { novaChaveIdempotencia, situacaoPadrao } from './lancamento-logic';
+import { centavosParaExpressao, novaChaveIdempotencia, situacaoPadrao } from './lancamento-logic';
 
 export const MENSAGEM_SEM_CONEXAO_LANCAMENTO =
   'Sem conexão. O lançamento não foi salvo; tente de novo.';
@@ -70,12 +76,8 @@ const DATA = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 /** Dados do diálogo: com `entry`, o formulário abre em modo edição (todos os campos, FR-022). */
 export interface LancamentoSheetData {
   entry?: Entry;
-}
-
-/** Centavos como expressão de valor aceita pelo servidor: `4499` → `44,99`. */
-function centavosParaExpressao(cents: number): string {
-  const reais = Math.floor(cents / 100);
-  return `${reais},${(cents % 100).toString().padStart(2, '0')}`;
+  /** Compra no cartão a editar (003 FR-015; tela da fatura). */
+  purchase?: CardPurchase;
 }
 
 /** Rascunho em `localStorage` (`finmy.draft.lancamento`, research R12). */
@@ -125,13 +127,16 @@ export class LancamentoSheet {
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly exclusao = inject(ExclusaoService);
-  private readonly edicao =
-    inject<LancamentoSheetData | null>(MAT_DIALOG_DATA, { optional: true })?.entry ?? null;
+  private readonly dados = inject<LancamentoSheetData | null>(MAT_DIALOG_DATA, { optional: true });
+  private readonly edicao = this.dados?.entry ?? null;
+  /** Compra no cartão aberta na edição, com a `version` mais recente conhecida. */
+  private compraAtual: CardPurchase | null = this.dados?.purchase ?? null;
   /** Lançamento aberto na edição, com a `version` mais recente conhecida. */
   private atual: Entry | null = this.edicao;
   private readonly valorCampo = viewChild(AmountInput);
 
-  protected readonly editando = this.edicao !== null;
+  protected readonly editandoCompra = this.compraAtual !== null;
+  protected readonly editando = this.edicao !== null || this.editandoCompra;
   protected readonly descricaoMax = DESCRICAO_MAX;
   protected readonly observacaoMax = OBSERVACAO_MAX;
 
@@ -310,6 +315,7 @@ export class LancamentoSheet {
 
   constructor() {
     if (this.edicao !== null) this.preencherEdicao(this.edicao);
+    else if (this.compraAtual !== null) this.preencherEdicaoCompra(this.compraAtual);
     else this.restaurarRascunho();
 
     this.termo$
@@ -481,6 +487,11 @@ export class LancamentoSheet {
       return;
     }
 
+    if (this.compraAtual !== null) {
+      this.salvarEdicaoCompra(this.compraAtual, false);
+      return;
+    }
+
     if (this.ehTransferencia()) {
       this.salvarTransferencia(lancarOutro);
       return;
@@ -567,7 +578,9 @@ export class LancamentoSheet {
         }
         const problem = asProblem(error);
         if (problem?.code === CODIGO_FATURA_PAGA) {
-          this.pedirConfirmacaoFaturaPaga(problem.detail, lancarOutro);
+          this.pedirConfirmacaoFaturaPaga(problem.detail, () =>
+            this.salvarCompra(lancarOutro, true),
+          );
           return;
         }
         this.erro.set(
@@ -579,7 +592,7 @@ export class LancamentoSheet {
     });
   }
 
-  private pedirConfirmacaoFaturaPaga(detail: string | undefined, lancarOutro: boolean): void {
+  private pedirConfirmacaoFaturaPaga(detail: string | undefined, confirmar: () => void): void {
     const data: ConfirmarData = {
       titulo: 'Fatura já paga',
       mensagem: detail ?? 'Esta fatura já foi paga e voltará a ter valor em aberto',
@@ -590,7 +603,7 @@ export class LancamentoSheet {
       .afterClosed()
       .subscribe((resultado) => {
         if (resultado === null || resultado === undefined) return;
-        this.salvarCompra(lancarOutro, true);
+        confirmar();
       });
   }
 
@@ -667,6 +680,94 @@ export class LancamentoSheet {
         }
         if (asProblem(error)?.code === 'concurrency_conflict') {
           this.recarregarPorConflito(original.id);
+          return;
+        }
+        this.erro.set(problemMessage(error));
+      },
+    });
+  }
+
+  /**
+   * Edição de compra (FR-015): PUT com todos os campos; valor negativo vira Crédito (R6). Em parcela
+   * vale só para esta (o escopo de descrição/observação é da T011).
+   */
+  private salvarEdicaoCompra(original: CardPurchase, confirmarFaturaPaga: boolean): void {
+    const valor = this.valor();
+    const descricao = this.description().trim();
+    const notas = this.notes().trim();
+    if (
+      !valor.ok ||
+      this.erroDescricao() !== null ||
+      !DATA.test(this.date()) ||
+      this.cartaoEscolhido() === null ||
+      notas.length > OBSERVACAO_MAX
+    ) {
+      return;
+    }
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      this.avisarSemConexao();
+      return;
+    }
+
+    const corpo: CardPurchaseUpdate = {
+      description: descricao,
+      amount: centavosParaExpressao(Math.abs(valor.cents)),
+      nature: valor.cents < 0 ? 'credit' : 'debit',
+      date: this.date(),
+      creditCardId: this.cardId(),
+      notes: notas === '' ? null : notas,
+      scope: 'this',
+      version: original.version,
+    };
+    if (confirmarFaturaPaga) corpo.confirmPaidInvoice = true;
+
+    this.ocupado.set(true);
+    this.compras.update(original.id, corpo).subscribe({
+      next: () => {
+        this.ocupado.set(false);
+        this.snackBar.open('Compra atualizada.', undefined, {
+          duration: 4000,
+          verticalPosition: 'top',
+        });
+        this.ref.close(undefined);
+      },
+      error: (error: unknown) => {
+        this.ocupado.set(false);
+        if (this.semConexao(error)) {
+          this.avisarSemConexao();
+          return;
+        }
+        const problem = asProblem(error);
+        if (problem?.code === CODIGO_FATURA_PAGA) {
+          this.pedirConfirmacaoFaturaPaga(problem.detail, () =>
+            this.salvarEdicaoCompra(original, true),
+          );
+          return;
+        }
+        if (problem?.code === 'concurrency_conflict') {
+          this.recarregarCompraPorConflito(original.id);
+          return;
+        }
+        this.erro.set(problemMessage(error));
+      },
+    });
+  }
+
+  private recarregarCompraPorConflito(id: string): void {
+    this.erro.set(MENSAGEM_CONFLITO);
+    this.compras.get(id).subscribe({
+      next: (compra) => {
+        this.compraAtual = compra;
+        this.preencherEdicaoCompra(compra);
+        this.tentou.set(false);
+      },
+      error: (error: unknown) => {
+        if (asProblem(error)?.code === 'not_found') {
+          this.snackBar.open('Esta compra não existe mais.', undefined, {
+            duration: 4000,
+            verticalPosition: 'top',
+          });
+          this.ref.close(undefined);
           return;
         }
         this.erro.set(problemMessage(error));
@@ -840,12 +941,17 @@ export class LancamentoSheet {
     if (this.cartoesPedidos) return;
     this.cartoesPedidos = true;
     this.carregandoCartoes.set(true);
+    // Na edição o cartão da compra pode estar arquivado: ele continua escolhível.
     this.cards
-      .list('false')
+      .list(this.editandoCompra ? 'all' : 'false')
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (lista) => {
-          this.cartoes.set(lista);
+          this.cartoes.set(
+            this.compraAtual === null
+              ? lista
+              : lista.filter((c) => !c.archived || c.id === this.compraAtual!.creditCardId),
+          );
           this.carregandoCartoes.set(false);
           this.resolverCartao();
         },
@@ -989,6 +1095,19 @@ export class LancamentoSheet {
     if (valido) return;
     this.toManual.set(false);
     this.toWalletId.set(ativas.find((w) => w.id !== this.walletId())?.id ?? '');
+  }
+
+  private preencherEdicaoCompra(compra: CardPurchase): void {
+    this.kind.set('card');
+    this.amount.set(
+      centavosParaExpressao(compra.nature === 'credit' ? -compra.amountCents : compra.amountCents),
+    );
+    this.description.set(compra.description);
+    this.date.set(compra.date);
+    this.cardId.set(compra.creditCardId);
+    this.cardManual.set(true);
+    this.notes.set(compra.notes ?? '');
+    if (this.notes() !== '') this.maisOpcoes.set(true);
   }
 
   private preencherEdicao(entry: Entry): void {

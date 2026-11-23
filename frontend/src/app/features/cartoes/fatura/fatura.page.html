@@ -1,0 +1,212 @@
+<main class="pagina">
+  <a class="voltar" routerLink="/cartoes">‹ Cartões</a>
+
+  @if (erro(); as mensagem) {
+    <div class="aviso" role="alert" data-testid="erro-fatura">{{ mensagem }}</div>
+  } @else if (carregando() || fatura() === null) {
+    <p role="status">Carregando…</p>
+  } @else {
+    @let f = fatura()!;
+    <header class="cabecalho">
+      <a
+        class="seta"
+        data-testid="fatura-anterior"
+        [routerLink]="['/cartoes', cardId(), 'faturas', f.previousMonth]"
+        aria-label="Fatura anterior"
+        >‹</a
+      >
+      <div class="titulo">
+        <h1 data-testid="titulo-fatura">Fatura de {{ nomeDoMes(f.dueMonth) }}</h1>
+        <p class="ajuda">
+          @if (cartao(); as c) {
+            <span class="cor" [style.background]="c.color" aria-hidden="true"></span>{{ c.name }} ·
+          }
+          {{ monthLabel(f.dueMonth) }}
+        </p>
+      </div>
+      <a
+        class="seta"
+        data-testid="fatura-seguinte"
+        [routerLink]="['/cartoes', cardId(), 'faturas', f.nextMonth]"
+        aria-label="Próxima fatura"
+        >›</a
+      >
+    </header>
+
+    <p class="datas" data-testid="datas-fatura">
+      Fecha em {{ diaEMes(f.closingDate) }} · vence em {{ diaEMes(f.dueDate) }}
+    </p>
+    <p class="situacao">
+      <span class="selo" [attr.data-status]="f.status" data-testid="situacao">{{
+        situacao()
+      }}</span>
+    </p>
+
+    <dl class="totais">
+      <div>
+        <dt>Total</dt>
+        <dd data-testid="total">{{ f.totalCents | brl }}</dd>
+      </div>
+      <div>
+        <dt>Pago</dt>
+        <dd data-testid="pago">{{ f.paidCents | brl }}</dd>
+      </div>
+      <div>
+        <dt>Restante</dt>
+        <dd data-testid="restante">{{ f.remainingCents | brl }}</dd>
+      </div>
+    </dl>
+    <p class="conferido" data-testid="conferido">
+      Conferido {{ f.reconciledCents | brl }} de {{ f.totalCents | brl }}
+    </p>
+
+    @if (aviso(); as mensagem) {
+      <div class="aviso" role="alert" data-testid="aviso-fatura">{{ mensagem }}</div>
+    }
+
+    <div class="acoes-fatura">
+      @if (podePagar()) {
+        <button type="button" class="botao principal" data-testid="pagar" (click)="pagar()">
+          Pagar
+        </button>
+      }
+      @if (f.canCarryOver) {
+        <button
+          type="button"
+          class="botao secundario"
+          data-testid="levar-restante"
+          [disabled]="ocupado()"
+          (click)="levarRestante()"
+        >
+          Levar restante para a próxima fatura
+        </button>
+      }
+    </div>
+
+    <section aria-labelledby="titulo-compras">
+      <h2 id="titulo-compras">Compras</h2>
+      @if (f.purchases.length === 0) {
+        <p class="vazio" data-testid="sem-compras">Nenhuma compra nesta fatura.</p>
+      } @else {
+        <ul class="lista" data-testid="lista-compras">
+          @for (c of f.purchases; track c.id) {
+            <li class="compra" data-testid="compra">
+              <div class="linha">
+                <input
+                  type="checkbox"
+                  class="conferida"
+                  data-testid="conferida"
+                  [checked]="c.reconciled"
+                  [disabled]="ocupado()"
+                  [attr.aria-label]="'Conferida: ' + c.displayDescription"
+                  (change)="conferir(c, $any($event.target).checked)"
+                />
+                <div class="texto">
+                  <span class="descricao" data-testid="descricao">{{ c.displayDescription }}</span>
+                  <span class="ajuda">
+                    {{ diaEMes(c.date) }}
+                    @if (c.nature === 'credit') {
+                      · crédito
+                    }
+                    @if (c.manuallyMoved) {
+                      · movida manualmente
+                    }
+                  </span>
+                </div>
+                <strong class="valor" [class.credito]="c.nature === 'credit'" data-testid="valor">{{
+                  valorCompra(c) | brl
+                }}</strong>
+              </div>
+              <div class="botoes">
+                @if (podeEditar(c)) {
+                  <button
+                    type="button"
+                    class="botao pequeno"
+                    data-testid="editar-compra"
+                    [attr.aria-label]="'Editar ' + c.displayDescription"
+                    (click)="editar(c)"
+                  >
+                    Editar
+                  </button>
+                }
+                <button
+                  type="button"
+                  class="botao pequeno"
+                  data-testid="mover-anterior"
+                  [disabled]="ocupado()"
+                  [attr.aria-label]="'Mover para a fatura anterior: ' + c.displayDescription"
+                  (click)="mover(c, 'previous')"
+                >
+                  ‹ Fatura anterior
+                </button>
+                <button
+                  type="button"
+                  class="botao pequeno"
+                  data-testid="mover-seguinte"
+                  [disabled]="ocupado()"
+                  [attr.aria-label]="'Mover para a próxima fatura: ' + c.displayDescription"
+                  (click)="mover(c, 'next')"
+                >
+                  Próxima fatura ›
+                </button>
+                <button
+                  type="button"
+                  class="botao pequeno perigo"
+                  data-testid="excluir-compra"
+                  [disabled]="ocupado()"
+                  [attr.aria-label]="'Excluir ' + c.displayDescription"
+                  (click)="excluir(c)"
+                >
+                  Excluir
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section aria-labelledby="titulo-pagamentos">
+      <h2 id="titulo-pagamentos">Pagamentos</h2>
+      @if (f.payments.length === 0) {
+        <p class="vazio" data-testid="sem-pagamentos">Nenhum pagamento registrado.</p>
+      } @else {
+        <ul class="lista" data-testid="lista-pagamentos">
+          @for (p of f.payments; track p.id) {
+            <li class="compra" data-testid="pagamento">
+              <div class="linha">
+                <div class="texto">
+                  <span class="descricao">{{ diaEMes(p.date) }} · {{ nomeCarteira(p) }}</span>
+                </div>
+                <strong class="valor" data-testid="valor-pagamento">{{
+                  p.amountCents | brl
+                }}</strong>
+              </div>
+              <div class="botoes">
+                <button
+                  type="button"
+                  class="botao pequeno"
+                  data-testid="editar-pagamento"
+                  [attr.aria-label]="'Editar pagamento de ' + diaEMes(p.date)"
+                  (click)="editarPagamento(p)"
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  class="botao pequeno perigo"
+                  data-testid="excluir-pagamento"
+                  [disabled]="ocupado()"
+                  [attr.aria-label]="'Excluir pagamento de ' + diaEMes(p.date)"
+                  (click)="excluirPagamento(p)"
+                >
+                  Excluir
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</main>
