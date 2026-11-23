@@ -1,3 +1,4 @@
+using FinMy.Api.Endpoints.Transfers;
 using FinMy.Api.Idempotency;
 using FinMy.Application.Entries;
 
@@ -5,7 +6,8 @@ namespace FinMy.Api.Endpoints.Entries;
 
 /// <summary>
 /// Entradas e Saídas (US2, US6.1, US6.2): <c>POST /entries</c>, <c>GET|PUT /entries/{id}</c>,
-/// <c>PATCH /entries/{id}/status</c>, <c>GET /entries/suggestions</c>, <c>GET /entries/pending</c> e <c>POST /entries/bulk</c> (contracts/openapi.yaml).
+/// <c>PATCH /entries/{id}/status</c>, <c>DELETE /entries/{id}</c>, <c>POST /entries/{id}/duplicate</c>, <c>GET /entries/search</c> (US6.3–US6.5),
+/// <c>GET /entries/suggestions</c>, <c>GET /entries/pending</c> e <c>POST /entries/bulk</c> (contracts/openapi.yaml).
 /// </summary>
 public sealed class EntryEndpoints : IEndpointModule
 {
@@ -39,6 +41,15 @@ public sealed class EntryEndpoints : IEndpointModule
             return Results.Ok(new EntryBulkResponse(result.Affected, result.DeletionBatchId));
         });
 
+        group.MapGet("/search", async (
+            string? q, string? kinds, string? walletIds, string? status, DateOnly? from, DateOnly? to, string? cursor, int? limit,
+            SearchLedgerHandler handler, CancellationToken cancellationToken) =>
+        {
+            var result = await handler.HandleAsync(new SearchLedgerCommand(q, kinds, walletIds, status, from, to, cursor, limit), cancellationToken);
+            return Results.Ok(new LedgerSearchResponse(
+                result.Items.Select(LedgerItemResponse.From).ToList(), result.TotalCents, result.TotalCount, result.NextCursor));
+        });
+
         group.MapGet("/{id:guid}", async (Guid id, GetEntryHandler handler, CancellationToken cancellationToken) =>
             Results.Ok(EntryResponse.From(await handler.HandleAsync(id, cancellationToken))));
 
@@ -52,5 +63,14 @@ public sealed class EntryEndpoints : IEndpointModule
 
         group.MapPatch("/{id:guid}/status", async (Guid id, EntryStatusRequest body, ChangeEntryStatusHandler handler, CancellationToken cancellationToken) =>
             Results.Ok(EntryResponse.From(await handler.HandleAsync(id, body.Status, cancellationToken))));
+
+        group.MapDelete("/{id:guid}", async (Guid id, DeleteEntryHandler handler, CancellationToken cancellationToken) =>
+            Results.Ok(new DeletionResponse(await handler.HandleAsync(id, cancellationToken))));
+
+        group.MapPost("/{id:guid}/duplicate", async (Guid id, EntryDuplicateRequest body, DuplicateEntryHandler handler, CancellationToken cancellationToken) =>
+        {
+            var entry = await handler.HandleAsync(id, body.Date, cancellationToken);
+            return Results.Created($"/api/v1/entries/{entry.Id}", EntryResponse.From(entry));
+        }).WithIdempotency();
     }
 }

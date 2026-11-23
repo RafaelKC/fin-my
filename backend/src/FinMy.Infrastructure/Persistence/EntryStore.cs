@@ -119,6 +119,19 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
         return entries.Count == ids.Count ? entries : null;
     }
 
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var entry = await db.Set<Entry>().SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
+        if (entry is null)
+        {
+            return false;
+        }
+
+        db.Remove(entry);
+        await db.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
     public async Task<IReadOnlyList<EntrySuggestion>> SuggestAsync(
         string normalizedText, EntryKind kind, DateOnly notBefore, int limit, CancellationToken cancellationToken)
     {
@@ -179,6 +192,6 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
         e.CreatedAt,
         version);
 
-    private static string EscapeLike(string text) =>
+    internal static string EscapeLike(string text) =>
         text.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("%", "\\%", StringComparison.Ordinal).Replace("_", "\\_", StringComparison.Ordinal);
 }

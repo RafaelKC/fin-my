@@ -40,6 +40,9 @@ public interface IEntryStore
     /// </summary>
     Task<EntryView?> UpdateAsync(Guid id, long? expectedVersion, Action<Entry> change, CancellationToken cancellationToken);
 
+    /// <summary>Exclusão lógica no lote corrente do contexto; <c>false</c> se o lançamento não existe.</summary>
+    Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken);
+
     /// <summary>
     /// Até <paramref name="limit"/> descrições usadas desde <paramref name="notBefore"/> que contenham
     /// <paramref name="normalizedText"/> (já normalizado), por usos e uso mais recente. A carteira vem do lançamento mais
