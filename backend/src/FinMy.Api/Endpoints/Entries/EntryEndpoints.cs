@@ -5,7 +5,7 @@ namespace FinMy.Api.Endpoints.Entries;
 
 /// <summary>
 /// Entradas e Saídas (US2, US6.1, US6.2): <c>POST /entries</c>, <c>GET|PUT /entries/{id}</c>,
-/// <c>PATCH /entries/{id}/status</c> e <c>GET /entries/suggestions</c> (contracts/openapi.yaml).
+/// <c>PATCH /entries/{id}/status</c>, <c>GET /entries/suggestions</c>, <c>GET /entries/pending</c> e <c>POST /entries/bulk</c> (contracts/openapi.yaml).
 /// </summary>
 public sealed class EntryEndpoints : IEndpointModule
 {
@@ -28,6 +28,15 @@ public sealed class EntryEndpoints : IEndpointModule
         {
             var suggestions = await handler.HandleAsync(q, kind, cancellationToken);
             return Results.Ok(suggestions.Select(s => new EntrySuggestionResponse(s.Description, s.Uses, s.WalletId)));
+        });
+
+        group.MapGet("/pending", async (ListPendingEntriesHandler handler, CancellationToken cancellationToken) =>
+            Results.Ok((await handler.HandleAsync(cancellationToken)).Select(EntryResponse.From)));
+
+        group.MapPost("/bulk", async (EntryBulkRequest body, BulkEntriesHandler handler, CancellationToken cancellationToken) =>
+        {
+            var result = await handler.HandleAsync(body.Ids, body.Action, cancellationToken);
+            return Results.Ok(new EntryBulkResponse(result.Affected, result.DeletionBatchId));
         });
 
         group.MapGet("/{id:guid}", async (Guid id, GetEntryHandler handler, CancellationToken cancellationToken) =>
