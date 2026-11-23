@@ -122,6 +122,25 @@ public class RefreshTokenStoreTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Revogar_pelo_token_encerra_a_sessao_inteira_e_e_idempotente()
+    {
+        var userId = await SeedUserAsync();
+        var (store, db, _) = NewStore();
+        await using var _db = db;
+        var first = await store.IssueAsync(userId, null, null, CancellationToken.None);
+        var second = (await store.RotateAsync(first.Token, CancellationToken.None)).Token!;
+        var otherSession = await store.IssueAsync(userId, null, null, CancellationToken.None);
+
+        await store.RevokeSessionByTokenAsync(second.Token, RefreshTokenRevocationReason.Logout, CancellationToken.None);
+        await store.RevokeSessionByTokenAsync(second.Token, RefreshTokenRevocationReason.Logout, CancellationToken.None);
+        await store.RevokeSessionByTokenAsync(RefreshTokenStore.GenerateToken(), RefreshTokenRevocationReason.Logout, CancellationToken.None);
+
+        (await LoadAsync(second.Token)).RevokedReason.ShouldBe(RefreshTokenRevocationReason.Logout);
+        (await store.RotateAsync(second.Token, CancellationToken.None)).Status.ShouldBe(RefreshRotationStatus.Revoked);
+        (await LoadAsync(otherSession.Token)).RevokedAt.ShouldBeNull();
+    }
+
+    [Fact]
     public async Task Reuso_de_token_ja_trocado_revoga_a_sessao_inteira()
     {
         var userId = await SeedUserAsync();

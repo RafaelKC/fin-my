@@ -47,6 +47,8 @@ public class LoginHandlerTests
     private sealed class FakeReader(LoginAccount? account) : ILoginAccountReader
     {
         public Task<LoginAccount?> FindAsync(string emailNormalized, CancellationToken cancellationToken) => Task.FromResult(account);
+
+        public Task<LoginAccount?> FindByUserIdAsync(Guid userId, CancellationToken cancellationToken) => Task.FromResult(account);
     }
 
     private sealed class FakeThrottles : ILoginThrottleStore

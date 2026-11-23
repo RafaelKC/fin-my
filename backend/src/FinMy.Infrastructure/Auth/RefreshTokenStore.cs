@@ -116,6 +116,23 @@ public sealed class RefreshTokenStore(FinMyDbContext db, IClock clock, ISessionR
         sessions.Forget(sessionId);
     }
 
+    public async Task RevokeSessionByTokenAsync(string token, RefreshTokenRevocationReason reason, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(token);
+
+        var hash = Hash(token);
+        var familyId = await Tokens
+            .AsNoTracking()
+            .Where(r => r.TokenHash == hash)
+            .Select(r => (Guid?)r.FamilyId)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (familyId is { } sessionId)
+        {
+            await RevokeSessionAsync(sessionId, reason, cancellationToken);
+        }
+    }
+
     public async Task RevokeUserSessionsAsync(Guid userId, RefreshTokenRevocationReason reason, CancellationToken cancellationToken, Guid? exceptSessionId = null)
     {
         var sessionIds = await Tokens

@@ -10,4 +10,7 @@ public interface ILoginAccountReader
 {
     /// <summary>Conta pelo <c>email_normalized</c>, ou <c>null</c> se não existe (ou não tem Espaço).</summary>
     Task<LoginAccount?> FindAsync(string emailNormalized, CancellationToken cancellationToken);
+
+    /// <summary>Conta pelo id do usuário (renovação de sessão), ou <c>null</c> se não existe (ou não tem Espaço).</summary>
+    Task<LoginAccount?> FindByUserIdAsync(Guid userId, CancellationToken cancellationToken);
 }

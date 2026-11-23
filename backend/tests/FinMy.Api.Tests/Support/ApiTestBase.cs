@@ -26,6 +26,9 @@ public abstract class ApiTestBase(PostgresFixture postgres) : IAsyncLifetime
 
     protected virtual IEndpointModule[] ExtraEndpoints => [];
 
+    /// <summary>Relógio controlável no lugar do relógio real; <c>null</c> mantém o do sistema.</summary>
+    protected virtual FinMy.Application.Abstractions.IClock? Clock => null;
+
     protected ApiFactory Factory => _factory ?? throw new InvalidOperationException("Factory ainda não inicializada.");
 
     protected HttpClient Client { get; private set; } = null!;
@@ -38,7 +41,7 @@ public abstract class ApiTestBase(PostgresFixture postgres) : IAsyncLifetime
     public async Task InitializeAsync()
     {
         DatabaseConnection = await postgres.CreateEmptyDatabaseAsync();
-        _factory = new ApiFactory(DatabaseConnection, Settings, ExtraEndpoints);
+        _factory = new ApiFactory(DatabaseConnection, Settings, Clock, ExtraEndpoints);
         await _factory.MigrateAsync();
         Client = _factory.CreateClient();
     }

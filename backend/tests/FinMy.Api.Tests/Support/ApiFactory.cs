@@ -16,7 +16,11 @@ namespace FinMy.Api.Tests.Support;
 /// <see cref="Application.Tests.Infrastructure.PostgresFixture"/>) e com <see cref="FakeEmailSender"/>.
 /// Fixture reutilizável pelas fases seguintes; use <see cref="ApiTestBase"/> para o ciclo de vida.
 /// </summary>
-public sealed class ApiFactory(string connectionString, IReadOnlyDictionary<string, string?>? settings = null, params IEndpointModule[] extraEndpoints)
+public sealed class ApiFactory(
+    string connectionString,
+    IReadOnlyDictionary<string, string?>? settings = null,
+    IClock? clock = null,
+    params IEndpointModule[] extraEndpoints)
     : WebApplicationFactory<Program>
 {
     /// <summary>Chave de assinatura dos tokens nos testes (a API real exige <c>Jwt__SigningKey</c>).</summary>
@@ -41,6 +45,12 @@ public sealed class ApiFactory(string connectionString, IReadOnlyDictionary<stri
         {
             services.RemoveAll<IEmailSender>();
             services.AddSingleton<IEmailSender>(Emails);
+
+            if (clock is not null)
+            {
+                services.RemoveAll<IClock>();
+                services.AddSingleton(clock);
+            }
 
             foreach (var module in extraEndpoints)
             {
