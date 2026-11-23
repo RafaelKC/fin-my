@@ -1,0 +1,195 @@
+openapi: 3.1.0
+info:
+  title: Fin-My API — 004 Tags e acertos
+  version: 1.0.0
+  description: |
+    Convenções da 001–003. Alterações nos contratos existentes (research R1, R6):
+      - EntryCreate/EntryUpdate/CardPurchaseCreate/PUT card-purchases ganham `tagIds: uuid[]`.
+      - Entry e CardPurchase ganham `tagIds`, `settlementTagId`, `splitGroupId`, `splitCount`.
+      - GET /entries/suggestions: itens ganham `tagIds`.
+      - GET /months/{m}, GET /credit-cards/{id}/invoices/{m}, GET /entries/search aceitam `tagIds`
+        (uuids separados por vírgula). MonthView ganha `purchases[]` e `filterTotals`; Invoice ganha
+        `filteredTotalCents` e `settlementSubtotals`; busca ganha type `card_purchase`.
+servers:
+  - url: /api/v1
+security:
+  - bearer: []
+paths:
+  /tags:
+    get:
+      parameters:
+        - name: archived
+          in: query
+          schema: { type: string, enum: ['false', 'true', 'all'], default: 'false' }
+      responses:
+        '200': { content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Tag' } } } } }
+    post:
+      parameters: [{ name: Idempotency-Key, in: header, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 30 }
+                color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+                isSettlement: { type: boolean, default: false }
+      responses:
+        '201': { content: { application/json: { schema: { $ref: '#/components/schemas/Tag' } } } }
+        '409': { description: 'code=tag.name_taken; extensão existingTagId' }
+  /tags/{id}:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    put:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, color, isSettlement, version]
+              properties:
+                name: { type: string }
+                color: { type: string }
+                isSettlement: { type: boolean }
+                version: { type: integer }
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Tag' } } } }
+        '409': { description: 'tag.name_taken | tag.settlement_conflict (extensão conflicts[]) | concurrency_conflict' }
+    delete:
+      responses:
+        '204': { description: excluída }
+        '409': { description: tag.in_use_archive_instead }
+  /tags/{id}/archive:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post: { responses: { '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Tag' } } } } } }
+  /tags/{id}/unarchive:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post: { responses: { '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Tag' } } } } } }
+  /tags/{id}/merge:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post:
+      summary: Junta esta tag na `targetTagId` (US5.1, US5.4)
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [targetTagId], properties: { targetTagId: { type: string, format: uuid } } } } }
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Tag' } } } }
+        '409': { description: tag.settlement_conflict }
+        '422': { description: 'tag.merge_into_self' }
+
+  /settlements/{month}:
+    get:
+      summary: Acertos do mês (FR-009)
+      parameters: [{ $ref: '#/components/parameters/Month' }]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [tagId, tagName, tagColor, archived, spentCents, chargedCents, receivedCents, toChargeCents, toReceiveCents, accumulatedCents]
+                  properties:
+                    tagId: { type: string, format: uuid }
+                    tagName: { type: string }
+                    tagColor: { type: string }
+                    archived: { type: boolean }
+                    spentCents: { type: integer }
+                    chargedCents: { type: integer }
+                    receivedCents: { type: integer }
+                    toChargeCents: { type: integer }
+                    toReceiveCents: { type: integer }
+                    accumulatedCents: { type: integer, description: 'negativo = crédito da pessoa' }
+  /settlements/{month}/tags/{tagId}/items:
+    get:
+      parameters:
+        - { $ref: '#/components/parameters/Month' }
+        - { name: tagId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [group, type, id, description, date, signedCents]
+                  properties:
+                    group: { type: string, enum: [spent, charged] }
+                    type: { type: string, enum: [income, expense, card_purchase] }
+                    id: { type: string, format: uuid }
+                    description: { type: string }
+                    date: { type: string, format: date }
+                    signedCents: { type: integer, description: 'crédito de compra negativo' }
+                    received: { type: [boolean, 'null'] }
+                    creditCardId: { type: [string, 'null'], format: uuid }
+
+  /entries/split:
+    post:
+      summary: Saída dividida (FR-012/FR-013) — cria uma Saída por parte
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 'campos de EntryCreate (kind = expense) + split'
+              required: [split]
+              properties:
+                split: { $ref: '#/components/schemas/Split' }
+      responses:
+        '201': { description: 'array de Entry' }
+        '422': { description: 'split.sum_mismatch (extensão differenceCents) | split.invalid_parts | validação' }
+  /card-purchases/split:
+    post:
+      summary: Compra dividida (FR-012/FR-013) — cria uma compra (ou um parcelamento) por parte
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 'campos de CardPurchaseCreate + split'
+              required: [split]
+              properties:
+                split: { $ref: '#/components/schemas/Split' }
+      responses:
+        '201': { description: '{ purchases: CardPurchase[], warnings: [] }' }
+        '422': { description: 'split.sum_mismatch | split.credit_not_allowed | split.invalid_parts' }
+
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    Id: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    Month: { name: month, in: path, required: true, schema: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$' } }
+  schemas:
+    Tag:
+      type: object
+      required: [id, name, color, isSettlement, archived, uses90d, inUse, version]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        color: { type: string }
+        isSettlement: { type: boolean }
+        archived: { type: boolean }
+        uses90d: { type: integer }
+        inUse: { type: boolean }
+        version: { type: integer }
+    Split:
+      type: object
+      required: [mode, parts]
+      properties:
+        mode: { type: string, enum: [equal, amounts] }
+        parts:
+          type: array
+          minItems: 2
+          maxItems: 10
+          items:
+            type: object
+            properties:
+              settlementTagId: { type: [string, 'null'], format: uuid, description: 'null = "Eu (sem tag de acerto)"' }
+              amount: { type: string, description: 'obrigatório em mode=amounts' }
