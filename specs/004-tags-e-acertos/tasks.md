@@ -13,7 +13,7 @@ description: "Tarefas da feature 004 — Tags e acerto de contas"
 
 ## Phase 1: Fundação
 
-- [ ] T001 Entidade `Tag`, ligações e colunas novas conforme data-model.md (configurações EF e migração `Tags`), `SettlementCalculator` e `SplitPlanner` puros em `backend/src/FinMy.Domain/` com `SettlementCalculatorTests` (exemplo da US2, US2.2, US2.3, acumulado) e `SplitPlannerTests` (US4.1–US4.4)
+- [x] T001 Entidade `Tag`, ligações e colunas novas conforme data-model.md (configurações EF e migração `Tags`), `SettlementCalculator` e `SplitPlanner` puros em `backend/src/FinMy.Domain/` com `SettlementCalculatorTests` (exemplo da US2, US2.2, US2.3, acumulado) e `SplitPlannerTests` (US4.1–US4.4)
 
 ## Phase 2: US1/US5 — Tags
 
