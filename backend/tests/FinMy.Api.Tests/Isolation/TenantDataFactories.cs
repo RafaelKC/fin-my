@@ -1,4 +1,5 @@
 using FinMy.Application.Tests.Infrastructure;
+using FinMy.Domain.Cards;
 using FinMy.Domain.Entries;
 using FinMy.Domain.Monetary;
 using FinMy.Domain.Transfers;
@@ -10,7 +11,7 @@ namespace FinMy.Api.Tests.Isolation;
 /// Fábricas de dados por tipo <c>ITenantEntity</c> (docs/arquitetura.md §3.7). A suíte descobre por reflexão
 /// todos os tipos de Espaço mapeados e <b>falha</b> se algum não tiver fábrica aqui — quem criar uma entidade
 /// de Espaço nas próximas features acrescenta a fábrica dela neste dicionário.
-/// Além das sondas do contexto de teste (research R1), há as entidades da 002: carteiras, lançamentos e transferências.
+/// Além das sondas do contexto de teste (research R1), há as entidades da 002 (carteiras, lançamentos e transferências) e da 003 (cartões, faturas, planos, compras e pagamentos).
 /// </summary>
 public static class TenantDataFactories
 {
@@ -40,9 +41,26 @@ public static class TenantDataFactories
                 var to = NewWallet($"{label} destino", primary: false);
                 return [from, to, Transfer.Create(from.Id, to.Id, Money.FromCents(1000), Today, null, null)];
             },
+            [typeof(CreditCard)] = label => [.. CardGraph(label).Take(2)],
+            [typeof(Invoice)] = label => [.. CardGraph(label).Take(3)],
+            [typeof(InstallmentPlan)] = label => [.. CardGraph(label).Take(4)],
+            [typeof(CardPurchase)] = label => [.. CardGraph(label).Take(5)],
+            [typeof(InvoicePayment)] = label => CardGraph(label),
         };
 
     private static readonly DateOnly Today = new(2026, 3, 10);
+
+    /// <summary>Carteira, cartão, fatura, plano, parcela e pagamento — cada tipo da 003 pede os anteriores (FKs compostas).</summary>
+    private static IReadOnlyList<object> CardGraph(string label)
+    {
+        var wallet = NewWallet(label, primary: false);
+        var card = CreditCard.Create(label, "#43A047", 5, 15, wallet.Id);
+        var invoice = Invoice.Create(card.Id, YearMonth.Of(2026, 3), new DateOnly(2026, 3, 5), new DateOnly(2026, 3, 15));
+        var plan = InstallmentPlan.Create(card.Id, label, InstallmentMode.TotalAmount, 3, 1, Money.FromCents(30_000), Today, YearMonth.Of(2026, 3));
+        var installment = CardPurchase.CreateInstallment(card.Id, invoice.Id, plan, 1, Money.FromCents(10_000), null);
+        var payment = InvoicePayment.Create(invoice.Id, wallet.Id, Money.FromCents(1_000), Today);
+        return [wallet, card, invoice, plan, installment, payment];
+    }
 
     private static Wallet NewWallet(string name, bool primary) =>
         Wallet.Create(name, WalletType.Checking, "#1E88E5", Money.Zero, Today, primary);

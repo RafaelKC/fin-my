@@ -22,6 +22,602 @@ namespace FinMy.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("FinMy.Domain.Cards.CardPurchase", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<long>("AmountCents")
+                        .HasColumnType("bigint")
+                        .HasColumnName("amount_cents");
+
+                    b.Property<Guid?>("CarryOverPairId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("carry_over_pair_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("CreatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("created_via");
+
+                    b.Property<Guid>("CreditCardId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("credit_card_id");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid?>("DeletionBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deletion_batch_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("DescriptionNormalized")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("description_normalized");
+
+                    b.Property<short?>("InstallmentNumber")
+                        .HasColumnType("smallint")
+                        .HasColumnName("installment_number");
+
+                    b.Property<Guid?>("InstallmentPlanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("installment_plan_id");
+
+                    b.Property<short?>("InstallmentTotal")
+                        .HasColumnType("smallint")
+                        .HasColumnName("installment_total");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("invoice_id");
+
+                    b.Property<bool>("ManuallyMoved")
+                        .HasColumnType("boolean")
+                        .HasColumnName("manually_moved");
+
+                    b.Property<string>("Nature")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("nature");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("Origin")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("origin");
+
+                    b.Property<DateOnly>("PurchaseDate")
+                        .HasColumnType("date")
+                        .HasColumnName("purchase_date");
+
+                    b.Property<bool>("Reconciled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("reconciled");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("UpdatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("updated_via");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_card_purchases");
+
+                    b.HasAlternateKey("TenantId", "Id")
+                        .HasName("ak_card_purchases_tenant_id_id");
+
+                    b.HasIndex("TenantId", "CarryOverPairId")
+                        .HasDatabaseName("ix_card_purchases_tenant_id_carry_over_pair_id")
+                        .HasFilter("carry_over_pair_id IS NOT NULL");
+
+                    b.HasIndex("TenantId", "CreditCardId")
+                        .HasDatabaseName("ix_card_purchases_tenant_id_credit_card_id");
+
+                    b.HasIndex("TenantId", "DescriptionNormalized")
+                        .HasDatabaseName("ix_card_purchases_tenant_id_description_normalized");
+
+                    b.HasIndex("TenantId", "InstallmentPlanId")
+                        .HasDatabaseName("ix_card_purchases_tenant_id_installment_plan_id");
+
+                    b.HasIndex("TenantId", "InvoiceId")
+                        .HasDatabaseName("ix_card_purchases_tenant_id_invoice_id");
+
+                    b.HasIndex("TenantId", "InvoiceId", "CreditCardId")
+                        .HasDatabaseName("ix_card_purchases_tenant_id_invoice_id_credit_card_id");
+
+                    b.ToTable("card_purchases", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_card_purchases_amount_cents", "amount_cents > 0 AND amount_cents <= 999999999");
+
+                            t.HasCheckConstraint("ck_card_purchases_carry_over_pair", "(origin = 'carry_over') = (carry_over_pair_id IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_card_purchases_credit_not_installment", "nature = 'debit' OR installment_plan_id IS NULL");
+
+                            t.HasCheckConstraint("ck_card_purchases_installment_fields", "(installment_plan_id IS NULL) = (installment_number IS NULL) AND (installment_plan_id IS NULL) = (installment_total IS NULL) AND ((origin = 'installment') = (installment_plan_id IS NOT NULL))");
+
+                            t.HasCheckConstraint("ck_card_purchases_installment_number", "installment_number IS NULL OR (installment_number BETWEEN 1 AND installment_total)");
+
+                            t.HasCheckConstraint("ck_card_purchases_installment_total", "installment_total IS NULL OR installment_total BETWEEN 1 AND 48");
+
+                            t.HasCheckConstraint("ck_card_purchases_nature", "nature IN ('debit', 'credit')");
+
+                            t.HasCheckConstraint("ck_card_purchases_origin", "origin IN ('manual', 'installment', 'carry_over')");
+
+                            t.HasCheckConstraint("ck_card_purchases_purchase_date", "purchase_date BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
+                        });
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Cards.CreditCard", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("archived_at");
+
+                    b.Property<short>("ClosingDay")
+                        .HasColumnType("smallint")
+                        .HasColumnName("closing_day");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasColumnName("color");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("CreatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("created_via");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid?>("DeletionBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deletion_batch_id");
+
+                    b.Property<short>("DueDay")
+                        .HasColumnType("smallint")
+                        .HasColumnName("due_day");
+
+                    b.Property<long?>("LimitCents")
+                        .HasColumnType("bigint")
+                        .HasColumnName("limit_cents");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NameNormalized")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("name_normalized");
+
+                    b.Property<Guid>("PaymentWalletId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payment_wallet_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("UpdatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("updated_via");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_credit_cards");
+
+                    b.HasAlternateKey("TenantId", "Id")
+                        .HasName("ak_credit_card_tenant_id_id");
+
+                    b.HasIndex("TenantId", "NameNormalized")
+                        .IsUnique()
+                        .HasDatabaseName("ix_credit_cards_tenant_id_name_normalized")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.HasIndex("TenantId", "PaymentWalletId")
+                        .HasDatabaseName("ix_credit_cards_tenant_id_payment_wallet_id");
+
+                    b.ToTable("credit_cards", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_credit_cards_closing_day", "closing_day BETWEEN 1 AND 31");
+
+                            t.HasCheckConstraint("ck_credit_cards_color", "color ~ '^#[0-9A-Fa-f]{6}$'");
+
+                            t.HasCheckConstraint("ck_credit_cards_due_day", "due_day BETWEEN 1 AND 31");
+
+                            t.HasCheckConstraint("ck_credit_cards_limit_cents", "limit_cents IS NULL OR (limit_cents >= 0 AND limit_cents <= 999999999)");
+                        });
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Cards.InstallmentPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("CreatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("created_via");
+
+                    b.Property<Guid>("CreditCardId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("credit_card_id");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid?>("DeletionBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deletion_batch_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("description");
+
+                    b.Property<DateOnly>("FirstInvoiceDueMonth")
+                        .HasColumnType("date")
+                        .HasColumnName("first_invoice_due_month");
+
+                    b.Property<short>("FirstNumber")
+                        .HasColumnType("smallint")
+                        .HasColumnName("first_number");
+
+                    b.Property<long?>("InstallmentAmountCents")
+                        .HasColumnType("bigint")
+                        .HasColumnName("installment_amount_cents");
+
+                    b.Property<short>("InstallmentTotal")
+                        .HasColumnType("smallint")
+                        .HasColumnName("installment_total");
+
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("mode");
+
+                    b.Property<DateOnly>("PurchaseDate")
+                        .HasColumnType("date")
+                        .HasColumnName("purchase_date");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<long?>("TotalAmountCents")
+                        .HasColumnType("bigint")
+                        .HasColumnName("total_amount_cents");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("UpdatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("updated_via");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_installment_plans");
+
+                    b.HasAlternateKey("TenantId", "Id")
+                        .HasName("ak_installment_plan_tenant_id_id");
+
+                    b.HasIndex("TenantId", "CreditCardId")
+                        .HasDatabaseName("ix_installment_plans_tenant_id_credit_card_id");
+
+                    b.ToTable("installment_plans", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_installment_plans_amount_by_mode", "(mode = 'total_amount' AND total_amount_cents IS NOT NULL AND installment_amount_cents IS NULL) OR (mode <> 'total_amount' AND installment_amount_cents IS NOT NULL AND total_amount_cents IS NULL)");
+
+                            t.HasCheckConstraint("ck_installment_plans_first_invoice_due_month", "extract(day from first_invoice_due_month) = 1 AND first_invoice_due_month BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
+
+                            t.HasCheckConstraint("ck_installment_plans_first_number", "first_number BETWEEN 1 AND installment_total");
+
+                            t.HasCheckConstraint("ck_installment_plans_first_number_mode", "mode = 'in_progress' OR first_number = 1");
+
+                            t.HasCheckConstraint("ck_installment_plans_installment_amount_cents", "installment_amount_cents IS NULL OR (installment_amount_cents > 0 AND installment_amount_cents <= 999999999)");
+
+                            t.HasCheckConstraint("ck_installment_plans_installment_total", "installment_total BETWEEN 1 AND 48");
+
+                            t.HasCheckConstraint("ck_installment_plans_mode", "mode IN ('total_amount', 'installment_amount', 'in_progress')");
+
+                            t.HasCheckConstraint("ck_installment_plans_purchase_date", "purchase_date BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
+
+                            t.HasCheckConstraint("ck_installment_plans_total_amount_cents", "total_amount_cents IS NULL OR (total_amount_cents > 0 AND total_amount_cents <= 999999999)");
+                        });
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Cards.Invoice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateOnly>("ClosingDate")
+                        .HasColumnType("date")
+                        .HasColumnName("closing_date");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("CreatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("created_via");
+
+                    b.Property<Guid>("CreditCardId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("credit_card_id");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid?>("DeletionBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deletion_batch_id");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("due_date");
+
+                    b.Property<DateOnly>("DueMonth")
+                        .HasColumnType("date")
+                        .HasColumnName("due_month");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("UpdatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("updated_via");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_invoices");
+
+                    b.HasAlternateKey("TenantId", "Id")
+                        .HasName("ak_invoices_tenant_id_id");
+
+                    b.HasAlternateKey("TenantId", "Id", "CreditCardId")
+                        .HasName("ak_invoices_tenant_id_id_credit_card_id");
+
+                    b.HasIndex("TenantId", "DueMonth")
+                        .HasDatabaseName("ix_invoices_tenant_id_due_month");
+
+                    b.HasIndex("TenantId", "CreditCardId", "DueMonth")
+                        .IsUnique()
+                        .HasDatabaseName("ix_invoices_tenant_id_credit_card_id_due_month");
+
+                    b.ToTable("invoices", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_invoices_closing_date", "closing_date BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
+
+                            t.HasCheckConstraint("ck_invoices_due_date", "due_date BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
+
+                            t.HasCheckConstraint("ck_invoices_due_month", "extract(day from due_month) = 1 AND due_month BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
+                        });
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Cards.InvoicePayment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<long>("AmountCents")
+                        .HasColumnType("bigint")
+                        .HasColumnName("amount_cents");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("CreatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("created_via");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid?>("DeletionBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deletion_batch_id");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("invoice_id");
+
+                    b.Property<DateOnly>("PaymentDate")
+                        .HasColumnType("date")
+                        .HasColumnName("payment_date");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("UpdatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("updated_via");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("wallet_id");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_invoice_payments");
+
+                    b.HasAlternateKey("TenantId", "Id")
+                        .HasName("ak_invoice_payments_tenant_id_id");
+
+                    b.HasIndex("TenantId", "InvoiceId")
+                        .HasDatabaseName("ix_invoice_payments_tenant_id_invoice_id");
+
+                    b.HasIndex("TenantId", "WalletId")
+                        .HasDatabaseName("ix_invoice_payments_tenant_id_wallet_id");
+
+                    b.ToTable("invoice_payments", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_invoice_payments_amount_cents", "amount_cents > 0");
+
+                            t.HasCheckConstraint("ck_invoice_payments_payment_date", "payment_date BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
+                        });
+                });
+
             modelBuilder.Entity("FinMy.Domain.Entries.Entry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -695,6 +1291,119 @@ namespace FinMy.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_wallets_type", "type IN ('checking', 'digital', 'savings', 'cash', 'meal_voucher', 'other')");
                         });
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Cards.CardPurchase", b =>
+                {
+                    b.HasOne("FinMy.Domain.Identity.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_card_purchases_tenant_tenant_id");
+
+                    b.HasOne("FinMy.Domain.Cards.CreditCard", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "CreditCardId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_card_purchases_credit_card_tenant_id_credit_card_id");
+
+                    b.HasOne("FinMy.Domain.Cards.InstallmentPlan", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "InstallmentPlanId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_card_purchases_installment_plan_tenant_id_installment_plan_");
+
+                    b.HasOne("FinMy.Domain.Cards.Invoice", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "InvoiceId", "CreditCardId")
+                        .HasPrincipalKey("TenantId", "Id", "CreditCardId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_card_purchases_invoice_tenant_id_invoice_id_credit_card_id");
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Cards.CreditCard", b =>
+                {
+                    b.HasOne("FinMy.Domain.Identity.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_credit_cards_tenant_tenant_id");
+
+                    b.HasOne("FinMy.Domain.Wallets.Wallet", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "PaymentWalletId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_credit_cards_wallet_tenant_id_payment_wallet_id");
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Cards.InstallmentPlan", b =>
+                {
+                    b.HasOne("FinMy.Domain.Identity.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_installment_plans_tenant_tenant_id");
+
+                    b.HasOne("FinMy.Domain.Cards.CreditCard", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "CreditCardId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_installment_plans_credit_cards_tenant_id_credit_card_id");
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Cards.Invoice", b =>
+                {
+                    b.HasOne("FinMy.Domain.Identity.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_invoices_tenant_tenant_id");
+
+                    b.HasOne("FinMy.Domain.Cards.CreditCard", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "CreditCardId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_invoices_credit_cards_tenant_id_credit_card_id");
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Cards.InvoicePayment", b =>
+                {
+                    b.HasOne("FinMy.Domain.Identity.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_invoice_payments_tenant_tenant_id");
+
+                    b.HasOne("FinMy.Domain.Cards.Invoice", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "InvoiceId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_invoice_payments_invoices_tenant_id_invoice_id");
+
+                    b.HasOne("FinMy.Domain.Wallets.Wallet", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "WalletId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_invoice_payments_wallet_tenant_id_wallet_id");
                 });
 
             modelBuilder.Entity("FinMy.Domain.Entries.Entry", b =>

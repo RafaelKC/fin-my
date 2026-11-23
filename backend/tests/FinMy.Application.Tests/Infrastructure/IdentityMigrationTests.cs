@@ -57,7 +57,7 @@ public class IdentityMigrationTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Cria_as_tabelas_globais_e_as_da_002_com_nomes_em_snake_case()
+    public async Task Cria_as_tabelas_globais_e_as_do_Espaco_com_nomes_em_snake_case()
     {
         var connectionString = await MigratedDatabaseAsync();
 
@@ -66,7 +66,10 @@ public class IdentityMigrationTests(PostgresFixture postgres)
             "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name <> '__EFMigrationsHistory' ORDER BY 1");
 
         tables.ShouldBe(
-            ["entries", "idempotency_keys", "login_throttles", "password_reset_tokens", "refresh_tokens", "tenant_members", "tenants", "transfers", "users", "wallets"]);
+            [
+                "card_purchases", "credit_cards", "entries", "idempotency_keys", "installment_plans", "invoice_payments", "invoices",
+                "login_throttles", "password_reset_tokens", "refresh_tokens", "tenant_members", "tenants", "transfers", "users", "wallets",
+            ]);
     }
 
     [Theory]
