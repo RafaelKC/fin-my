@@ -1,0 +1,95 @@
+<main class="pagina">
+  <header class="cabecalho">
+    <h1>Cartões</h1>
+    <a class="nova" routerLink="/cartoes/novo">Novo cartão</a>
+  </header>
+
+  <label class="filtro">
+    <input
+      type="checkbox"
+      [checked]="arquivados()"
+      (change)="alternarArquivados()"
+      data-testid="filtro-arquivados"
+    />
+    Arquivados
+  </label>
+
+  @if (erro(); as mensagem) {
+    <div class="aviso" role="alert" data-testid="erro-lista">{{ mensagem }}</div>
+  }
+
+  @if (carregando()) {
+    <p role="status">Carregando…</p>
+  } @else if (cartoes().length === 0 && !erro()) {
+    <p class="vazio" data-testid="lista-vazia">
+      {{
+        arquivados()
+          ? 'Nenhum cartão arquivado.'
+          : 'Você ainda não tem cartões. Toque em "Novo cartão" para começar.'
+      }}
+    </p>
+  } @else {
+    <ul class="lista" data-testid="lista-cartoes">
+      @for (c of cartoes(); track c.id) {
+        <li class="cartao" data-testid="cartao">
+          <div class="topo">
+            <span class="cor" [style.background]="c.color" aria-hidden="true"></span>
+            <h2 class="nome">
+              {{ c.name }}
+              @if (c.archived) {
+                <span class="selo cinza">Arquivado</span>
+              }
+            </h2>
+            <a class="editar" [routerLink]="['/cartoes', c.id, 'editar']">
+              Editar<span class="so-leitor"> cartão {{ c.name }}</span>
+            </a>
+          </div>
+
+          <dl class="faturas">
+            <div data-testid="fatura-atual">
+              <dt>Fatura de {{ nomeDoMes(c.currentInvoice.dueMonth) }}</dt>
+              <dd>
+                <strong>{{ c.currentInvoice.totalCents | brl }}</strong>
+                <span class="ajuda">fecha em {{ diaEMes(c.currentInvoice.closingDate) }}</span>
+              </dd>
+            </div>
+            <div data-testid="proxima-fatura">
+              <dt>Próxima ({{ nomeDoMes(c.nextInvoice.dueMonth) }})</dt>
+              <dd>
+                <strong>{{ c.nextInvoice.totalCents | brl }}</strong>
+              </dd>
+            </div>
+          </dl>
+
+          @if (c.openPastInvoices.length > 0) {
+            <ul class="abertas" aria-label="Faturas em aberto">
+              @for (f of c.openPastInvoices; track f.dueMonth) {
+                <li [class.vencida]="vencida(f)" data-testid="fatura-aberta">
+                  Fatura de {{ nomeDoMes(f.dueMonth) }}: {{ f.remainingCents | brl }} em aberto
+                  <span class="ajuda">
+                    {{ vencida(f) ? 'venceu' : 'vence' }} em {{ diaEMes(f.dueDate) }}
+                  </span>
+                </li>
+              }
+            </ul>
+          }
+
+          @if (
+            c.limitCents !== null &&
+            c.limitCents !== undefined &&
+            c.availableLimitCents !== null &&
+            c.availableLimitCents !== undefined
+          ) {
+            <p
+              class="limite"
+              [class.negativo]="c.availableLimitCents < 0"
+              data-testid="limite-disponivel"
+            >
+              Limite disponível: <strong>{{ c.availableLimitCents | brl }}</strong>
+            </p>
+          }
+        </li>
+      }
+    </ul>
+  }
+</main>
