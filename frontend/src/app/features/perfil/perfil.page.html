@@ -1,0 +1,135 @@
+<main class="pagina">
+  <h1>Perfil</h1>
+  <p class="intro" data-testid="email-da-conta">{{ email }}</p>
+
+  <section class="secao" aria-labelledby="titulo-nome">
+    <h2 id="titulo-nome">Seu nome</h2>
+    <form class="form" [formGroup]="formNome" (ngSubmit)="salvarNome()" novalidate>
+      @if (erroNome(); as mensagem) {
+        <div class="aviso" role="alert" data-testid="erro-nome">{{ mensagem }}</div>
+      }
+      @if (nomeSalvo()) {
+        <div class="confirmacao" role="status" data-testid="nome-salvo">
+          <p>Nome atualizado.</p>
+        </div>
+      }
+      <div class="campo">
+        <label for="nome">Nome</label>
+        <input
+          id="nome"
+          type="text"
+          formControlName="name"
+          autocomplete="name"
+          [attr.maxlength]="nomeMax"
+          [attr.aria-invalid]="erroNomeCampo('nome') ? 'true' : null"
+          [attr.aria-describedby]="erroNomeCampo('nome') ? 'nome-erro' : null"
+        />
+        @if (erroNomeCampo('nome'); as mensagem) {
+          <span class="erro" id="nome-erro">{{ mensagem }}</span>
+        }
+      </div>
+      <button type="submit" class="enviar" [disabled]="salvandoNome()">
+        {{ salvandoNome() ? 'Salvando…' : 'Salvar nome' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="secao" aria-labelledby="titulo-espaco">
+    <h2 id="titulo-espaco">Espaço</h2>
+    <form class="form" [formGroup]="formEspaco" (ngSubmit)="salvarEspaco()" novalidate>
+      @if (erroEspaco(); as mensagem) {
+        <div class="aviso" role="alert" data-testid="erro-espaco">{{ mensagem }}</div>
+      }
+      @if (espacoSalvo()) {
+        <div class="confirmacao" role="status" data-testid="espaco-salvo">
+          <p>Nome do Espaço atualizado.</p>
+        </div>
+      }
+      <div class="campo">
+        <label for="espaco">Nome do Espaço</label>
+        <input
+          id="espaco"
+          type="text"
+          formControlName="name"
+          [attr.maxlength]="nomeMax"
+          [attr.aria-invalid]="erroNomeCampo('espaco') ? 'true' : null"
+          [attr.aria-describedby]="erroNomeCampo('espaco') ? 'espaco-erro' : null"
+        />
+        @if (erroNomeCampo('espaco'); as mensagem) {
+          <span class="erro" id="espaco-erro">{{ mensagem }}</span>
+        }
+      </div>
+      <button type="submit" class="enviar" [disabled]="salvandoEspaco()">
+        {{ salvandoEspaco() ? 'Salvando…' : 'Salvar Espaço' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="secao" aria-labelledby="titulo-senha">
+    <h2 id="titulo-senha">Trocar senha</h2>
+    <form class="form" [formGroup]="formSenha" (ngSubmit)="trocarSenha()" novalidate>
+      @if (erroSenhaGeral(); as mensagem) {
+        <div class="aviso" role="alert" data-testid="erro-senha">{{ mensagem }}</div>
+      }
+      @if (senhaTrocada()) {
+        <div class="confirmacao" role="status" data-testid="senha-trocada">
+          <p>Senha alterada. Suas outras sessões foram encerradas.</p>
+        </div>
+      }
+
+      <div class="campo">
+        <label for="senha-atual">Senha atual</label>
+        <input
+          id="senha-atual"
+          [type]="senhaVisivel() ? 'text' : 'password'"
+          formControlName="currentPassword"
+          autocomplete="current-password"
+          [attr.maxlength]="senhaMax"
+          [attr.aria-invalid]="erroSenha('currentPassword') ? 'true' : null"
+          [attr.aria-describedby]="erroSenha('currentPassword') ? 'senha-atual-erro' : null"
+        />
+        @if (erroSenha('currentPassword'); as mensagem) {
+          <span class="erro" id="senha-atual-erro">{{ mensagem }}</span>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="senha-nova">Nova senha</label>
+        <div class="senha">
+          <input
+            id="senha-nova"
+            [type]="senhaVisivel() ? 'text' : 'password'"
+            formControlName="newPassword"
+            autocomplete="new-password"
+            [attr.maxlength]="senhaMax"
+            [attr.aria-invalid]="erroSenha('newPassword') ? 'true' : null"
+            aria-describedby="senha-nova-ajuda senha-nova-erro"
+          />
+          <button
+            type="button"
+            class="mostrar"
+            [attr.aria-label]="senhaVisivel() ? 'Ocultar senhas' : 'Mostrar senhas'"
+            [attr.aria-pressed]="senhaVisivel()"
+            (click)="alternarSenha()"
+          >
+            <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{
+              senhaVisivel() ? 'visibility_off' : 'visibility'
+            }}</mat-icon>
+          </button>
+        </div>
+        <span class="ajuda" id="senha-nova-ajuda">Mínimo de {{ senhaMin }} caracteres.</span>
+        @if (erroSenha('newPassword'); as mensagem) {
+          <span class="erro" id="senha-nova-erro">{{ mensagem }}</span>
+        }
+      </div>
+
+      <button type="submit" class="enviar" [disabled]="trocandoSenha()">
+        {{ trocandoSenha() ? 'Salvando…' : 'Trocar senha' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="secao">
+    <button type="button" class="sair" [disabled]="saindo()" (click)="sair()">Sair</button>
+  </section>
+</main>

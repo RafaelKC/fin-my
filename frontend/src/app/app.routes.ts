@@ -37,6 +37,10 @@ export const routes: Routes = [
         pathMatch: 'full',
         loadComponent: () => import('./features/mes/mes.page').then((m) => m.MesPage),
       },
+      {
+        path: 'perfil',
+        loadComponent: () => import('./features/perfil/perfil.page').then((m) => m.PerfilPage),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
