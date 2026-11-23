@@ -29,7 +29,7 @@ public sealed class EntryEndpoints : IEndpointModule
         group.MapGet("/suggestions", async (string? q, string? kind, SuggestEntriesHandler handler, CancellationToken cancellationToken) =>
         {
             var suggestions = await handler.HandleAsync(q, kind, cancellationToken);
-            return Results.Ok(suggestions.Select(s => new EntrySuggestionResponse(s.Description, s.Uses, s.WalletId)));
+            return Results.Ok(suggestions.Select(s => new EntrySuggestionResponse(s.Description, s.Uses, s.WalletId, s.CreditCardId)));
         });
 
         group.MapGet("/pending", async (ListPendingEntriesHandler handler, CancellationToken cancellationToken) =>

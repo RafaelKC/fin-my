@@ -20,8 +20,11 @@ public sealed record EntryView(
 /// <summary>Carteira do Espaço do contexto, só com o que os lançamentos precisam saber.</summary>
 public sealed record WalletRef(Guid Id, bool IsArchived);
 
-/// <summary>Sugestão de descrição (FR-011, research R8).</summary>
-public sealed record EntrySuggestion(string Description, int Uses, Guid? WalletId);
+/// <summary>
+/// Sugestão de descrição (FR-011, research R8). <paramref name="CreditCardId"/> só vem na busca de compras no cartão
+/// (003 research R9): o cartão da compra mais recente com a descrição, ou <c>null</c> se ele foi arquivado.
+/// </summary>
+public sealed record EntrySuggestion(string Description, int Uses, Guid? WalletId, Guid? CreditCardId = null);
 
 /// <summary>Persistência de Entradas e Saídas do Espaço do contexto (o filtro de Espaço é automático).</summary>
 public interface IEntryStore
@@ -46,10 +49,12 @@ public interface IEntryStore
     /// <summary>
     /// Até <paramref name="limit"/> descrições usadas desde <paramref name="notBefore"/> que contenham
     /// <paramref name="normalizedText"/> (já normalizado), por usos e uso mais recente. A carteira vem do lançamento mais
-    /// recente com a mesma descrição e o mesmo <paramref name="kind"/>, se ainda ativa.
+    /// recente com a mesma descrição e o mesmo <paramref name="kind"/>, se ainda ativa. As compras no cartão (descrição
+    /// base; um parcelamento conta uma vez) também entram nos usos; com <paramref name="kind"/> <c>null</c> a busca é de
+    /// compras no cartão e a resposta traz o cartão em vez da carteira (003 research R9).
     /// </summary>
     Task<IReadOnlyList<EntrySuggestion>> SuggestAsync(
-        string normalizedText, EntryKind kind, DateOnly notBefore, int limit, CancellationToken cancellationToken);
+        string normalizedText, EntryKind? kind, DateOnly notBefore, int limit, CancellationToken cancellationToken);
 
     /// <summary>Entradas/Saídas Previstas com Mês de referência anterior a <paramref name="currentMonth"/>, na ordem RT-12 (data, depois criação).</summary>
     Task<IReadOnlyList<EntryView>> ListPendingAsync(YearMonth currentMonth, CancellationToken cancellationToken);
