@@ -13,6 +13,11 @@ if (!string.IsNullOrWhiteSpace(connectionString))
 
 var app = builder.Build();
 
+if (!string.IsNullOrWhiteSpace(connectionString))
+{
+    app.Services.GetRequiredService<IRecurringJobManager>().RegisterFinMyRecurringJobs();
+}
+
 app.MapGet("/", () => "Hello World!");
 
 app.Run();
