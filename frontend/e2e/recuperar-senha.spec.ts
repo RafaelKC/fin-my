@@ -119,9 +119,9 @@ test.describe('recuperar senha (US4) — API simulada', () => {
 });
 
 // Fluxo completo contra a API real, lendo o e-mail pela API do Mailpit.
-// Pulado até a T025 (endpoints /auth/password-reset/*) entrar na main; depois
-// basta trocar `test.skip` por `test` (com a stack do compose no ar).
-test.skip('fluxo completo com o e-mail lido no Mailpit', async ({ page, request }) => {
+// Precisa da stack do compose no ar (com o Mailpit do docker-compose.dev.yml) e de `E2E_BASE_URL`;
+// sem a stack, o `request`/`page` falha na conexão. `MAILPIT_URL` aponta para a API do Mailpit.
+test('fluxo completo com o e-mail lido no Mailpit', async ({ page, request }) => {
   const mailpit = process.env['MAILPIT_URL'] ?? 'http://localhost:8025';
   const email = `ana+${Date.now()}@example.com`;
   const senhaAntiga = 'senha-antiga-1';
