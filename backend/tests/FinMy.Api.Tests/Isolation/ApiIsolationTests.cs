@@ -86,6 +86,14 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
             "POST /api/v1/me/password",
             "PATCH /api/v1/tenant",
             "POST /api/v1/deletions/{batchId}/restore",
+            "GET /api/v1/wallets",
+            "POST /api/v1/wallets",
+            "GET /api/v1/wallets/{id}",
+            "PUT /api/v1/wallets/{id}",
+            "DELETE /api/v1/wallets/{id}",
+            "POST /api/v1/wallets/{id}/make-primary",
+            "POST /api/v1/wallets/{id}/archive",
+            "POST /api/v1/wallets/{id}/unarchive",
         ];
         esperadas.ShouldBeSubsetOf(operations.Select(o => o.Key));
     }
@@ -221,7 +229,8 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
         try
         {
             using var document = JsonDocument.Parse(text);
-            code = document.RootElement.TryGetProperty("code", out var c) ? c.GetString() : null;
+            // Listas (ex.: GET /wallets) vêm como array JSON, sem code.
+            code = document.RootElement.ValueKind == JsonValueKind.Object && document.RootElement.TryGetProperty("code", out var c) ? c.GetString() : null;
         }
         catch (JsonException)
         {
