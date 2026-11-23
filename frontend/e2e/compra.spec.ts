@@ -216,6 +216,7 @@ test.describe('aba Cartão — compra à vista (US2) — stack real', () => {
     await salvar(page).click();
     const uber = (await (await primeira).json()).purchases[0];
     expect(uber).toMatchObject({ dueMonth: '2026-03', amountCents: 1295, nature: 'debit' });
+    await expect(page.getByRole('dialog')).toHaveCount(0);
 
     await page.getByTestId('lancar').click();
     await valor(page).fill('20');
@@ -225,6 +226,7 @@ test.describe('aba Cartão — compra à vista (US2) — stack real', () => {
     const segunda = criacao(page);
     await salvar(page).click();
     expect((await (await segunda).json()).purchases[0].dueMonth).toBe('2026-04');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
 
     await page.getByTestId('lancar').click();
     await valor(page).fill('-99,90');
