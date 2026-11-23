@@ -1,0 +1,502 @@
+openapi: 3.1.0
+info:
+  title: Fin-My API — 002 Carteiras, Entradas, Saídas e visão do mês
+  version: 1.0.0
+  description: |
+    Convenções gerais em docs/arquitetura.md §6 e na 001 (auth bearer, Problem, ValidationProblem).
+    Dinheiro na resposta: inteiro em centavos (`*Cents`). Na entrada, valores são TEXTO avaliado pelo
+    servidor (RT-05, research R1). Datas "AAAA-MM-DD"; meses "AAAA-MM".
+    Recurso de outro Espaço ou inexistente → 404 code=not_found (RT-01).
+    POST de criação aceita o cabeçalho opcional Idempotency-Key (UUID; research R2).
+    PUT exige `version` do recurso; divergente → 409 code=concurrency_conflict (research R11).
+servers:
+  - url: /api/v1
+security:
+  - bearer: []
+tags:
+  - name: wallets
+  - name: entries
+  - name: transfers
+  - name: months
+  - name: deletions
+paths:
+  /wallets:
+    get:
+      tags: [wallets]
+      summary: Lista carteiras com saldo atual (FR-003)
+      parameters:
+        - name: archived
+          in: query
+          description: "false (padrão) = só ativas; true = só arquivadas; all = todas"
+          schema: { type: string, enum: ['false', 'true', 'all'], default: 'false' }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Wallet' } }
+    post:
+      tags: [wallets]
+      summary: Cria carteira (US1); a primeira ativa vira principal
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WalletInput' }
+      responses:
+        '201':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Wallet' }
+        '409': { description: 'code=wallet.name_taken — "Já existe uma carteira com esse nome."' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /wallets/{id}:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    get:
+      tags: [wallets]
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Wallet' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [wallets]
+      summary: Edita nome, tipo, cor, saldo inicial e data (não muda principal nem arquivamento)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/WalletInput'
+                - type: object
+                  required: [version]
+                  properties: { version: { type: integer } }
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Wallet' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'code=wallet.name_taken | concurrency_conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [wallets]
+      summary: Exclui definitivamente (só sem lançamentos; research R6)
+      parameters:
+        - name: newPrimaryWalletId
+          in: query
+          description: obrigatório se a carteira for a principal e existir outra ativa
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: Excluída }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'code=wallet.has_entries_archive_instead — "Esta carteira tem lançamentos. Você pode arquivá-la."' }
+        '422': { description: 'code=wallet.new_primary_required' }
+  /wallets/{id}/make-primary:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post:
+      tags: [wallets]
+      summary: Torna principal (FR-002); carteira precisa estar ativa
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Wallet' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { description: 'code=wallet.archived' }
+  /wallets/{id}/archive:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post:
+      tags: [wallets]
+      summary: Arquiva (RT-11, US1.4)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newPrimaryWalletId: { type: string, format: uuid, description: 'obrigatório ao arquivar a principal' }
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Wallet' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422':
+          description: |
+            code=wallet.new_primary_required — "Escolha outra carteira para ser a principal."
+            code=wallet.last_active_cannot_be_archived — "Cadastre outra carteira antes de arquivar esta: ela é a única ativa."
+            code=wallet.invalid_new_primary — a escolhida não está ativa ou é a mesma
+  /wallets/{id}/unarchive:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    post:
+      tags: [wallets]
+      summary: Desarquiva; vira principal só se não houver nenhuma ativa
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Wallet' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'code=wallet.name_taken' }
+
+  /entries:
+    post:
+      tags: [entries]
+      summary: Cria Entrada ou Saída (US2)
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EntryCreate' }
+      responses:
+        '201': { content: { application/json: { schema: { $ref: '#/components/schemas/Entry' } } } }
+        '404': { description: 'carteira inexistente/de outro Espaço → code=not_found' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /entries/{id}:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    get:
+      tags: [entries]
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Entry' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [entries]
+      summary: Edita todos os campos (FR-022; RT-04 em research R7)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EntryUpdate' }
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Entry' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'code=concurrency_conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [entries]
+      summary: Exclui (RT-09); use o lote para desfazer
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/DeletionResult' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /entries/{id}/status:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    patch:
+      tags: [entries]
+      summary: Troca a situação com um toque (FR-006)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties: { status: { $ref: '#/components/schemas/EntryStatus' } }
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Entry' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /entries/{id}/duplicate:
+    parameters: [{ $ref: '#/components/parameters/Id' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+    post:
+      tags: [entries]
+      summary: Duplica com nova data (FR-024); mês e situação recalculados como na criação
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [date]
+              properties: { date: { type: string, format: date } }
+      responses:
+        '201': { content: { application/json: { schema: { $ref: '#/components/schemas/Entry' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { description: 'code=wallet.archived (a carteira original foi arquivada) ou validação de data' }
+  /entries/suggestions:
+    get:
+      tags: [entries]
+      summary: Sugestões de descrição (FR-011; research R8)
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, maxLength: 80 } }
+        - { name: kind, in: query, required: true, schema: { $ref: '#/components/schemas/EntryKind' } }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 6
+                items:
+                  type: object
+                  required: [description, uses]
+                  properties:
+                    description: { type: string }
+                    uses: { type: integer }
+                    walletId: { type: [string, 'null'], format: uuid }
+  /entries/pending:
+    get:
+      tags: [entries]
+      summary: Pendências de meses anteriores (FR-019; research R9), ordem RT-12
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Entry' } }
+  /entries/bulk:
+    post:
+      tags: [entries]
+      summary: Ação em várias entradas/saídas, tudo ou nada (FR-020)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids, action]
+              properties:
+                ids: { type: array, minItems: 1, maxItems: 200, items: { type: string, format: uuid } }
+                action: { type: string, enum: [settle, move_to_current_month, delete] }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  affected: { type: integer }
+                  deletionBatchId: { type: [string, 'null'], format: uuid }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /entries/search:
+    get:
+      tags: [entries]
+      summary: Busca (FR-025; research R10) em entradas, saídas e transferências
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 80 } }
+        - { name: kinds, in: query, description: 'lista separada por vírgula: income,expense,transfer', schema: { type: string } }
+        - { name: walletIds, in: query, description: 'uuids separados por vírgula', schema: { type: string } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/EntryStatus' } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 50, maximum: 200 } }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, totalCents, totalCount]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/LedgerItem' } }
+                  totalCents: { type: integer, description: 'soma de TODOS os resultados: entradas +, saídas −, transferências 0' }
+                  totalCount: { type: integer }
+                  nextCursor: { type: [string, 'null'] }
+
+  /transfers:
+    post:
+      tags: [transfers]
+      summary: Cria transferência (US5, FR-021)
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TransferInput' }
+      responses:
+        '201': { content: { application/json: { schema: { $ref: '#/components/schemas/Transfer' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { description: 'code=transfer.same_wallet — "Escolha carteiras diferentes."; wallet.archived; validação' }
+  /transfers/{id}:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    get:
+      tags: [transfers]
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Transfer' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [transfers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/TransferInput'
+                - type: object
+                  required: [version]
+                  properties: { version: { type: integer } }
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Transfer' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'code=concurrency_conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [transfers]
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/DeletionResult' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /months/{month}:
+    get:
+      tags: [months]
+      summary: Visão do mês (US3; FR-014..FR-019; research R4)
+      parameters:
+        - { name: month, in: path, required: true, schema: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$' } }
+        - { name: walletIds, in: query, description: 'uuids separados por vírgula; ausente = todas (ativas e arquivadas)', schema: { type: string } }
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/MonthView' } } } }
+        '422': { description: 'mês fora de 2000-01..2100-12 ou formato inválido' }
+
+  /deletions/{batchId}/restore:
+    post:
+      tags: [deletions]
+      summary: Desfaz uma exclusão (RT-09; research R3), até 10 min depois
+      parameters:
+        - { name: batchId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: Restaurado }
+        '404': { description: 'code=deletion.not_found — lote inexistente, de outro Espaço, já restaurado ou expirado' }
+        '409': { description: 'code=deletion.restore_conflict' }
+
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    Id: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema: { type: string, format: uuid }
+  responses:
+    NotFound: { description: 'code=not_found' }
+    ValidationError:
+      description: |
+        422 code=validation_failed com `errors` por campo (camelCase). Códigos de valor (RT-05):
+        amount.invalid_expression "Valor inválido. Use números e + − × ÷ ( )",
+        amount.division_by_zero "Divisão por zero",
+        amount.must_be_positive "Informe um valor maior que zero",
+        amount.too_large "O valor máximo é R$ 9.999.999,99".
+        description.required "Informe a descrição", description.too_long "Use até 80 caracteres",
+        date.out_of_range "Use uma data entre 01/01/2000 e 31/12/2100", wallet.archived "Esta carteira está arquivada".
+  schemas:
+    EntryKind: { type: string, enum: [income, expense] }
+    EntryStatus: { type: string, enum: [planned, settled], description: 'planned = Prevista; settled = Recebida (income) / Paga (expense)' }
+    WalletType: { type: string, enum: [checking, digital, savings, cash, meal_voucher, other] }
+    WalletInput:
+      type: object
+      required: [name, type, color, initialBalance, initialBalanceDate]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 40 }
+        type: { $ref: '#/components/schemas/WalletType' }
+        color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+        initialBalance: { type: string, description: 'expressão RT-05; aceita zero e negativo (exceção RT-02): "-150,00", "0"' }
+        initialBalanceDate: { type: string, format: date }
+    Wallet:
+      type: object
+      required: [id, name, type, color, initialBalanceCents, initialBalanceDate, isPrimary, archived, currentBalanceCents, hasEntries, version]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        type: { $ref: '#/components/schemas/WalletType' }
+        color: { type: string }
+        initialBalanceCents: { type: integer }
+        initialBalanceDate: { type: string, format: date }
+        isPrimary: { type: boolean }
+        archived: { type: boolean }
+        currentBalanceCents: { type: integer }
+        hasEntries: { type: boolean, description: 'true → só arquivar (RT-11)' }
+        version: { type: integer }
+    EntryCreate:
+      type: object
+      required: [kind, description, amount, date, walletId]
+      properties:
+        kind: { $ref: '#/components/schemas/EntryKind' }
+        description: { type: string }
+        amount: { type: string, description: 'expressão RT-05, ex. "29+73,2"' }
+        date: { type: string, format: date }
+        walletId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/EntryStatus', description: 'ausente → FR-012' }
+        referenceMonth: { type: string, description: 'AAAA-MM; ausente → mês da data' }
+        notes: { type: [string, 'null'], maxLength: 500 }
+    EntryUpdate:
+      type: object
+      required: [kind, description, amount, date, walletId, status, version]
+      properties:
+        kind: { $ref: '#/components/schemas/EntryKind' }
+        description: { type: string }
+        amount: { type: string }
+        date: { type: string, format: date }
+        walletId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/EntryStatus' }
+        referenceMonth: { type: string, description: 'ausente ou igual ao atual → regra RT-04 (research R7)' }
+        notes: { type: [string, 'null'] }
+        version: { type: integer }
+    Entry:
+      type: object
+      required: [id, kind, description, amountCents, date, referenceMonth, status, walletId, createdAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { $ref: '#/components/schemas/EntryKind' }
+        description: { type: string }
+        amountCents: { type: integer }
+        date: { type: string, format: date }
+        referenceMonth: { type: string }
+        status: { $ref: '#/components/schemas/EntryStatus' }
+        walletId: { type: string, format: uuid }
+        notes: { type: [string, 'null'] }
+        createdAt: { type: string, format: date-time }
+        version: { type: integer }
+    TransferInput:
+      type: object
+      required: [fromWalletId, toWalletId, amount, date]
+      properties:
+        fromWalletId: { type: string, format: uuid }
+        toWalletId: { type: string, format: uuid }
+        amount: { type: string }
+        date: { type: string, format: date }
+        description: { type: string, description: 'vazio/ausente → "Transferência"' }
+        notes: { type: [string, 'null'], maxLength: 500 }
+    Transfer:
+      type: object
+      required: [id, fromWalletId, toWalletId, amountCents, date, description, createdAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        fromWalletId: { type: string, format: uuid }
+        toWalletId: { type: string, format: uuid }
+        amountCents: { type: integer }
+        date: { type: string, format: date }
+        description: { type: string }
+        notes: { type: [string, 'null'] }
+        createdAt: { type: string, format: date-time }
+        version: { type: integer }
+    LedgerItem:
+      type: object
+      description: item de busca; `type` diz qual dos dois objetos veio preenchido
+      required: [type]
+      properties:
+        type: { type: string, enum: [income, expense, transfer] }
+        entry: { $ref: '#/components/schemas/Entry' }
+        transfer: { $ref: '#/components/schemas/Transfer' }
+    DeletionResult:
+      type: object
+      required: [deletionBatchId]
+      properties: { deletionBatchId: { type: string, format: uuid } }
+    SummaryColumn:
+      type: object
+      required: [openingBalanceCents, walletsInitialBalanceCents, incomeCents, expenseCents, resultCents, transfersInCents, transfersOutCents, finalBalanceCents]
+      properties:
+        openingBalanceCents: { type: integer, description: 'Saldo final(M−1) + walletsInitialBalanceCents (research R4)' }
+        walletsInitialBalanceCents: { type: integer, description: 'saldos iniciais de carteiras selecionadas com data em M' }
+        incomeCents: { type: integer }
+        expenseCents: { type: integer }
+        resultCents: { type: integer }
+        transfersInCents: { type: integer, description: '0 quando todas as carteiras estão selecionadas' }
+        transfersOutCents: { type: integer }
+        finalBalanceCents: { type: integer, description: 'opening + result + transfersIn − transfersOut' }
+    MonthView:
+      type: object
+      required: [month, today, walletIds, planned, actual, entries, transfers, pending]
+      properties:
+        month: { type: string }
+        today: { type: string, format: date, description: 'hoje em America/Sao_Paulo' }
+        walletIds: { type: [array, 'null'], items: { type: string, format: uuid }, description: 'filtro aplicado; null = todas' }
+        planned: { $ref: '#/components/schemas/SummaryColumn', description: 'Previsto' }
+        actual: { $ref: '#/components/schemas/SummaryColumn', description: 'Realizado' }
+        entries: { type: array, items: { $ref: '#/components/schemas/Entry' }, description: 'referenceMonth = M, carteiras do filtro, ordem RT-12' }
+        transfers: { type: array, items: { $ref: '#/components/schemas/Transfer' }, description: 'mês da data = M e que tocam alguma carteira do filtro' }
+        pending:
+          type: object
+          required: [count, toReceiveCents, toPayCents]
+          properties:
+            count: { type: integer }
+            toReceiveCents: { type: integer }
+            toPayCents: { type: integer }
