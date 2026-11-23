@@ -1,0 +1,73 @@
+<main class="pagina">
+  <h1>Entrar</h1>
+  <p class="intro">Entre para continuar de onde parou.</p>
+
+  <form class="form" [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+    @if (bloqueioRestante(); as restante) {
+      <div class="aviso" role="alert" data-testid="bloqueio">
+        <p>
+          Muitas tentativas. Tente novamente em
+          <strong>{{ formatarTempoRestante(restante) }}</strong>.
+        </p>
+      </div>
+    }
+    @if (erroGeral(); as mensagem) {
+      <div class="aviso" role="alert" data-testid="erro-geral">{{ mensagem }}</div>
+    }
+
+    <div class="campo">
+      <label for="email">E-mail</label>
+      <input
+        id="email"
+        type="email"
+        formControlName="email"
+        autocomplete="email"
+        inputmode="email"
+        [attr.maxlength]="emailMax"
+        [attr.aria-invalid]="obrigatorio('email') ? 'true' : null"
+        [attr.aria-describedby]="obrigatorio('email') ? 'email-erro' : null"
+      />
+      @if (obrigatorio('email')) {
+        <span class="erro" id="email-erro">Informe seu e-mail.</span>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="senha">Senha</label>
+      <div class="senha">
+        <input
+          id="senha"
+          [type]="senhaVisivel() ? 'text' : 'password'"
+          formControlName="password"
+          autocomplete="current-password"
+          [attr.maxlength]="senhaMax"
+          [attr.aria-invalid]="obrigatorio('password') ? 'true' : null"
+          [attr.aria-describedby]="obrigatorio('password') ? 'senha-erro' : null"
+        />
+        <button
+          type="button"
+          class="mostrar"
+          [attr.aria-label]="senhaVisivel() ? 'Ocultar senha' : 'Mostrar senha'"
+          [attr.aria-pressed]="senhaVisivel()"
+          (click)="alternarSenha()"
+        >
+          <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{
+            senhaVisivel() ? 'visibility_off' : 'visibility'
+          }}</mat-icon>
+        </button>
+      </div>
+      @if (obrigatorio('password')) {
+        <span class="erro" id="senha-erro">Informe sua senha.</span>
+      }
+    </div>
+
+    <button type="submit" class="enviar" [disabled]="enviando() || bloqueioRestante() !== null">
+      {{ enviando() ? 'Entrando…' : 'Entrar' }}
+    </button>
+  </form>
+
+  <p class="rodape">
+    <a routerLink="/esqueci-senha">Esqueci minha senha</a>
+    <a routerLink="/criar-conta">Criar conta</a>
+  </p>
+</main>

@@ -115,11 +115,9 @@ test.describe('perfil e sair (US5) — API simulada', () => {
 
 // Edge Case da troca de senha com DOIS contextos de navegador (dois aparelhos): ao trocar a
 // senha no aparelho A, o aparelho B cai na próxima ação (401 session_revoked → /entrar), e A
-// continua logado. O backend já está pronto (T027: POST /me/password revoga as outras sessões;
-// T015: SessionValidationMiddleware) e foi conferido contra a stack real (cadastro, login, troca de
-// senha e 401 session_revoked no outro aparelho). Falta o resto do caminho do navegador: a tela
-// `/entrar` (T023, hoje só um marcador), `/auth/refresh` (T022, usado no `reload`) e o login (T021,
-// PR aberto). Pulado até entrarem na main; depois basta trocar `test.skip` por `test`.
+// continua logado. O backend (T027, T015, T021) e a tela `/entrar` (T023) já estão prontos; falta
+// só `POST /auth/refresh` (T022), usado no `reload` do aparelho A e na reabertura do app. Pulado
+// até a T022 entrar na main; depois basta trocar `test.skip` por `test`.
 test.skip('troca de senha em um aparelho derruba o outro na próxima ação', async ({ browser }) => {
   const email = `ana+${Date.now()}@example.com`;
   const senhaAntiga = 'senha-antiga-1';
