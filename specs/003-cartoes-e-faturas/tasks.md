@@ -36,7 +36,7 @@ decisões da 002 (`specs/002-carteiras-e-lancamentos/research.md`).
 ## Phase 5: Integração com o mês
 
 - [x] T010 Resumo e visão do mês com faturas (research R8): `MonthSummaryCalculator` recebendo faturas (Previsto `max(Total, Pago, 0)`, Realizado Pago, recorte por carteira FR-023), `GET /months/{m}` com `invoices[]`, `InvoiceWalletSplitTests` (SC-004) e teste do exemplo da US5 na visão de março. Depende de T008
-- [ ] T011 Linhas "Fatura <Cartão>" na visão do mês (front): situação, Total/Pago/Restante, caixinha pagar/desfazer pagamentos (FR-019, US5.1, US5.6), toque abre a fatura; edição/exclusão de parcela com os diálogos de escopo no formulário rápido (US3.4, US3.5); e2e `mes-faturas.spec.ts`. Depende de T007, T009, T010
+- [x] T011 Linhas "Fatura <Cartão>" na visão do mês (front): situação, Total/Pago/Restante, caixinha pagar/desfazer pagamentos (FR-019, US5.1, US5.6), toque abre a fatura; edição/exclusão de parcela com os diálogos de escopo no formulário rápido (US3.4, US3.5); e2e `mes-faturas.spec.ts`. Depende de T007, T009, T010
 
 ## Phase 6: Polish
 
