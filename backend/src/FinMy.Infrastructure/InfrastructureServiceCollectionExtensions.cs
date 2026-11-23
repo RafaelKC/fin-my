@@ -43,6 +43,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddMemoryCache();
         services.AddScoped<ISessionRegistry, SessionRegistry>();
         services.AddScoped<IRefreshTokenStore, RefreshTokenStore>();
+        services.AddScoped<IAccountStore, AccountStore>();
 
         return services;
     }
