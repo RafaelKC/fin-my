@@ -3,6 +3,7 @@ using FinMy.Infrastructure.Auth;
 using FinMy.Infrastructure.Context;
 using FinMy.Infrastructure.Email;
 using FinMy.Infrastructure.Jobs;
+using FinMy.Infrastructure.Months;
 using FinMy.Infrastructure.Persistence;
 using FinMy.Infrastructure.Persistence.Interceptors;
 using FinMy.Infrastructure.Time;
@@ -52,6 +53,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IDeletionStore, DeletionStore>();
         services.AddScoped<IWalletStore, WalletStore>();
         services.AddScoped<ITransferStore, TransferStore>();
+        services.AddScoped<IMonthReader, MonthReader>();
         services.AddScoped<IIdempotencyStore, IdempotencyStore>();
         services.AddScoped<IEntryStore, EntryStore>();
 
