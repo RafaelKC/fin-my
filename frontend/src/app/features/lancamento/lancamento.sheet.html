@@ -10,6 +10,17 @@
 
   <div class="corpo" role="group" aria-labelledby="lancamento-titulo">
     <div class="tipos" role="radiogroup" aria-label="Tipo de lançamento">
+      @if (!editando) {
+        <button
+          type="button"
+          role="radio"
+          class="tipo"
+          [attr.aria-checked]="kind() === 'card'"
+          (click)="escolherTipo('card')"
+        >
+          Cartão
+        </button>
+      }
       <button
         type="button"
         role="radio"
@@ -43,12 +54,18 @@
 
     <app-amount-input
       label="Valor"
+      [allowNonPositive]="ehCartao()"
       [ngModel]="amount()"
       (ngModelChange)="amount.set($event)"
       [ngModelOptions]="{ standalone: true }"
     />
     @if (tentou() && erroValor(); as mensagem) {
       <p class="erro" role="alert" data-testid="erro-valor">{{ mensagem }}</p>
+    }
+    @if (ehCredito()) {
+      <p class="aviso" role="status" data-testid="aviso-credito">
+        Será lançado como estorno/crédito.
+      </p>
     }
 
     <div class="campo">
@@ -85,7 +102,9 @@
     </div>
 
     <div class="campo">
-      <label for="lancamento-data">Data</label>
+      <label for="lancamento-data">{{
+        ehCartao() && emAndamento() ? 'Data da compra' : 'Data'
+      }}</label>
       <input
         id="lancamento-data"
         type="date"
@@ -94,97 +113,218 @@
       />
     </div>
 
-    <div class="campo">
-      @if (carregandoCarteiras()) {
-        <span class="rotulo">Carteira</span>
-        <p role="status">Carregando…</p>
-      } @else if (carteiras().length === 0) {
-        <span class="rotulo">Carteira</span>
-        @if (!criandoCarteira()) {
-          <p class="ajuda">Você ainda não tem carteiras.</p>
-          <button type="button" class="botao secundario" (click)="abrirCriarCarteira()">
-            Criar carteira
+    @if (ehCartao()) {
+      <div class="campo">
+        @if (carregandoCartoes()) {
+          <span class="rotulo">Cartão</span>
+          <p role="status">Carregando…</p>
+        } @else if (erroCartoes(); as mensagem) {
+          <span class="rotulo">Cartão</span>
+          <p class="erro" role="alert" data-testid="erro-cartoes">{{ mensagem }}</p>
+        } @else if (cartoes().length === 0) {
+          <span class="rotulo">Cartão</span>
+          <p class="ajuda" data-testid="sem-cartoes">Você ainda não tem cartões.</p>
+          <button
+            type="button"
+            class="botao secundario"
+            data-testid="novo-cartao"
+            (click)="irParaNovoCartao()"
+          >
+            Cadastrar cartão
           </button>
         } @else {
-          <div class="mini" role="group" aria-label="Nova carteira">
-            <label for="nova-carteira-nome">Nome da carteira</label>
-            <input
-              id="nova-carteira-nome"
-              type="text"
-              autocomplete="off"
-              maxlength="40"
-              [value]="novaNome()"
-              (input)="novaNome.set($any($event.target).value)"
-            />
-            <label for="nova-carteira-saldo">Saldo inicial</label>
-            <input
-              id="nova-carteira-saldo"
-              type="text"
-              inputmode="decimal"
-              autocomplete="off"
-              [value]="novaSaldo()"
-              (input)="novaSaldo.set($any($event.target).value)"
-            />
-            @if (previaSaldoNovo(); as previa) {
-              <p class="ajuda" data-testid="nova-carteira-previa">{{ previa }}</p>
+          <label for="lancamento-cartao">Cartão</label>
+          <select
+            id="lancamento-cartao"
+            [value]="cardId()"
+            (change)="escolherCartao($any($event.target).value)"
+          >
+            @for (c of cartoes(); track c.id) {
+              <option [value]="c.id" [selected]="c.id === cardId()">{{ c.name }}</option>
             }
-            @if (novaErro(); as mensagem) {
-              <p class="erro" role="alert" data-testid="erro-nova-carteira">{{ mensagem }}</p>
+          </select>
+        }
+        @if (tentou() && erroCartao(); as mensagem) {
+          <p class="erro" role="alert" data-testid="erro-cartao">{{ mensagem }}</p>
+        }
+      </div>
+
+      @if (cartaoEscolhido() !== null) {
+        <div class="campo">
+          <label for="lancamento-parcelas">{{
+            emAndamento() ? 'Total de parcelas' : 'Parcelas'
+          }}</label>
+          <select
+            id="lancamento-parcelas"
+            [value]="parcelas()"
+            (change)="escolherParcelas($any($event.target).value)"
+          >
+            @for (n of opcoesParcelas; track n) {
+              <option [value]="n" [selected]="n === parcelas()">{{ n }}x</option>
             }
-            <button
-              type="button"
-              class="botao secundario"
-              [disabled]="ocupado()"
-              (click)="criarCarteira()"
-            >
-              Criar
-            </button>
+          </select>
+        </div>
+
+        @if (parcelas() > 1 && !emAndamento()) {
+          <div class="campo">
+            <span class="rotulo" id="lancamento-modo">O valor digitado é</span>
+            <div class="tipos" role="radiogroup" aria-labelledby="lancamento-modo">
+              <button
+                type="button"
+                role="radio"
+                class="tipo"
+                [attr.aria-checked]="modoParcela() === 'total_amount'"
+                (click)="modoParcela.set('total_amount')"
+              >
+                Valor total
+              </button>
+              <button
+                type="button"
+                role="radio"
+                class="tipo"
+                [attr.aria-checked]="modoParcela() === 'installment_amount'"
+                (click)="modoParcela.set('installment_amount')"
+              >
+                Valor da parcela
+              </button>
+            </div>
           </div>
         }
-      } @else {
-        <label for="lancamento-carteira">{{ ehTransferencia() ? 'De' : 'Carteira' }}</label>
-        <select
-          id="lancamento-carteira"
-          [value]="walletId()"
-          (change)="escolherCarteira($any($event.target).value)"
-        >
-          @for (w of carteiras(); track w.id) {
-            <option [value]="w.id" [selected]="w.id === walletId()">{{ w.name }}</option>
-          }
-        </select>
-        @if (avisoDataAnterior()) {
-          <p class="aviso" role="status" data-testid="aviso-data-anterior">
-            Esta data é anterior ao saldo inicial da carteira. O saldo inicial já deveria incluir
-            este valor.
-          </p>
-        }
-      }
-      @if (ehTransferencia() && carteiras().length > 0) {
-        <label for="lancamento-destino">Para</label>
-        <select
-          id="lancamento-destino"
-          [value]="toWalletId()"
-          (change)="escolherDestino($any($event.target).value)"
-        >
-          @if (toWalletId() === '') {
-            <option value="" selected>Escolha a carteira</option>
-          }
-          @for (w of carteiras(); track w.id) {
-            <option [value]="w.id" [selected]="w.id === toWalletId()">{{ w.name }}</option>
-          }
-        </select>
-        @if (erroDestino(); as mensagem) {
-          @if (tentou()) {
-            <p class="erro" role="alert" data-testid="erro-destino">{{ mensagem }}</p>
-          }
-        }
-      }
-      @if (tentou() && !carregandoCarteiras() && walletId() === '' && !criandoCarteira()) {
-        <p class="erro" role="alert" data-testid="erro-carteira">Escolha uma carteira.</p>
-      }
-    </div>
 
-    @if (!ehTransferencia()) {
+        <label class="opcao">
+          <input
+            type="checkbox"
+            data-testid="em-andamento"
+            [checked]="emAndamento()"
+            (change)="escolherAndamento($any($event.target).checked)"
+          />
+          Parcelamento em andamento
+        </label>
+        @if (emAndamento()) {
+          <div class="mini" role="group" aria-label="Parcelamento em andamento">
+            <p class="ajuda">
+              O valor digitado é o da parcela; só as parcelas restantes são criadas.
+            </p>
+            <label for="lancamento-proxima">Próxima parcela</label>
+            <input
+              id="lancamento-proxima"
+              type="number"
+              inputmode="numeric"
+              min="1"
+              [attr.max]="parcelas()"
+              [value]="proximaParcela()"
+              (input)="escolherProximaParcela($any($event.target).value)"
+            />
+            <label for="lancamento-fatura-parcela">Fatura da parcela {{ proximaParcela() }}</label>
+            <input
+              id="lancamento-fatura-parcela"
+              type="month"
+              [value]="faturaEmAndamento()"
+              (input)="faturaManual.set($any($event.target).value)"
+            />
+          </div>
+        }
+        @if (tentou() && erroParcelas(); as mensagem) {
+          <p class="erro" role="alert" data-testid="erro-parcelas">{{ mensagem }}</p>
+        }
+
+        @if (previaCompra(); as previa) {
+          <p class="previa" role="status" data-testid="previa-fatura">{{ previa }}</p>
+        }
+      }
+    } @else {
+      <div class="campo">
+        @if (carregandoCarteiras()) {
+          <span class="rotulo">Carteira</span>
+          <p role="status">Carregando…</p>
+        } @else if (carteiras().length === 0) {
+          <span class="rotulo">Carteira</span>
+          @if (!criandoCarteira()) {
+            <p class="ajuda">Você ainda não tem carteiras.</p>
+            <button type="button" class="botao secundario" (click)="abrirCriarCarteira()">
+              Criar carteira
+            </button>
+          } @else {
+            <div class="mini" role="group" aria-label="Nova carteira">
+              <label for="nova-carteira-nome">Nome da carteira</label>
+              <input
+                id="nova-carteira-nome"
+                type="text"
+                autocomplete="off"
+                maxlength="40"
+                [value]="novaNome()"
+                (input)="novaNome.set($any($event.target).value)"
+              />
+              <label for="nova-carteira-saldo">Saldo inicial</label>
+              <input
+                id="nova-carteira-saldo"
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                [value]="novaSaldo()"
+                (input)="novaSaldo.set($any($event.target).value)"
+              />
+              @if (previaSaldoNovo(); as previa) {
+                <p class="ajuda" data-testid="nova-carteira-previa">{{ previa }}</p>
+              }
+              @if (novaErro(); as mensagem) {
+                <p class="erro" role="alert" data-testid="erro-nova-carteira">{{ mensagem }}</p>
+              }
+              <button
+                type="button"
+                class="botao secundario"
+                [disabled]="ocupado()"
+                (click)="criarCarteira()"
+              >
+                Criar
+              </button>
+            </div>
+          }
+        } @else {
+          <label for="lancamento-carteira">{{ ehTransferencia() ? 'De' : 'Carteira' }}</label>
+          <select
+            id="lancamento-carteira"
+            [value]="walletId()"
+            (change)="escolherCarteira($any($event.target).value)"
+          >
+            @for (w of carteiras(); track w.id) {
+              <option [value]="w.id" [selected]="w.id === walletId()">{{ w.name }}</option>
+            }
+          </select>
+          @if (avisoDataAnterior()) {
+            <p class="aviso" role="status" data-testid="aviso-data-anterior">
+              Esta data é anterior ao saldo inicial da carteira. O saldo inicial já deveria incluir
+              este valor.
+            </p>
+          }
+        }
+        @if (ehTransferencia() && carteiras().length > 0) {
+          <label for="lancamento-destino">Para</label>
+          <select
+            id="lancamento-destino"
+            [value]="toWalletId()"
+            (change)="escolherDestino($any($event.target).value)"
+          >
+            @if (toWalletId() === '') {
+              <option value="" selected>Escolha a carteira</option>
+            }
+            @for (w of carteiras(); track w.id) {
+              <option [value]="w.id" [selected]="w.id === toWalletId()">{{ w.name }}</option>
+            }
+          </select>
+          @if (erroDestino(); as mensagem) {
+            @if (tentou()) {
+              <p class="erro" role="alert" data-testid="erro-destino">{{ mensagem }}</p>
+            }
+          }
+        }
+        @if (tentou() && !carregandoCarteiras() && walletId() === '' && !criandoCarteira()) {
+          <p class="erro" role="alert" data-testid="erro-carteira">Escolha uma carteira.</p>
+        }
+      </div>
+    }
+
+    @if (!ehTransferencia() && !ehCartao()) {
       <div class="campo">
         <span class="rotulo" id="lancamento-situacao">Situação</span>
         <div class="tipos" role="radiogroup" aria-labelledby="lancamento-situacao">
@@ -221,7 +361,7 @@
     </button>
     @if (maisOpcoes()) {
       <div id="lancamento-mais" class="mais-corpo">
-        @if (!ehTransferencia()) {
+        @if (!ehTransferencia() && !ehCartao()) {
           <div class="campo">
             <label for="lancamento-mes">Mês de referência</label>
             <input

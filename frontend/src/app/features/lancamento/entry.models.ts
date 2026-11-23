@@ -43,6 +43,8 @@ export interface EntrySuggestion {
   description: string;
   uses: number;
   walletId?: string | null;
+  /** Só em `kind=card_purchase`: cartão da compra mais recente com a descrição (`null` se arquivado). */
+  creditCardId?: string | null;
 }
 
 export const DESCRICAO_MAX = 80;

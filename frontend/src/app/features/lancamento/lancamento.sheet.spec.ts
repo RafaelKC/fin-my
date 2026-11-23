@@ -87,7 +87,11 @@ describe('LancamentoSheet', () => {
     await digitar('#lancamento-descricao', descricao);
   }
 
-  beforeEach(() => localStorage.clear());
+  // Primeiro uso abre em Cartão (003 FR-010); estes testes partem de Saída.
+  beforeEach(() => {
+    localStorage.clear();
+    localStorage.setItem('finmy.prefs.v1', JSON.stringify({ lastKind: 'expense' }));
+  });
   afterEach(() => {
     fixture.destroy();
     // sugestões pendentes de quem digitou a descrição não são o foco destes testes

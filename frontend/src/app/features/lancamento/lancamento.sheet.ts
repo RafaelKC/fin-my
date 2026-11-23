@@ -12,16 +12,32 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 import { Subject, catchError, of, switchMap, timer } from 'rxjs';
 import { asProblem, problemMessage } from '../../core/errors/problem-details';
-import { formatBrl, monthOfDate, parseValueExpression, today } from '../../core/money';
+import {
+  InstallmentMode,
+  YearMonth,
+  formatBrl,
+  invoiceFor,
+  isYearMonth,
+  monthOfDate,
+  parseValueExpression,
+  today,
+} from '../../core/money';
 import { DevicePrefsService, LancamentoKind } from '../../core/prefs/device-prefs.service';
 import { AmountInput } from '../../shared/amount-input/amount-input';
 import { WALLET_COLORS, Wallet } from '../carteiras/wallet.models';
 import { WalletsService } from '../carteiras/wallets.service';
+import { ConfirmarData, ConfirmarDialog, ConfirmarResultado } from '../carteiras/confirmar.dialog';
+import { CreditCardOverview } from '../cartoes/card.models';
+import { CardsService } from '../cartoes/cards.service';
+import { AVISO_CREDITO, CODIGO_FATURA_PAGA, CardPurchaseCreate } from './card-purchase.models';
+import { CardPurchasesService } from './card-purchases.service';
+import { PARCELAS_MAX, parseValorCartao, previaCompra } from './compra-cartao-logic';
 import { EntriesService } from './entries.service';
 import { TransfersService } from './transfers.service';
 import { ExclusaoService } from './exclusao.service';
@@ -44,6 +60,8 @@ export const MENSAGEM_SEM_CONEXAO_LANCAMENTO =
 export const ERRO_MESMA_CARTEIRA = 'Escolha carteiras diferentes.';
 export const MENSAGEM_CONFLITO =
   'Este lançamento foi alterado em outro aparelho. Os dados foram recarregados; confira e salve de novo.';
+export const ERRO_CREDITO_A_VISTA = 'Estorno ou crédito é sempre à vista.';
+export const AVISO_ESTORNO = 'Lançado como estorno/crédito';
 export const AVISO_DATA_ANTERIOR =
   'Esta data é anterior ao saldo inicial da carteira. O saldo inicial já deveria incluir este valor.';
 
@@ -72,6 +90,9 @@ interface Rascunho {
   /** Carteira de destino da transferência (rascunhos antigos não têm). */
   toWalletId?: string;
   toManual?: boolean;
+  /** Cartão da aba Cartão (rascunhos antigos não têm). */
+  cardId?: string;
+  cardManual?: boolean;
   status: EntryStatus | null;
   refMonth: string | null;
   notes: string;
@@ -96,6 +117,10 @@ export class LancamentoSheet {
   private readonly entries = inject(EntriesService);
   private readonly transfers = inject(TransfersService);
   private readonly wallets = inject(WalletsService);
+  private readonly cards = inject(CardsService);
+  private readonly compras = inject(CardPurchasesService);
+  private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
   private readonly prefs = inject(DevicePrefsService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
@@ -129,6 +154,25 @@ export class LancamentoSheet {
   protected readonly notes = signal('');
   protected readonly maisOpcoes = signal(false);
 
+  // aba Cartão (003)
+  protected readonly parcelasMax = PARCELAS_MAX;
+  protected readonly opcoesParcelas = Array.from({ length: PARCELAS_MAX }, (_, i) => i + 1);
+  protected readonly cartoes = signal<CreditCardOverview[]>([]);
+  protected readonly carregandoCartoes = signal(false);
+  protected readonly erroCartoes = signal<string | null>(null);
+  private cartoesPedidos = false;
+  protected readonly cardId = signal('');
+  /** `true` quando o cartão foi escolhido à mão: sugestões não o trocam mais (FR-011). */
+  private readonly cardManual = signal(false);
+  /** N: total de parcelas (1 = à vista). */
+  protected readonly parcelas = signal(1);
+  protected readonly modoParcela = signal<Exclude<InstallmentMode, 'in_progress'>>('total_amount');
+  protected readonly emAndamento = signal(false);
+  /** p: próxima parcela do parcelamento em andamento. */
+  protected readonly proximaParcela = signal(1);
+  /** Fatura da parcela p escolhida à mão; `null` = fatura atual do cartão (FR-014). */
+  protected readonly faturaManual = signal<string | null>(null);
+
   protected readonly carteiras = signal<Wallet[]>([]);
   protected readonly carregandoCarteiras = signal(true);
   protected readonly sugestoes = signal<EntrySuggestion[]>([]);
@@ -157,12 +201,69 @@ export class LancamentoSheet {
     return DATA.test(this.date()) ? monthOfDate(this.date()) : '';
   });
   protected readonly ehTransferencia = computed(() => this.kind() === 'transfer');
+  protected readonly ehCartao = computed(() => this.kind() === 'card');
   protected readonly descricaoPadrao = DESCRICAO_TRANSFERENCIA;
   protected readonly rotuloRealizada = computed(() =>
     this.kind() === 'income' ? 'Recebida' : 'Paga',
   );
 
-  protected readonly valor = computed(() => parseValueExpression(this.amount()));
+  protected readonly valor = computed(() =>
+    this.ehCartao() ? parseValorCartao(this.amount()) : parseValueExpression(this.amount()),
+  );
+  protected readonly cartaoEscolhido = computed(
+    () => this.cartoes().find((c) => c.id === this.cardId()) ?? null,
+  );
+  /** Fatura atual do cartão hoje: padrão da fatura da parcela p (FR-014). */
+  private readonly faturaAtual = computed<YearMonth | null>(() => {
+    const c = this.cartaoEscolhido();
+    return c === null ? null : invoiceFor(this.hoje(), c.closingDay, c.dueDay);
+  });
+  protected readonly faturaEmAndamento = computed(
+    () => this.faturaManual() ?? this.faturaAtual() ?? '',
+  );
+  /** RT-02/R6: valor negativo vira estorno (crédito). */
+  protected readonly ehCredito = computed(() => {
+    const v = this.valor();
+    return this.ehCartao() && v.ok && v.cents < 0;
+  });
+  protected readonly erroParcelas = computed(() => {
+    if (!this.ehCartao()) return null;
+    const total = this.parcelas();
+    if (this.ehCredito() && (total > 1 || this.emAndamento())) return ERRO_CREDITO_A_VISTA;
+    if (!this.emAndamento()) return null;
+    const p = this.proximaParcela();
+    if (!Number.isInteger(p) || p < 1 || p > total) {
+      return `A próxima parcela deve estar entre 1 e ${total}.`;
+    }
+    return isYearMonth(this.faturaEmAndamento()) ? null : 'Informe a fatura da parcela.';
+  });
+  protected readonly erroCartao = computed(() => {
+    if (!this.ehCartao() || this.carregandoCartoes() || this.cartoes().length === 0) return null;
+    return this.cartaoEscolhido() === null ? 'Escolha um cartão.' : null;
+  });
+  /** Linha "Fatura de março — vence 25/03" / "3x de …" (FR-010, US3.3); porta TS, sem API. */
+  protected readonly previaCompra = computed(() => {
+    const c = this.cartaoEscolhido();
+    if (!this.ehCartao() || c === null) return null;
+    const v = this.valor();
+    const faturaEmAndamento = this.faturaEmAndamento();
+    if (this.emAndamento() && !isYearMonth(faturaEmAndamento)) return null;
+    try {
+      return previaCompra({
+        date: this.date(),
+        closingDay: c.closingDay,
+        dueDay: c.dueDay,
+        cents: v.ok ? Math.abs(v.cents) : null,
+        parcelas: this.parcelas(),
+        modo: this.modoParcela(),
+        emAndamento: this.emAndamento(),
+        proxima: this.proximaParcela(),
+        faturaEmAndamento,
+      });
+    } catch {
+      return null;
+    }
+  });
   protected readonly carteiraEscolhida = computed(
     () => this.carteiras().find((w) => w.id === this.walletId()) ?? null,
   );
@@ -219,7 +320,9 @@ export class LancamentoSheet {
           // Transferência não tem sugestões (contracts/ui-rotas.md).
           if (kind === 'transfer' || q.trim().length < 1) return of<EntrySuggestion[]>([]);
           return timer(120).pipe(
-            switchMap(() => this.entries.suggestions(q.trim(), kind)),
+            switchMap(() =>
+              this.entries.suggestions(q.trim(), kind === 'card' ? 'card_purchase' : kind),
+            ),
             catchError(() => of<EntrySuggestion[]>([])),
           );
         }),
@@ -247,6 +350,8 @@ export class LancamentoSheet {
         },
       });
 
+    if (this.kind() === 'card') this.carregarCartoes();
+
     effect(() => this.guardarRascunho());
 
     afterNextRender(() => this.valorCampo()?.focus());
@@ -257,6 +362,7 @@ export class LancamentoSheet {
     this.kind.set(kind);
     this.sugestoes.set([]);
     this.termo$.next(this.description());
+    if (kind === 'card') this.carregarCartoes();
     if (!this.walletManual()) this.walletId.set(this.carteiraPadrao());
     this.resolverDestino();
   }
@@ -271,6 +377,12 @@ export class LancamentoSheet {
     this.description.set(s.description);
     this.termo$.next('');
     this.sugestoes.set([]);
+    if (this.ehCartao()) {
+      // FR-011: o cartão da compra mais recente, se ativo e ainda não alterado à mão.
+      const ativo = s.creditCardId && this.cartoes().some((c) => c.id === s.creditCardId);
+      if (!this.cardManual() && ativo) this.cardId.set(s.creditCardId!);
+      return;
+    }
     const ativa = s.walletId && this.carteiras().some((w) => w.id === s.walletId);
     if (!this.walletManual() && ativa) this.walletId.set(s.walletId!);
   }
@@ -279,6 +391,32 @@ export class LancamentoSheet {
     this.walletId.set(id);
     this.walletManual.set(true);
     this.resolverDestino();
+  }
+
+  protected escolherCartao(id: string): void {
+    this.cardId.set(id);
+    this.cardManual.set(true);
+    this.faturaManual.set(null);
+  }
+
+  protected escolherParcelas(valor: string): void {
+    this.parcelas.set(Number(valor));
+    if (this.proximaParcela() > this.parcelas()) this.proximaParcela.set(this.parcelas());
+  }
+
+  protected escolherProximaParcela(valor: string): void {
+    this.proximaParcela.set(Number(valor));
+  }
+
+  protected escolherAndamento(ligado: boolean): void {
+    this.emAndamento.set(ligado);
+    if (ligado && this.parcelas() < 2) this.parcelas.set(2);
+    if (ligado) this.proximaParcela.set(Math.min(this.proximaParcela(), this.parcelas()));
+  }
+
+  protected irParaNovoCartao(): void {
+    this.ref.close(undefined);
+    void this.router.navigateByUrl('/cartoes/novo');
   }
 
   protected escolherDestino(id: string): void {
@@ -348,6 +486,11 @@ export class LancamentoSheet {
       return;
     }
 
+    if (this.ehCartao()) {
+      this.salvarCompra(lancarOutro, false);
+      return;
+    }
+
     const corpo = this.montarCorpo();
     if (corpo === null) return;
 
@@ -384,6 +527,71 @@ export class LancamentoSheet {
         );
       },
     });
+  }
+
+  /** US2–US4: cria a compra (à vista, parcelas ou em andamento); 409 de fatura paga pede confirmação (R5). */
+  private salvarCompra(lancarOutro: boolean, confirmarFaturaPaga: boolean): void {
+    const corpo = this.montarCorpoCompra(confirmarFaturaPaga);
+    if (corpo === null) return;
+
+    // Mesma regra de chave das demais criações: o corpo mudou (ex.: confirmação) → chave nova.
+    const serial = JSON.stringify(corpo);
+    if (serial !== this.ultimoCorpo) {
+      this.chave = novaChaveIdempotencia();
+      this.ultimoCorpo = serial;
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      this.avisarSemConexao();
+      return;
+    }
+
+    this.ocupado.set(true);
+    this.compras.create(corpo, this.chave).subscribe({
+      next: (resultado) => {
+        this.ocupado.set(false);
+        const credito = resultado.warnings.includes(AVISO_CREDITO);
+        this.aoSalvar(
+          'card',
+          corpo.creditCardId,
+          lancarOutro,
+          undefined,
+          credito ? `${AVISO_ESTORNO}.` : 'Lançamento salvo.',
+        );
+      },
+      error: (error: unknown) => {
+        this.ocupado.set(false);
+        if (this.semConexao(error)) {
+          this.avisarSemConexao();
+          return;
+        }
+        const problem = asProblem(error);
+        if (problem?.code === CODIGO_FATURA_PAGA) {
+          this.pedirConfirmacaoFaturaPaga(problem.detail, lancarOutro);
+          return;
+        }
+        this.erro.set(
+          problem?.code === 'not_found'
+            ? 'Cartão não encontrado. Escolha outro cartão.'
+            : problemMessage(error),
+        );
+      },
+    });
+  }
+
+  private pedirConfirmacaoFaturaPaga(detail: string | undefined, lancarOutro: boolean): void {
+    const data: ConfirmarData = {
+      titulo: 'Fatura já paga',
+      mensagem: detail ?? 'Esta fatura já foi paga e voltará a ter valor em aberto',
+      confirmar: 'Lançar mesmo assim',
+    };
+    this.dialog
+      .open<ConfirmarDialog, ConfirmarData, ConfirmarResultado>(ConfirmarDialog, { data })
+      .afterClosed()
+      .subscribe((resultado) => {
+        if (resultado === null || resultado === undefined) return;
+        this.salvarCompra(lancarOutro, true);
+      });
   }
 
   private salvarTransferencia(lancarOutro: boolean): void {
@@ -593,8 +801,82 @@ export class LancamentoSheet {
     return corpo;
   }
 
+  private montarCorpoCompra(confirmarFaturaPaga: boolean): CardPurchaseCreate | null {
+    const descricao = this.description().trim();
+    const notas = this.notes().trim();
+    if (
+      !this.valor().ok ||
+      this.erroDescricao() !== null ||
+      !DATA.test(this.date()) ||
+      this.cartaoEscolhido() === null ||
+      this.erroParcelas() !== null ||
+      notas.length > OBSERVACAO_MAX
+    ) {
+      return null;
+    }
+
+    const corpo: CardPurchaseCreate = {
+      description: descricao,
+      amount: this.amount().trim(),
+      date: this.date(),
+      creditCardId: this.cardId(),
+    };
+    if (notas !== '') corpo.notes = notas;
+    if (this.emAndamento()) {
+      corpo.installments = {
+        total: this.parcelas(),
+        mode: 'in_progress',
+        nextNumber: this.proximaParcela(),
+        firstInvoiceMonth: this.faturaEmAndamento(),
+      };
+    } else if (this.parcelas() > 1) {
+      corpo.installments = { total: this.parcelas(), mode: this.modoParcela() };
+    }
+    if (confirmarFaturaPaga) corpo.confirmPaidInvoice = true;
+    return corpo;
+  }
+
+  private carregarCartoes(): void {
+    if (this.cartoesPedidos) return;
+    this.cartoesPedidos = true;
+    this.carregandoCartoes.set(true);
+    this.cards
+      .list('false')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (lista) => {
+          this.cartoes.set(lista);
+          this.carregandoCartoes.set(false);
+          this.resolverCartao();
+        },
+        error: (error: unknown) => {
+          this.carregandoCartoes.set(false);
+          this.cartoesPedidos = false;
+          this.erroCartoes.set(problemMessage(error));
+        },
+      });
+  }
+
+  /** FR-010: último cartão usado se ainda ativo; senão o primeiro ativo em ordem alfabética. */
+  private cartaoPadrao(): string {
+    const ativos = this.cartoes();
+    const ultimo = this.prefs.lastCardId();
+    return (
+      ativos.find((c) => c.id === ultimo)?.id ??
+      [...ativos].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))[0]?.id ??
+      ''
+    );
+  }
+
+  private resolverCartao(): void {
+    if (!this.cartoes().some((c) => c.id === this.cardId())) {
+      this.cardManual.set(false);
+      this.cardId.set(this.cartaoPadrao());
+    }
+  }
+
   private montarCorpo(): EntryCreate | null {
-    if (this.kind() === 'transfer') return null;
+    if (this.kind() === 'transfer' || this.kind() === 'card') return null;
     const valor = this.valor();
     const descricao = this.description().trim();
     const notas = this.notes().trim();
@@ -629,10 +911,11 @@ export class LancamentoSheet {
     walletId: string,
     lancarOutro: boolean,
     entry: Entry | undefined,
+    mensagem = 'Lançamento salvo.',
   ): void {
     this.prefs.rememberSaved(kind, walletId);
     this.prefs.clearDraft();
-    this.snackBar.open('Lançamento salvo.', undefined, { duration: 4000, verticalPosition: 'top' });
+    this.snackBar.open(mensagem, undefined, { duration: 4000, verticalPosition: 'top' });
 
     if (!lancarOutro) {
       this.finalizado = true;
@@ -648,6 +931,11 @@ export class LancamentoSheet {
     this.refManual.set(null);
     this.walletManual.set(false);
     this.toManual.set(false);
+    this.cardManual.set(false);
+    this.parcelas.set(1);
+    this.emAndamento.set(false);
+    this.proximaParcela.set(1);
+    this.faturaManual.set(null);
     this.sugestoes.set([]);
     this.termo$.next('');
     this.tentou.set(false);
@@ -725,7 +1013,9 @@ export class LancamentoSheet {
     if (r === null || typeof r !== 'object') return;
     if ((r.amount ?? '') === '' && (r.description ?? '') === '' && (r.notes ?? '') === '') return;
 
-    if (r.kind === 'expense' || r.kind === 'income' || r.kind === 'transfer') this.kind.set(r.kind);
+    if (r.kind === 'card' || r.kind === 'expense' || r.kind === 'income' || r.kind === 'transfer') {
+      this.kind.set(r.kind);
+    }
     this.amount.set(r.amount ?? '');
     this.description.set(r.description ?? '');
     this.notes.set(r.notes ?? '');
@@ -735,6 +1025,10 @@ export class LancamentoSheet {
     if (r.walletId) {
       this.walletId.set(r.walletId);
       this.walletManual.set(r.walletManual === true);
+    }
+    if (r.cardId) {
+      this.cardId.set(r.cardId);
+      this.cardManual.set(r.cardManual === true);
     }
     if (r.toWalletId) {
       this.toWalletId.set(r.toWalletId);
@@ -755,6 +1049,8 @@ export class LancamentoSheet {
       walletManual: this.walletManual(),
       toWalletId: this.toWalletId(),
       toManual: this.toManual(),
+      cardId: this.cardId(),
+      cardManual: this.cardManual(),
       status: this.statusManual(),
       refMonth: this.refManual(),
       notes: this.notes(),

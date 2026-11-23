@@ -75,7 +75,7 @@ export class EntriesService {
     return this.api.get<SearchResult>(`/entries/search${texto ? `?${texto}` : ''}`);
   }
 
-  suggestions(q: string, kind: EntryKind): Observable<EntrySuggestion[]> {
+  suggestions(q: string, kind: EntryKind | 'card_purchase'): Observable<EntrySuggestion[]> {
     return this.api.get<EntrySuggestion[]>(
       `/entries/suggestions?q=${encodeURIComponent(q)}&kind=${kind}`,
     );

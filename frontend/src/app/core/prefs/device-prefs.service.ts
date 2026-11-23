@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
-/** Tipos que o formulário rápido grava por aparelho (FR-009). */
-export type LancamentoKind = 'expense' | 'income' | 'transfer';
+/** Tipos que o formulário rápido grava por aparelho (FR-009; `card` = aba Cartão, 003 FR-010). */
+export type LancamentoKind = 'card' | 'expense' | 'income' | 'transfer';
 
 const PREFS_KEY = 'finmy.prefs.v1';
 const DRAFT_KEY = 'finmy.draft.lancamento';
@@ -9,10 +9,12 @@ const DRAFT_KEY = 'finmy.draft.lancamento';
 interface Prefs {
   lastKind?: LancamentoKind;
   lastWalletByKind?: Partial<Record<LancamentoKind, string>>;
+  /** Último cartão usado na aba Cartão (research R9). */
+  lastCardId?: string;
 }
 
 function isKind(value: unknown): value is LancamentoKind {
-  return value === 'expense' || value === 'income' || value === 'transfer';
+  return value === 'card' || value === 'expense' || value === 'income' || value === 'transfer';
 }
 
 /**
@@ -22,10 +24,16 @@ function isKind(value: unknown): value is LancamentoKind {
  */
 @Injectable({ providedIn: 'root' })
 export class DevicePrefsService {
-  /** Último tipo salvo neste aparelho; no primeiro uso, Saída. */
+  /** Último tipo salvo neste aparelho; no primeiro uso, Cartão (003 FR-010). */
   lastKind(): LancamentoKind {
     const kind = this.readPrefs().lastKind;
-    return isKind(kind) ? kind : 'expense';
+    return isKind(kind) ? kind : 'card';
+  }
+
+  /** Último cartão usado, ou `null` se nunca houve uso. */
+  lastCardId(): string | null {
+    const id = this.readPrefs().lastCardId;
+    return typeof id === 'string' && id !== '' ? id : null;
   }
 
   /** Última carteira usada no tipo, ou `null` se nunca houve uso. */
@@ -34,9 +42,13 @@ export class DevicePrefsService {
     return typeof id === 'string' && id !== '' ? id : null;
   }
 
-  /** Registra o tipo e a carteira de um lançamento salvo. */
+  /** Registra o tipo e a carteira de um lançamento salvo (no tipo Cartão, o id é o do cartão). */
   rememberSaved(kind: LancamentoKind, walletId: string): void {
     const prefs = this.readPrefs();
+    if (kind === 'card') {
+      this.write(PREFS_KEY, { ...prefs, lastKind: kind, lastCardId: walletId });
+      return;
+    }
     this.write(PREFS_KEY, {
       ...prefs,
       lastKind: kind,
