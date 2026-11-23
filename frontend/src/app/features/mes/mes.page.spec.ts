@@ -170,4 +170,24 @@ describe('MesPage', () => {
     el.querySelector<HTMLButtonElement>('[data-testid="lancamento"] .linha')!.click();
     expect(abrirForm).toHaveBeenCalledWith(expect.objectContaining({ id: '1' }));
   });
+
+  it('mostra o aviso de pendências só no mês de hoje (US4.1)', async () => {
+    const pending = { count: 1, toReceiveCents: 30000, toPayCents: 0 };
+    await abrir('/mes/2026-03', visao({ pending }));
+    expect(txt('pendencias-aviso')).toContain('1 pendência de meses anteriores');
+    expect(txt('pendencias-receber')).toBe('R$ 300,00');
+  });
+
+  it('não mostra o aviso em outro mês nem sem pendências', async () => {
+    await abrir(
+      '/mes/2026-04',
+      visao({ month: '2026-04', pending: { count: 1, toReceiveCents: 30000, toPayCents: 0 } }),
+    );
+    expect(el.querySelector('[data-testid="pendencias"]')).toBeNull();
+  });
+
+  it('não mostra o aviso quando não há pendências', async () => {
+    await abrir();
+    expect(el.querySelector('[data-testid="pendencias"]')).toBeNull();
+  });
 });
