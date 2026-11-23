@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AuthService } from '../core/auth/auth.service';
 import { sessao } from '../core/auth/testing';
+import { LancamentoLauncher } from '../features/lancamento/lancamento.launcher';
 import { Shell } from './shell';
 
 describe('Shell', () => {
@@ -41,5 +42,19 @@ describe('Shell', () => {
       'nav[aria-label="Principal"] a[href="/carteiras"]',
     );
     expect(link?.textContent).toContain('Carteiras');
+  });
+
+  it('tem o "+" Lançar na barra, que abre o formulário rápido (FR-008)', () => {
+    const abrir = vi
+      .spyOn(TestBed.inject(LancamentoLauncher), 'abrir')
+      .mockReturnValue(undefined as never);
+    const fixture = TestBed.createComponent(Shell);
+    fixture.detectChanges();
+    const botao = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      'nav[aria-label="Principal"] button[data-testid="lancar"]',
+    );
+    expect(botao?.textContent).toContain('Lançar');
+    botao!.click();
+    expect(abrir).toHaveBeenCalledOnce();
   });
 });

@@ -1,0 +1,68 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { EntriesService } from './entries.service';
+import { Entry } from './entry.models';
+
+describe('EntriesService', () => {
+  let service: EntriesService;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    service = TestBed.inject(EntriesService);
+    http = TestBed.inject(HttpTestingController);
+  });
+  afterEach(() => http.verify());
+
+  it('create envia o corpo com o Idempotency-Key e avisa em criados$', () => {
+    const criado: Entry = {
+      id: 'e1',
+      kind: 'expense',
+      description: 'Tim',
+      amountCents: 4499,
+      date: '2026-03-10',
+      referenceMonth: '2026-03',
+      status: 'settled',
+      walletId: 'w-azul',
+      createdAt: '2026-03-10T15:00:00Z',
+      version: 1,
+    };
+    const avisados: Entry[] = [];
+    service.criados$.subscribe((e) => avisados.push(e));
+
+    let resposta: Entry | undefined;
+    service
+      .create(
+        {
+          kind: 'expense',
+          description: 'Tim',
+          amount: '44,99',
+          date: '2026-03-10',
+          walletId: 'w-azul',
+        },
+        'chave-1',
+      )
+      .subscribe((e) => (resposta = e));
+    const req = http.expectOne('/api/v1/entries');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('chave-1');
+    expect(req.request.body).toMatchObject({ amount: '44,99' });
+    req.flush(criado);
+
+    expect(resposta).toEqual(criado);
+    expect(avisados).toEqual([criado]);
+  });
+
+  it('suggestions codifica o texto e informa o tipo', () => {
+    let lista: unknown;
+    service.suggestions('ti & é', 'income').subscribe((l) => (lista = l));
+    const req = http.expectOne(
+      (r) => r.url === `/api/v1/entries/suggestions?q=${encodeURIComponent('ti & é')}&kind=income`,
+    );
+    req.flush([{ description: 'Tim', uses: 2, walletId: null }]);
+    expect(lista).toEqual([{ description: 'Tim', uses: 2, walletId: null }]);
+  });
+});
