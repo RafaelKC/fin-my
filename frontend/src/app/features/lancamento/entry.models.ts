@@ -17,6 +17,12 @@ export interface EntryCreate {
   notes?: string | null;
 }
 
+/** `EntryUpdate` do contrato: todos os campos mais a `version` lida. */
+export interface EntryUpdate extends Omit<EntryCreate, 'status'> {
+  status: EntryStatus;
+  version: number;
+}
+
 /** `Entry` do contrato (contracts/openapi.yaml). */
 export interface Entry {
   id: string;

@@ -66,3 +66,36 @@ describe('EntriesService', () => {
     expect(lista).toEqual([{ description: 'Tim', uses: 2, walletId: null }]);
   });
 });
+
+describe('EntriesService (situação e edição)', () => {
+  it('PATCH da situação e PUT da edição emitem alterados$', () => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    const http = TestBed.inject(HttpTestingController);
+    const s = TestBed.inject(EntriesService);
+    const vistos: string[] = [];
+    s.alterados$.subscribe((x) => vistos.push(x.id));
+
+    s.setStatus('e1', 'settled').subscribe();
+    const patch = http.expectOne('/api/v1/entries/e1/status');
+    expect(patch.request.method).toBe('PATCH');
+    expect(patch.request.body).toEqual({ status: 'settled' });
+    patch.flush({ id: 'e1' });
+
+    s.update('e1', {
+      kind: 'expense',
+      description: 'Tim',
+      amount: '44,99',
+      date: '2026-03-10',
+      walletId: 'w',
+      status: 'settled',
+      version: 2,
+    }).subscribe();
+    const put = http.expectOne('/api/v1/entries/e1');
+    expect(put.request.method).toBe('PUT');
+    expect(put.request.body.version).toBe(2);
+    put.flush({ id: 'e1' });
+    expect(vistos).toEqual(['e1', 'e1']);
+  });
+});

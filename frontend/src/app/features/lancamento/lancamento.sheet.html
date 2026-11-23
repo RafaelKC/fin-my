@@ -1,6 +1,8 @@
 <div class="folha">
   <header class="topo">
-    <h2 class="titulo" id="lancamento-titulo">Novo lançamento</h2>
+    <h2 class="titulo" id="lancamento-titulo">
+      {{ editando ? 'Editar lançamento' : 'Novo lançamento' }}
+    </h2>
     <button type="button" class="fechar" aria-label="Fechar" (click)="fechar()">
       <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">close</mat-icon>
     </button>
@@ -222,14 +224,16 @@
     >
       Salvar
     </button>
-    <button
-      type="button"
-      class="botao secundario"
-      data-testid="salvar-outro"
-      [disabled]="ocupado()"
-      (click)="salvar(true)"
-    >
-      Salvar e lançar outro
-    </button>
+    @if (!editando) {
+      <button
+        type="button"
+        class="botao secundario"
+        data-testid="salvar-outro"
+        [disabled]="ocupado()"
+        (click)="salvar(true)"
+      >
+        Salvar e lançar outro
+      </button>
+    }
   </footer>
 </div>
