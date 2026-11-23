@@ -25,7 +25,7 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
 
     private sealed record Caller(HttpClient Http, string AccessToken, string RefreshToken, string Email, string Password);
 
-    private sealed record ContaDeA(TestAccount Account, string SecondAccessToken, Guid SessionId, IReadOnlyList<string> Secrets, IReadOnlyList<Guid> Ids, Guid WalletA, Guid WalletA2);
+    private sealed record ContaDeA(TestAccount Account, string SecondAccessToken, Guid SessionId, IReadOnlyList<string> Secrets, IReadOnlyList<Guid> Ids, Guid WalletA, Guid WalletA2, Guid CardA);
 
     private async Task<string> OpenApiJsonAsync()
     {
@@ -71,17 +71,30 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
         bulk.EnsureSuccessStatusCode();
         var batchId = (await bulk.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("deletionBatchId").GetGuid();
 
+        // Cartão de A com compra parcelada (3x) e um pagamento de fatura: ids de cartão, compra, plano e pagamento de A
+        // em rotas novas batem em linhas reais (003).
+        var cartao = await CreateJsonAsync(asA, "/api/v1/credit-cards", new { name = "Cartão Segredo da Alice", closingDay = 18, dueDay = 25, paymentWalletId = azulId, color = "#1E88E5", limit = "3000" });
+        var cartaoId = cartao.GetProperty("id").GetGuid();
+        var compras = await CreateJsonAsync(asA, "/api/v1/card-purchases", new { description = "Casa Segredo da Alice", amount = "100", date = "2026-03-10", creditCardId = cartaoId, notes = "Nota do Cartão da Alice", installments = new { total = 3, mode = "total_amount" } });
+        var compra = compras.GetProperty("purchases")[0];
+        var compraId = compra.GetProperty("id").GetGuid();
+        var planoId = compra.GetProperty("installmentPlanId").GetGuid();
+        var fatura = await CreateJsonAsync(asA, $"/api/v1/credit-cards/{cartaoId}/invoices/2026-03/payments", new { amount = "10,00", date = "2026-03-25", walletId = azulId });
+        var pagamentoId = fatura.GetProperty("payments")[0].GetProperty("id").GetGuid();
+
         var secrets = new[]
         {
             a.Email, "Alice Isolada Segredo", "Espaço Secreto da Alice", a.AccessToken, second.AccessToken,
             "Azul Segredo da Alice", "Verde Segredo da Alice", "Tim Segredo da Alice", "Nota Secreta da Alice", "Salário Segredo da Alice", "Reserva Segredo da Alice",
+            "Cartão Segredo da Alice", "Casa Segredo da Alice", "Nota do Cartão da Alice",
         };
         var ids = new[]
         {
             a.Session.User.Id, a.Session.Tenant.Id, sessionId, Guid.Parse(JwtClaims.Get(second.AccessToken, "sid")!),
             azulId, verdeId, entry.GetProperty("id").GetGuid(), outra.GetProperty("id").GetGuid(), transfer.GetProperty("id").GetGuid(), batchId,
+            cartaoId, compraId, planoId, pagamentoId,
         };
-        return new ContaDeA(a, second.AccessToken, sessionId, secrets, ids, azulId, verdeId);
+        return new ContaDeA(a, second.AccessToken, sessionId, secrets, ids, azulId, verdeId, cartaoId);
     }
 
     private static async Task<JsonElement> CreateJsonAsync(HttpClient http, string path, object body)
@@ -130,6 +143,12 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
             "POST /api/v1/credit-cards/{id}/archive",
             "POST /api/v1/credit-cards/{id}/unarchive",
             "GET /api/v1/credit-cards/{id}/invoice-for",
+            "GET /api/v1/credit-cards/{id}/invoices/{month}",
+            "POST /api/v1/credit-cards/{id}/invoices/{month}/payments",
+            "DELETE /api/v1/credit-cards/{id}/invoices/{month}/payments",
+            "POST /api/v1/credit-cards/{id}/invoices/{month}/carry-over",
+            "PUT /api/v1/invoice-payments/{id}",
+            "DELETE /api/v1/invoice-payments/{id}",
             "POST /api/v1/card-purchases",
             "GET /api/v1/card-purchases/{id}",
             "PUT /api/v1/card-purchases/{id}",
@@ -232,12 +251,18 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
         var b = await NewCallerAsync("Beto Isolado");
         var own = await CreateJsonAsync(b.Http, "/api/v1/wallets", new { name = "Azul do Beto", type = "checking", color = "#1E88E5", initialBalance = "0", initialBalanceDate = "2026-03-01" });
         var ownId = own.GetProperty("id").GetGuid();
+        var ownCard = await CreateJsonAsync(b.Http, "/api/v1/credit-cards", new { name = "Cartão do Beto", closingDay = 18, dueDay = 25, paymentWalletId = ownId, color = "#1E88E5" });
+        var ownCardId = ownCard.GetProperty("id").GetGuid();
+        await CreateJsonAsync(b.Http, "/api/v1/card-purchases", new { description = "Uber do Beto", amount = "12,95", date = "2026-03-10", creditCardId = ownCardId });
 
         var respostas = new Dictionary<string, HttpResponseMessage>
         {
             ["POST /entries"] = await b.Http.PostAsJsonAsync("/api/v1/entries", new { kind = "expense", description = "Tim", amount = "1", date = "2026-03-10", walletId = a.WalletA }),
             ["POST /transfers (origem de A)"] = await b.Http.PostAsJsonAsync("/api/v1/transfers", new { fromWalletId = a.WalletA, toWalletId = ownId, amount = "1", date = "2026-03-10" }),
             ["POST /transfers (destino de A)"] = await b.Http.PostAsJsonAsync("/api/v1/transfers", new { fromWalletId = ownId, toWalletId = a.WalletA2, amount = "1", date = "2026-03-10" }),
+            ["POST /card-purchases (cartão de A)"] = await b.Http.PostAsJsonAsync("/api/v1/card-purchases", new { description = "Uber", amount = "12,95", date = "2026-03-10", creditCardId = a.CardA }),
+            ["POST /credit-cards (carteira de A)"] = await b.Http.PostAsJsonAsync("/api/v1/credit-cards", new { name = "Cartão do Beto", closingDay = 18, dueDay = 25, paymentWalletId = a.WalletA, color = "#1E88E5" }),
+            ["POST /invoices/payments (carteira de A)"] = await b.Http.PostAsJsonAsync($"/api/v1/credit-cards/{ownCardId}/invoices/2026-03/payments", new { amount = "1", date = "2026-03-25", walletId = a.WalletA }),
             ["GET /months (filtro)"] = await b.Http.GetAsync($"/api/v1/months/2026-03?walletIds={a.WalletA}"),
         };
 
