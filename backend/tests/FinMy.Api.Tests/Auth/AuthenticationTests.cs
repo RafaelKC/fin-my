@@ -46,10 +46,10 @@ public class AuthenticationTests(PostgresFixture postgres) : ApiTestBase(postgre
     [Fact]
     public async Task Token_valido_preenche_o_contexto_com_usuario_espaco_e_canal()
     {
-        var request = Request(channel: Channel.Claude);
-        var token = Tokens.IssueAccessToken(request).Token;
+        var session = await Factory.CreateSessionAsync(Channel.Claude);
+        var request = session.Request;
 
-        var response = await GetAsync("/test/whoami", token);
+        var response = await GetAsync("/test/whoami", session.AccessToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         var who = (await response.Content.ReadFromJsonAsync<WhoAmI>(Json))!;
@@ -144,7 +144,7 @@ public class AuthenticationTests(PostgresFixture postgres) : ApiTestBase(postgre
     [Fact]
     public async Task Escrita_autenticada_grava_o_autor_e_o_canal_vindos_do_token()
     {
-        var request = Request(channel: Channel.Claude);
+        var request = (await Factory.CreateSessionAsync(Channel.Claude)).Request;
         using var message = new HttpRequestMessage(HttpMethod.Post, "/test/audited");
         message.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Tokens.IssueAccessToken(request).Token);
 
@@ -159,7 +159,7 @@ public class AuthenticationTests(PostgresFixture postgres) : ApiTestBase(postgre
     [Fact]
     public async Task Contexto_nao_vaza_entre_requisicoes()
     {
-        var token = Tokens.IssueAccessToken(Request()).Token;
+        var token = (await Factory.CreateSessionAsync()).AccessToken;
 
         (await GetAsync("/test/maybe-whoami", token)).StatusCode.ShouldBe(HttpStatusCode.OK);
         var anonymous = await GetAsync("/test/maybe-whoami", null);

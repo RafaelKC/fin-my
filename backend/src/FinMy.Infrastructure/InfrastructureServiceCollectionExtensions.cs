@@ -40,6 +40,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>());
         services.TryAddSingleton<ITokenService, JwtTokenService>();
         services.TryAddSingleton<IPasswordHasher, PasswordHasherAdapter>();
+        services.AddMemoryCache();
+        services.AddScoped<ISessionRegistry, SessionRegistry>();
         services.AddScoped<IRefreshTokenStore, RefreshTokenStore>();
 
         return services;
