@@ -29,7 +29,7 @@ test('passos 1 e 2: cria a conta e vê o Espaço; o mesmo e-mail em maiúsculas 
   const email = `ana+${Date.now()}@exemplo.com`;
 
   await criarConta(page, 'Ana', email, 'segredo123');
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
   await expect(page.getByTestId('nome-do-espaco')).toHaveText('Finanças de Ana');
   await semRolagemHorizontal(page);
 
@@ -52,7 +52,7 @@ test('passo 3: cinco senhas erradas e a sexta tentativa mostra o bloqueio de 15 
   const senha = 'segredo123';
 
   await criarConta(page, 'Bia', email, senha);
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
   await page.context().clearCookies();
 
   await page.goto('/entrar');
@@ -82,7 +82,7 @@ test('passo 6: e-mail inexistente em /esqueci-senha recebe a mesma mensagem e ne
   const confirmacao = 'Se houver conta com este e-mail, enviaremos um link';
 
   await criarConta(page, 'Carla', existente, 'segredo123');
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
   await page.context().clearCookies();
 
   for (const email of [inexistente, existente]) {

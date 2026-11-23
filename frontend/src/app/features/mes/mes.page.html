@@ -1,0 +1,296 @@
+<div
+  class="pagina"
+  (pointerdown)="iniciarDeslize($event)"
+  (pointerup)="terminarDeslize($event)"
+  (pointercancel)="cancelarDeslize()"
+>
+  <header class="cabecalho">
+    <button
+      type="button"
+      class="seta"
+      aria-label="Mês anterior"
+      data-testid="mes-anterior"
+      [disabled]="noMinimo()"
+      (click)="ir(-1)"
+    >
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">chevron_left</mat-icon>
+    </button>
+    <h1 class="titulo" data-testid="mes-titulo">{{ rotuloMes() }}</h1>
+    <button
+      type="button"
+      class="seta"
+      aria-label="Próximo mês"
+      data-testid="mes-seguinte"
+      [disabled]="noMaximo()"
+      (click)="ir(1)"
+    >
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">chevron_right</mat-icon>
+    </button>
+  </header>
+
+  <section class="filtros" aria-label="Filtros">
+    @if (carteiras().length > 1) {
+      <div class="grupo" role="group" aria-label="Carteiras">
+        <button
+          type="button"
+          class="chip"
+          data-testid="filtro-todas-carteiras"
+          [attr.aria-pressed]="carteirasSelecionadas().length === 0"
+          (click)="limparCarteiras()"
+        >
+          Todas as carteiras
+        </button>
+        @for (w of carteiras(); track w.id) {
+          <button
+            type="button"
+            class="chip"
+            data-testid="filtro-carteira"
+            [attr.aria-pressed]="carteirasSelecionadas().includes(w.id)"
+            (click)="alternarCarteira(w.id)"
+          >
+            <span class="cor" [style.background]="w.color" aria-hidden="true"></span>
+            {{ w.name }}
+          </button>
+        }
+      </div>
+    }
+    <div class="grupo" role="radiogroup" aria-label="Situação">
+      <button
+        type="button"
+        role="radio"
+        class="chip"
+        [attr.aria-checked]="situacao() === null"
+        (click)="escolherSituacao(null)"
+      >
+        Todas
+      </button>
+      <button
+        type="button"
+        role="radio"
+        class="chip"
+        [attr.aria-checked]="situacao() === 'planned'"
+        (click)="escolherSituacao('planned')"
+      >
+        Previstas
+      </button>
+      <button
+        type="button"
+        role="radio"
+        class="chip"
+        [attr.aria-checked]="situacao() === 'settled'"
+        (click)="escolherSituacao('settled')"
+      >
+        Realizadas
+      </button>
+    </div>
+  </section>
+
+  @if (erro(); as mensagem) {
+    <div class="erro" role="alert" data-testid="erro-mes">
+      <span>{{ mensagem }}</span>
+      <button type="button" class="botao" (click)="tentarDeNovo()">Tentar de novo</button>
+    </div>
+  }
+  @if (erroAcao(); as mensagem) {
+    <p class="erro" role="alert" data-testid="erro-acao">{{ mensagem }}</p>
+  }
+
+  @if (carregando() && visao() === null && erro() === null) {
+    <p role="status" data-testid="carregando">Carregando…</p>
+  }
+
+  @if (visao() !== null) {
+    <table class="resumo" data-testid="resumo">
+      <caption class="so-leitor">
+        Resumo de
+        {{
+          rotuloMes()
+        }}
+      </caption>
+      <thead>
+        <tr>
+          <td></td>
+          <th scope="col">Previsto</th>
+          <th scope="col">Realizado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (linha of linhasResumo(); track linha.id) {
+          <tr [attr.data-testid]="'resumo-' + linha.id">
+            <th scope="row">
+              {{ linha.rotulo }}
+              @if (linha.nota) {
+                <small class="nota">{{ linha.nota }}</small>
+              }
+            </th>
+            <td
+              class="valor"
+              [class.negativo]="linha.destacaNegativo && linha.previsto < 0"
+              data-testid="previsto"
+            >
+              {{ linha.previsto | brl }}
+            </td>
+            <td
+              class="valor"
+              [class.negativo]="linha.destacaNegativo && linha.realizado < 0"
+              data-testid="realizado"
+            >
+              {{ linha.realizado | brl }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @if (mesVazio()) {
+      <p class="vazio" data-testid="mes-vazio">Nada lançado neste mês. Toque em + para lançar.</p>
+    } @else if (semResultadoNoFiltro()) {
+      <p class="vazio" data-testid="filtro-vazio">Nenhum lançamento com esta situação.</p>
+    }
+
+    @for (
+      grupo of [
+        { id: 'entradas', titulo: 'Entradas', itens: entradas() },
+        { id: 'saidas', titulo: 'Saídas', itens: saidas() },
+      ];
+      track grupo.id
+    ) {
+      @if (grupo.itens.length > 0) {
+        <section class="lista" [attr.aria-labelledby]="'titulo-' + grupo.id">
+          <h2 [id]="'titulo-' + grupo.id">{{ grupo.titulo }}</h2>
+
+          @if (desktop()) {
+            <table class="tabela" [attr.data-testid]="'tabela-' + grupo.id">
+              <thead>
+                <tr>
+                  <th scope="col" [attr.aria-sort]="ariaSort('description')">
+                    <button type="button" class="ordena" (click)="ordenarPor('description')">
+                      Descrição
+                    </button>
+                  </th>
+                  <th scope="col" [attr.aria-sort]="ariaSort('date')">
+                    <button type="button" class="ordena" (click)="ordenarPor('date')">Data</button>
+                  </th>
+                  <th scope="col" class="num" [attr.aria-sort]="ariaSort('amount')">
+                    <button type="button" class="ordena" (click)="ordenarPor('amount')">
+                      Valor
+                    </button>
+                  </th>
+                  <th scope="col" [attr.aria-sort]="ariaSort('wallet')">
+                    <button type="button" class="ordena" (click)="ordenarPor('wallet')">
+                      Carteira
+                    </button>
+                  </th>
+                  <th scope="col" [attr.aria-sort]="ariaSort('status')">
+                    <button type="button" class="ordena" (click)="ordenarPor('status')">
+                      Situação
+                    </button>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (e of grupo.itens; track e.id) {
+                  <tr data-testid="lancamento">
+                    <td>
+                      <button type="button" class="abrir" (click)="editar(e)">
+                        {{ e.description }}
+                      </button>
+                      @if (atrasada(e)) {
+                        <span class="selo" data-testid="atrasada">Atrasada</span>
+                      }
+                    </td>
+                    <td>{{ data(e.date) }}</td>
+                    <td class="num">{{ e.amountCents | brl }}</td>
+                    <td>
+                      <span class="cor" [style.background]="corCarteira(e.walletId)"></span>
+                      {{ nomeCarteira(e.walletId) }}
+                    </td>
+                    <td>
+                      <label class="caixinha">
+                        <input
+                          type="checkbox"
+                          data-testid="situacao"
+                          [checked]="e.status === 'settled'"
+                          [disabled]="alterandoId() === e.id"
+                          [attr.aria-label]="e.description + ': ' + rotuloRealizada(e)"
+                          (change)="alternarSituacao(e)"
+                        />
+                        <span>{{ rotuloSituacao(e) }}</span>
+                      </label>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          } @else {
+            <ul class="itens">
+              @for (e of grupo.itens; track e.id) {
+                <li class="item" data-testid="lancamento">
+                  <label class="caixinha">
+                    <input
+                      type="checkbox"
+                      data-testid="situacao"
+                      [checked]="e.status === 'settled'"
+                      [disabled]="alterandoId() === e.id"
+                      [attr.aria-label]="e.description + ': ' + rotuloRealizada(e)"
+                      (change)="alternarSituacao(e)"
+                    />
+                  </label>
+                  <button type="button" class="linha" (click)="editar(e)">
+                    <span class="descricao">
+                      {{ e.description }}
+                      @if (atrasada(e)) {
+                        <span class="selo" data-testid="atrasada">Atrasada</span>
+                      }
+                    </span>
+                    <span class="valor-item">{{ e.amountCents | brl }}</span>
+                    <span class="meta">
+                      <span class="cor" [style.background]="corCarteira(e.walletId)"></span>
+                      {{ nomeCarteira(e.walletId) }} · {{ data(e.date) }} ·
+                      {{ rotuloSituacao(e) }}
+                    </span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      }
+    }
+
+    @if (transferencias().length > 0) {
+      <section class="lista" aria-labelledby="titulo-transferencias">
+        <h2 id="titulo-transferencias">
+          <button
+            type="button"
+            class="recolher"
+            data-testid="transferencias-alternar"
+            [attr.aria-expanded]="transferenciasAbertas()"
+            (click)="transferenciasAbertas.set(!transferenciasAbertas())"
+          >
+            Transferências ({{ transferencias().length }})
+            <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{
+              transferenciasAbertas() ? 'expand_less' : 'expand_more'
+            }}</mat-icon>
+          </button>
+        </h2>
+        @if (transferenciasAbertas()) {
+          <ul class="itens" data-testid="lista-transferencias">
+            @for (t of transferencias(); track t.id) {
+              <li class="item sem-caixinha" data-testid="transferencia">
+                <div class="linha estatica">
+                  <span class="descricao">{{ t.description }}</span>
+                  <span class="valor-item">{{ t.amountCents | brl }}</span>
+                  <span class="meta">
+                    {{ nomeCarteira(t.fromWalletId) }} → {{ nomeCarteira(t.toWalletId) }} ·
+                    {{ data(t.date) }}
+                  </span>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+  }
+</div>

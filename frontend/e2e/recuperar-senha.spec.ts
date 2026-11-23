@@ -132,7 +132,7 @@ test('fluxo completo com o e-mail lido no Mailpit', async ({ page, request }) =>
   await page.getByLabel('E-mail').fill(email);
   await page.getByLabel('Senha', { exact: true }).fill(senhaAntiga);
   await page.getByRole('button', { name: 'Criar conta' }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
 
   await page.context().clearCookies(); // encerra a sessão do refresh token
   await page.goto('/esqueci-senha');

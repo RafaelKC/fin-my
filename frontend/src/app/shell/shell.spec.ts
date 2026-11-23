@@ -31,7 +31,7 @@ describe('Shell', () => {
     const el = fixture.nativeElement as HTMLElement;
     const nav = el.querySelector('nav[aria-label="Principal"]');
     expect(nav?.textContent).toContain('Mês');
-    expect(nav?.querySelector('a')?.getAttribute('href')).toBe('/');
+    expect(nav?.querySelector('a')?.getAttribute('href')).toBe('/mes');
     expect(el.querySelector('main')).not.toBeNull();
   });
 

@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { today } from './core/money';
 import { authGuard, publicGuard } from './core/auth/auth.guards';
 
 export const routes: Routes = [
@@ -35,6 +36,15 @@ export const routes: Routes = [
       {
         path: '',
         pathMatch: 'full',
+        redirectTo: () => `/mes/${today().slice(0, 7)}`,
+      },
+      {
+        path: 'mes',
+        pathMatch: 'full',
+        redirectTo: () => `/mes/${today().slice(0, 7)}`,
+      },
+      {
+        path: 'mes/:mes',
         loadComponent: () => import('./features/mes/mes.page').then((m) => m.MesPage),
       },
       {

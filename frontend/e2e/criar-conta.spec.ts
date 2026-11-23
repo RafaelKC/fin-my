@@ -36,7 +36,7 @@ test.describe('criar conta (US1)', () => {
     await preencher(page);
     await page.getByRole('button', { name: 'Criar conta' }).click();
 
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
     await expect(page.getByTestId('nome-do-espaco')).toHaveText('Finanças de Ana');
     expect(corpo).toEqual({
       name: 'Ana Souza',

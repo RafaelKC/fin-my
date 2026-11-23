@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subject, catchError, of, switchMap, timer } from 'rxjs';
@@ -30,6 +30,7 @@ import {
   EntryKind,
   EntryStatus,
   EntrySuggestion,
+  EntryUpdate,
   OBSERVACAO_MAX,
 } from './entry.models';
 import { novaChaveIdempotencia, situacaoPadrao } from './lancamento-logic';
@@ -40,6 +41,17 @@ export const AVISO_DATA_ANTERIOR =
   'Esta data é anterior ao saldo inicial da carteira. O saldo inicial já deveria incluir este valor.';
 
 const DATA = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+
+/** Dados do diálogo: com `entry`, o formulário abre em modo edição (T012; o completo é a T018). */
+export interface LancamentoSheetData {
+  entry?: Entry;
+}
+
+/** Centavos como expressão de valor aceita pelo servidor: `4499` → `44,99`. */
+function centavosParaExpressao(cents: number): string {
+  const reais = Math.floor(cents / 100);
+  return `${reais},${(cents % 100).toString().padStart(2, '0')}`;
+}
 
 /** Rascunho em `localStorage` (`finmy.draft.lancamento`, research R12). */
 interface Rascunho {
@@ -58,7 +70,8 @@ interface Rascunho {
 /**
  * Formulário rápido de lançamento (US2; FR-008..FR-013; contracts/ui-rotas.md). Aberto pelo "+"
  * da casca (`LancamentoLauncher`): tela cheia no celular, diálogo no computador. Por ora cria
- * Saída e Entrada; Transferência é da T016 e a edição, da T018.
+ * Saída e Entrada; Transferência é da T016. Com `entry` nos dados do diálogo abre para editar
+ * (salva por PUT); Duplicar, Excluir e o tratamento de conflito de versão são da T018.
  */
 @Component({
   selector: 'app-lancamento-sheet',
@@ -74,8 +87,11 @@ export class LancamentoSheet {
   private readonly prefs = inject(DevicePrefsService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly edicao =
+    inject<LancamentoSheetData | null>(MAT_DIALOG_DATA, { optional: true })?.entry ?? null;
   private readonly valorCampo = viewChild(AmountInput);
 
+  protected readonly editando = this.edicao !== null;
   protected readonly descricaoMax = DESCRICAO_MAX;
   protected readonly observacaoMax = OBSERVACAO_MAX;
 
@@ -153,7 +169,8 @@ export class LancamentoSheet {
   private finalizado = false;
 
   constructor() {
-    this.restaurarRascunho();
+    if (this.edicao !== null) this.preencherEdicao(this.edicao);
+    else this.restaurarRascunho();
 
     this.termo$
       .pipe(
@@ -170,12 +187,17 @@ export class LancamentoSheet {
       )
       .subscribe((lista) => this.sugestoes.set(lista));
 
+    // Na edição a carteira do lançamento pode estar arquivada: ela continua escolhível.
     this.wallets
-      .list('false')
+      .list(this.editando ? 'all' : 'false')
       .pipe(takeUntilDestroyed())
       .subscribe({
         next: (lista) => {
-          this.carteiras.set(lista);
+          this.carteiras.set(
+            this.edicao === null
+              ? lista
+              : lista.filter((w) => !w.archived || w.id === this.edicao!.walletId),
+          );
           this.carregandoCarteiras.set(false);
           this.resolverCarteira();
         },
@@ -269,6 +291,11 @@ export class LancamentoSheet {
     this.tentou.set(true);
     this.erro.set(null);
 
+    if (this.edicao !== null) {
+      this.salvarEdicao(this.edicao);
+      return;
+    }
+
     const corpo = this.montarCorpo();
     if (corpo === null) return;
 
@@ -303,6 +330,42 @@ export class LancamentoSheet {
             ? 'Carteira não encontrada. Escolha outra carteira.'
             : problemMessage(error),
         );
+      },
+    });
+  }
+
+  private salvarEdicao(original: Entry): void {
+    const base = this.montarCorpo();
+    if (base === null) return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      this.avisarSemConexao();
+      return;
+    }
+
+    // Edição manda todos os campos; `referenceMonth` só quando foi escolhido à mão (RT-04, R7).
+    const corpo: EntryUpdate = {
+      ...base,
+      status: this.status(),
+      notes: base.notes ?? null,
+      version: original.version,
+    };
+    this.ocupado.set(true);
+    this.entries.update(original.id, corpo).subscribe({
+      next: (entry) => {
+        this.ocupado.set(false);
+        this.snackBar.open('Lançamento atualizado.', undefined, {
+          duration: 4000,
+          verticalPosition: 'top',
+        });
+        this.ref.close(entry);
+      },
+      error: (error: unknown) => {
+        this.ocupado.set(false);
+        if (this.semConexao(error)) {
+          this.avisarSemConexao();
+          return;
+        }
+        this.erro.set(problemMessage(error));
       },
     });
   }
@@ -399,6 +462,22 @@ export class LancamentoSheet {
     this.walletId.set(this.carteiraPadrao());
   }
 
+  private preencherEdicao(entry: Entry): void {
+    this.kind.set(entry.kind);
+    this.amount.set(centavosParaExpressao(entry.amountCents));
+    this.description.set(entry.description);
+    this.date.set(entry.date);
+    this.walletId.set(entry.walletId);
+    this.walletManual.set(true);
+    this.statusManual.set(entry.status);
+    if (entry.referenceMonth !== monthOfDate(entry.date)) {
+      this.refManual.set(entry.referenceMonth);
+      this.maisOpcoes.set(true);
+    }
+    this.notes.set(entry.notes ?? '');
+    if (this.notes() !== '') this.maisOpcoes.set(true);
+  }
+
   private restaurarRascunho(): void {
     const r = this.prefs.readDraft<Rascunho>();
     if (r === null || typeof r !== 'object') return;
@@ -419,6 +498,7 @@ export class LancamentoSheet {
   }
 
   private guardarRascunho(): void {
+    if (this.editando) return;
     const rascunho: Rascunho = {
       savedOn: this.hoje(),
       kind: this.kind(),

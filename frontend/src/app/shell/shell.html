@@ -9,7 +9,7 @@
       class="item"
       [routerLink]="item.rota"
       routerLinkActive="ativo"
-      [routerLinkActiveOptions]="{ exact: item.rota === '/' }"
+      [routerLinkActiveOptions]="{ exact: false }"
     >
       <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{ item.icone }}</mat-icon>
       <span>{{ item.rotulo }}</span>
