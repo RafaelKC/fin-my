@@ -59,7 +59,8 @@ public class LayerDependencyTests
         // O compilador omite referências sem uso, por isso a checagem é de "somente estas", não de "todas estas".
         Referencias(ApplicationAssembly).Except([Domain]).ShouldBeEmpty();
         Referencias(InfrastructureAssembly).Except([Application, Domain]).ShouldBeEmpty();
-        Referencias(ApiAssembly).Except([Application, Infrastructure]).ShouldBeEmpty();
+        // A Api usa tipos do Domain (ex.: DomainError) para montar os ProblemDetails.
+        Referencias(ApiAssembly).Except([Application, Infrastructure, Domain]).ShouldBeEmpty();
     }
 
     [Fact]

@@ -1,6 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\FinMy.Application\FinMy.Application.csproj" />
     <ProjectReference Include="..\FinMy.Infrastructure\FinMy.Infrastructure.csproj" />
   </ItemGroup>

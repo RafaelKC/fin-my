@@ -18,23 +18,18 @@ services:
       retries: 10
       start_period: 10s
 
-  # --- Migrações (T013) ---------------------------------------------------
-  # O comando `migrate` (dotnet FinMy.Api.dll migrate) e o /health só existem a
-  # partir da T013. Até lá a API ignora o argumento e sobe como servidor, o que
-  # nunca terminaria e travaria o `api`. Quando a T013 chegar: descomente este
-  # serviço e o `depends_on.migrate` do `api` abaixo.
-  #
-  # migrate:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #   command: ["migrate"]
-  #   restart: "no"
-  #   environment:
-  #     ConnectionStrings__Default: ${ConnectionStrings__Default:?defina ConnectionStrings__Default no .env}
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
+  # Aplica as migrações (dotnet FinMy.Api.dll migrate) e termina; a `api` só sobe depois.
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: ["migrate"]
+    restart: "no"
+    environment:
+      ConnectionStrings__Default: ${ConnectionStrings__Default:?defina ConnectionStrings__Default no .env}
+    depends_on:
+      db:
+        condition: service_healthy
 
   api:
     build:
@@ -44,19 +39,19 @@ services:
     environment:
       ConnectionStrings__Default: ${ConnectionStrings__Default:?defina ConnectionStrings__Default no .env}
       Jwt__SigningKey: ${Jwt__SigningKey:?defina Jwt__SigningKey no .env}
-      Smtp__Host: ${Smtp__Host:-mailpit}
-      Smtp__Port: ${Smtp__Port:-1025}
-      Smtp__User: ${Smtp__User:-}
-      Smtp__Password: ${Smtp__Password:-}
-      Smtp__UseSsl: ${Smtp__UseSsl:-false}
-      Smtp__From: ${Smtp__From:-no-reply@finmy.local}
+      Email__Host: ${Email__Host:-mailpit}
+      Email__Port: ${Email__Port:-1025}
+      Email__User: ${Email__User:-}
+      Email__Password: ${Email__Password:-}
+      Email__UseTls: ${Email__UseTls:-false}
+      Email__FromAddress: ${Email__FromAddress:-no-reply@finmy.local}
+      Email__FromName: ${Email__FromName:-Fin-My}
       APP_URL: ${APP_URL:-http://localhost:8080}
     depends_on:
       db:
         condition: service_healthy
-      # T013: adicionar também
-      # migrate:
-      #   condition: service_completed_successfully
+      migrate:
+        condition: service_completed_successfully
 
   web:
     build:
@@ -66,9 +61,8 @@ services:
     ports:
       - "${WEB_PORT:-8080}:80"
     depends_on:
-      # Hoje o `api` só "iniciou" (sem /health). Na T013 trocar por
-      # `condition: service_healthy` (o HEALTHCHECK da imagem já aponta para /health).
-      - api
+      api:
+        condition: service_healthy
 
 volumes:
   db-data:
