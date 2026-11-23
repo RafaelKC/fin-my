@@ -105,7 +105,7 @@ autenticação e casca do front prontas para as telas.
 **Independent Test**: pedir recuperação, usar o link, entrar com a nova senha (spec US4).
 
 - [ ] T025 [US4] Implementar `RequestPasswordReset` (resposta 202 idêntica exista ou não a conta, FR-011; `PasswordResetToken` conforme data-model.md; e-mail pt-BR com `{APP_URL}/redefinir-senha?token=`) e `ConfirmPasswordReset` (troca a senha, renova `User.security_stamp`, marca `PasswordResetToken.used_at`, revoga todas as sessões com `RefreshToken.revoked_reason = password_reset`; token inválido/expirado/usado → 410 `reset_token_invalid`) em `backend/src/FinMy.Application/Auth/` e os endpoints de contracts/openapi.yaml; testes dos cenários 4.1–4.4 com `FakeEmailSender`
-- [ ] T026 [US4] Criar as telas `/esqueci-senha` e `/redefinir-senha` em `frontend/src/app/features/auth/` e o e2e `frontend/e2e/recuperar-senha.spec.ts` lendo o e-mail pela API do Mailpit
+- [x] T026 [US4] Criar as telas `/esqueci-senha` e `/redefinir-senha` em `frontend/src/app/features/auth/` e o e2e `frontend/e2e/recuperar-senha.spec.ts` lendo o e-mail pela API do Mailpit
 
 **Checkpoint**: recuperação de senha completa.
 
