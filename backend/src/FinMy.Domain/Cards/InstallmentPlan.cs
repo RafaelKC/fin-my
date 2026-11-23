@@ -28,34 +28,9 @@ public sealed class InstallmentPlan : TenantEntity
         YearMonth firstInvoiceDueMonth)
     {
         CreditCardId = creditCardId;
-        Description = Rules.RequiredText(description, Rules.DescriptionMaxLength, "description", "description", "a descrição");
-        Mode = mode;
-
-        if (installmentTotal is < 1 or > MaxInstallments)
-        {
-            throw Rules.Invalid("installment.total_invalid", "installments", $"O número de parcelas deve ficar entre 1 e {MaxInstallments}");
-        }
-
-        InstallmentTotal = installmentTotal;
-
-        FirstNumber = mode == InstallmentMode.InProgress ? firstNumber : 1;
-        if (FirstNumber < 1 || FirstNumber > installmentTotal)
-        {
-            throw Rules.Invalid("installment.first_number_invalid", "firstNumber", "A próxima parcela deve ficar entre 1 e o total de parcelas");
-        }
-
-        var cents = Rules.EntryAmount(amount);
-        if (mode == InstallmentMode.TotalAmount)
-        {
-            TotalAmountCents = cents;
-        }
-        else
-        {
-            InstallmentAmountCents = cents;
-        }
-
+        ChangeDescription(description);
+        Configure(mode, installmentTotal, firstNumber, amount, firstInvoiceDueMonth);
         PurchaseDate = Rules.Date(purchaseDate, "purchaseDate");
-        FirstInvoiceDueMonth = Rules.Date(firstInvoiceDueMonth.FirstDay, "firstInvoiceDueMonth");
     }
 
     public Guid CreditCardId { get; private set; }
@@ -79,6 +54,45 @@ public sealed class InstallmentPlan : TenantEntity
 
     /// <summary>Fatura (mês de vencimento, dia 1) da parcela <see cref="FirstNumber"/>.</summary>
     public DateOnly FirstInvoiceDueMonth { get; private set; }
+
+    public void ChangeDescription(string description) =>
+        Description = Rules.RequiredText(description, Rules.DescriptionMaxLength, "description", "description", "a descrição");
+
+    /// <summary>Cartão e data valem para todas as parcelas (FR-015); <paramref name="firstInvoiceDueMonth"/> acompanha a nova fatura da primeira.</summary>
+    public void Relocate(Guid creditCardId, DateOnly purchaseDate, YearMonth firstInvoiceDueMonth)
+    {
+        CreditCardId = creditCardId;
+        PurchaseDate = Rules.Date(purchaseDate, "purchaseDate");
+        FirstInvoiceDueMonth = Rules.Date(firstInvoiceDueMonth.FirstDay, "firstInvoiceDueMonth");
+    }
+
+    /// <summary>Altera N, o valor ou o modo do valor (FR-015); quem chama recria as parcelas.</summary>
+    public void Reconfigure(InstallmentMode mode, int installmentTotal, Money amount) =>
+        Configure(mode, installmentTotal, FirstNumber, amount, YearMonth.From(FirstInvoiceDueMonth));
+
+    private void Configure(InstallmentMode mode, int installmentTotal, int firstNumber, Money amount, YearMonth firstInvoiceDueMonth)
+    {
+        if (installmentTotal is < 1 or > MaxInstallments)
+        {
+            throw Rules.Invalid("installment.total_invalid", "installments", $"O número de parcelas deve ficar entre 1 e {MaxInstallments}");
+        }
+
+        var first = mode == InstallmentMode.InProgress ? firstNumber : 1;
+        if (first < 1 || first > installmentTotal)
+        {
+            throw Rules.Invalid("installment.first_number_invalid", "firstNumber", "A próxima parcela deve ficar entre 1 e o total de parcelas");
+        }
+
+        var cents = Rules.EntryAmount(amount);
+        var firstMonth = Rules.Date(firstInvoiceDueMonth.FirstDay, "firstInvoiceDueMonth");
+
+        Mode = mode;
+        InstallmentTotal = installmentTotal;
+        FirstNumber = first;
+        TotalAmountCents = mode == InstallmentMode.TotalAmount ? cents : null;
+        InstallmentAmountCents = mode == InstallmentMode.TotalAmount ? null : cents;
+        FirstInvoiceDueMonth = firstMonth;
+    }
 
     /// <summary>
     /// Cria o plano. <paramref name="amount"/> é o total no modo <see cref="InstallmentMode.TotalAmount"/> e o valor da

@@ -1,5 +1,6 @@
 using FinMy.Application.Abstractions;
 using FinMy.Domain.Common;
+using FinMy.Domain.Entries;
 using FinMy.Domain.Monetary;
 
 namespace FinMy.Application.Entries;
@@ -9,10 +10,11 @@ public sealed class SuggestEntriesHandler(IEntryStore store, IClock clock)
 {
     public const int MaxResults = 6;
     public const int MaxQueryLength = 80;
+    public const string CardPurchaseKind = "card_purchase";
 
     public async Task<IReadOnlyList<EntrySuggestion>> HandleAsync(string? q, string? kind, CancellationToken cancellationToken)
     {
-        var parsedKind = EntryInput.ParseKind(kind);
+        EntryKind? parsedKind = kind == CardPurchaseKind ? null : EntryInput.ParseKind(kind);
         var text = q?.Trim() ?? string.Empty;
         if (text.Length > MaxQueryLength)
         {

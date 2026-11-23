@@ -65,7 +65,7 @@ public sealed record EntryResponse(
 }
 
 /// <summary>Item de <c>GET /entries/suggestions</c>.</summary>
-public sealed record EntrySuggestionResponse(string Description, int Uses, Guid? WalletId);
+public sealed record EntrySuggestionResponse(string Description, int Uses, Guid? WalletId, Guid? CreditCardId);
 
 /// <summary>Corpo de <c>POST /entries/{id}/duplicate</c>: só a nova data.</summary>
 public sealed record EntryDuplicateRequest(DateOnly? Date);

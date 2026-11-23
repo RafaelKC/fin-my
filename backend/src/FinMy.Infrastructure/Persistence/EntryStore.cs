@@ -1,5 +1,6 @@
 using FinMy.Application.Abstractions;
 using FinMy.Application.Entries;
+using FinMy.Domain.Cards;
 using FinMy.Domain.Common;
 using FinMy.Domain.Entries;
 using FinMy.Domain.Monetary;
@@ -133,49 +134,97 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
     }
 
     public async Task<IReadOnlyList<EntrySuggestion>> SuggestAsync(
-        string normalizedText, EntryKind kind, DateOnly notBefore, int limit, CancellationToken cancellationToken)
+        string normalizedText, EntryKind? kind, DateOnly notBefore, int limit, CancellationToken cancellationToken)
     {
         var pattern = $"%{EscapeLike(normalizedText)}%";
-        var universe = db.Set<Entry>().AsNoTracking()
+        var entries = db.Set<Entry>().AsNoTracking()
             .Where(e => e.EntryDate >= notBefore && EF.Functions.Like(e.DescriptionNormalized, pattern, "\\"));
+        var purchases = db.Set<CardPurchase>().AsNoTracking()
+            .Where(p => p.PurchaseDate >= notBefore && EF.Functions.Like(p.DescriptionNormalized, pattern, "\\"));
 
-        var groups = await universe
+        var entryGroups = await entries
             .GroupBy(e => e.DescriptionNormalized)
-            .Select(g => new { Key = g.Key, Uses = g.Count(), LastDate = g.Max(e => e.EntryDate), LastCreated = g.Max(e => e.CreatedAt) })
+            .Select(g => new Usage(g.Key, g.Count(), g.Max(e => e.EntryDate), g.Max(e => e.CreatedAt)))
+            .ToListAsync(cancellationToken);
+
+        // Um parcelamento é um uso só, não um por parcela (research R9).
+        var purchaseGroups = await purchases
+            .GroupBy(p => p.DescriptionNormalized)
+            .Select(g => new Usage(
+                g.Key, g.Select(p => p.InstallmentPlanId ?? p.Id).Distinct().Count(), g.Max(p => p.PurchaseDate), g.Max(p => p.CreatedAt)))
+            .ToListAsync(cancellationToken);
+
+        var groups = entryGroups.Concat(purchaseGroups)
+            .GroupBy(u => u.Key)
+            .Select(g => new Usage(g.Key, g.Sum(u => u.Uses), g.Max(u => u.LastDate), g.Max(u => u.LastCreated)))
             .OrderByDescending(g => g.Uses)
             .ThenByDescending(g => g.LastDate)
             .ThenByDescending(g => g.LastCreated)
-            .ThenBy(g => g.Key)
+            .ThenBy(g => g.Key, StringComparer.Ordinal)
             .Take(limit)
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         var result = new List<EntrySuggestion>(groups.Count);
         foreach (var group in groups)
         {
-            var same = universe.Where(e => e.DescriptionNormalized == group.Key);
+            var sameEntries = entries.Where(e => e.DescriptionNormalized == group.Key);
+            var samePurchases = purchases.Where(p => p.DescriptionNormalized == group.Key);
 
-            var latest = await same
+            var latestEntry = await sameEntries
                 .OrderByDescending(e => e.EntryDate).ThenByDescending(e => e.CreatedAt)
-                .Select(e => e.Description)
-                .FirstAsync(cancellationToken);
-
-            var walletId = await same
-                .Where(e => e.Kind == kind)
-                .OrderByDescending(e => e.EntryDate).ThenByDescending(e => e.CreatedAt)
-                .Select(e => (Guid?)e.WalletId)
+                .Select(e => new Latest(e.Description, e.EntryDate, e.CreatedAt))
+                .FirstOrDefaultAsync(cancellationToken);
+            var latestPurchase = await samePurchases
+                .OrderByDescending(p => p.PurchaseDate).ThenByDescending(p => p.CreatedAt)
+                .Select(p => new Latest(p.Description, p.PurchaseDate, p.CreatedAt))
                 .FirstOrDefaultAsync(cancellationToken);
 
-            if (walletId is { } id
-                && !await db.Set<Wallet>().AsNoTracking().AnyAsync(w => w.Id == id && w.ArchivedAt == null, cancellationToken))
+            var latest = (latestEntry, latestPurchase) switch
             {
-                walletId = null;
+                (null, var p) => p!,
+                (var e, null) => e,
+                var (e, p) => (e.Date, e.Created).CompareTo((p!.Date, p.Created)) >= 0 ? e : p,
+            };
+
+            Guid? walletId = null;
+            Guid? creditCardId = null;
+            if (kind is { } entryKind)
+            {
+                walletId = await sameEntries
+                    .Where(e => e.Kind == entryKind)
+                    .OrderByDescending(e => e.EntryDate).ThenByDescending(e => e.CreatedAt)
+                    .Select(e => (Guid?)e.WalletId)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (walletId is { } id
+                    && !await db.Set<Wallet>().AsNoTracking().AnyAsync(w => w.Id == id && w.ArchivedAt == null, cancellationToken))
+                {
+                    walletId = null;
+                }
+            }
+            else
+            {
+                creditCardId = await samePurchases
+                    .OrderByDescending(p => p.PurchaseDate).ThenByDescending(p => p.CreatedAt)
+                    .Select(p => (Guid?)p.CreditCardId)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (creditCardId is { } cardId
+                    && !await db.Set<CreditCard>().AsNoTracking().AnyAsync(c => c.Id == cardId && c.ArchivedAt == null, cancellationToken))
+                {
+                    creditCardId = null;
+                }
             }
 
-            result.Add(new EntrySuggestion(latest, group.Uses, walletId));
+            result.Add(new EntrySuggestion(latest.Description, group.Uses, walletId, creditCardId));
         }
 
         return result;
     }
+
+    private sealed record Usage(string Key, int Uses, DateOnly LastDate, DateTimeOffset LastCreated);
+
+    private sealed record Latest(string Description, DateOnly Date, DateTimeOffset Created);
 
     private uint VersionOf(Entry entry) => db.Entry(entry).Property<uint>(VersionColumn).CurrentValue;
 

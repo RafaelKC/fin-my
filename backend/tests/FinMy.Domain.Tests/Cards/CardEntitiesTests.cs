@@ -185,4 +185,72 @@ public class CardEntitiesTests
         Should.Throw<DomainException>(() => InvoicePayment.Create(Guid.CreateVersion7(), Carteira, Dinheiro.FromCents(1), new DateOnly(1999, 12, 31)))
             .Error.Code.ShouldBe("date.out_of_range");
     }
+
+    [Fact]
+    public void Parcela_nao_pode_virar_credito_mas_compra_a_vista_pode()
+    {
+        var plan = InstallmentPlan.Create(
+            Guid.CreateVersion7(), "Geladeira", InstallmentMode.TotalAmount, 10, 1, Dinheiro.FromCents(100_000), Hoje, YearMonth.Of(2026, 4));
+        var parcela = CardPurchase.CreateInstallment(plan.CreditCardId, Guid.CreateVersion7(), plan, 1, Dinheiro.FromCents(10_000), null);
+        var avista = CardPurchase.CreateManual(
+            Guid.CreateVersion7(), Guid.CreateVersion7(), "Mercado", Dinheiro.FromCents(100), PurchaseNature.Debit, Hoje, null);
+
+        Should.Throw<DomainException>(() => parcela.ChangeNature(PurchaseNature.Credit))
+            .Error.Code.ShouldBe("card_purchase.credit_must_be_single");
+        avista.ChangeNature(PurchaseNature.Credit);
+
+        avista.Nature.ShouldBe(PurchaseNature.Credit);
+    }
+
+    [Fact]
+    public void Reatribuir_troca_cartao_e_fatura_sem_marcar_como_movida_e_a_data_respeita_o_intervalo()
+    {
+        var purchase = CardPurchase.CreateManual(
+            Guid.CreateVersion7(), Guid.CreateVersion7(), "Mercado", Dinheiro.FromCents(100), PurchaseNature.Debit, Hoje, null);
+        var card = Guid.CreateVersion7();
+        var invoice = Guid.CreateVersion7();
+
+        purchase.Reassign(card, invoice);
+        purchase.ChangeDate(new DateOnly(2026, 4, 2));
+
+        purchase.CreditCardId.ShouldBe(card);
+        purchase.InvoiceId.ShouldBe(invoice);
+        purchase.ManuallyMoved.ShouldBeFalse();
+        purchase.PurchaseDate.ShouldBe(new DateOnly(2026, 4, 2));
+        Should.Throw<DomainException>(() => purchase.ChangeDate(new DateOnly(2101, 1, 1))).Error.Code.ShouldBe("date.out_of_range");
+    }
+
+    [Fact]
+    public void Plano_reconfigurado_troca_total_valor_e_modo_e_mantem_a_primeira_parcela_do_andamento()
+    {
+        var plan = InstallmentPlan.Create(Guid.CreateVersion7(), "TV", InstallmentMode.InProgress, 10, 4, Dinheiro.FromCents(9_000), Hoje, YearMonth.Of(2026, 4));
+
+        plan.Reconfigure(InstallmentMode.InProgress, 12, Dinheiro.FromCents(8_000));
+
+        plan.InstallmentTotal.ShouldBe(12);
+        plan.InstallmentAmountCents.ShouldBe(8_000);
+        plan.FirstNumber.ShouldBe(4);
+        Should.Throw<DomainException>(() => plan.Reconfigure(InstallmentMode.InProgress, 3, Dinheiro.FromCents(8_000)))
+            .Error.Code.ShouldBe("installment.first_number_invalid");
+
+        var total = InstallmentPlan.Create(Guid.CreateVersion7(), "TV", InstallmentMode.InstallmentAmount, 3, 1, Dinheiro.FromCents(1_000), Hoje, YearMonth.Of(2026, 4));
+        total.Reconfigure(InstallmentMode.TotalAmount, 4, Dinheiro.FromCents(4_000));
+        total.TotalAmountCents.ShouldBe(4_000);
+        total.InstallmentAmountCents.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Plano_realocado_leva_cartao_data_e_primeira_fatura()
+    {
+        var plan = InstallmentPlan.Create(Guid.CreateVersion7(), "TV", InstallmentMode.TotalAmount, 3, 1, Dinheiro.FromCents(3_000), Hoje, YearMonth.Of(2026, 4));
+        var card = Guid.CreateVersion7();
+
+        plan.Relocate(card, new DateOnly(2026, 5, 3), YearMonth.Of(2026, 6));
+        plan.ChangeDescription(" Televisão ");
+
+        plan.CreditCardId.ShouldBe(card);
+        plan.PurchaseDate.ShouldBe(new DateOnly(2026, 5, 3));
+        plan.FirstInvoiceDueMonth.ShouldBe(new DateOnly(2026, 6, 1));
+        plan.Description.ShouldBe("Televisão");
+    }
 }
