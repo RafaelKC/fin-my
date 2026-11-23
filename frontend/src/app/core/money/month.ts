@@ -68,3 +68,10 @@ export function monthOfDate(date: string): YearMonth {
 
   return match[1];
 }
+
+/** Soma `count` meses (pode ser negativo): `2026-11` + 3 → `2027-02`. */
+export function addMonths(month: YearMonth, count: number): YearMonth {
+  const { year, month: m } = split(month);
+  const index = year * 12 + (m - 1) + count;
+  return join(Math.floor(index / 12), (index % 12) + 1);
+}
