@@ -22,7 +22,10 @@ public class LoginTests(PostgresFixture postgres) : ApiTestBase(postgres)
     private Task<HttpResponseMessage> LoginPostAsync(string email, string password) => Client.PostAsJsonAsync(Path, new { email, password });
 
     private static async Task<JsonElement> ReadJsonAsync(HttpResponseMessage response)
-        => JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement.Clone();
+    {
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return document.RootElement.Clone();
+    }
 
     private async Task<LoginThrottle?> ThrottleAsync(string email)
     {

@@ -43,8 +43,11 @@ public class TenantClaimTests(PostgresFixture postgres) : ApiTestBase(postgres)
         return Client.SendAsync(message);
     }
 
-    private static async Task<string> CodeAsync(HttpResponseMessage response) =>
-        JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement.GetProperty("code").GetString()!;
+    private static async Task<string> CodeAsync(HttpResponseMessage response)
+    {
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return document.RootElement.GetProperty("code").GetString()!;
+    }
 
     [Fact]
     public async Task Cadastro_emite_tid_do_Espaco_do_qual_a_pessoa_participa()

@@ -53,7 +53,8 @@ public class PasswordResetEndpointsTests(PostgresFixture postgres) : ApiTestBase
         var a = await existing.Content.ReadAsStringAsync();
         var b = await missing.Content.ReadAsStringAsync();
         a.ShouldBe(b);
-        JsonDocument.Parse(a).RootElement.GetProperty("detail").GetString().ShouldBe("Se houver conta com este e-mail, enviaremos um link");
+        using var document = JsonDocument.Parse(a);
+        document.RootElement.GetProperty("detail").GetString().ShouldBe("Se houver conta com este e-mail, enviaremos um link");
 
         var mail = Factory.Emails.Sent.ShouldHaveSingleItem();
         mail.To.ShouldBe(user.Email);

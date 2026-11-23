@@ -55,8 +55,8 @@ public class RefreshAndLogoutTests(PostgresFixture postgres) : ApiTestBase(postg
     private static async Task<string> CodeAsync(HttpResponseMessage response)
     {
         response.Content.Headers.ContentType?.MediaType.ShouldBe("application/problem+json");
-        var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
-        return problem.GetProperty("code").GetString()!;
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return document.RootElement.GetProperty("code").GetString()!;
     }
 
     private async Task<RefreshToken[]> TokensAsync()

@@ -16,7 +16,7 @@ test('abre o app em pt-BR com o título Fin-My', async ({ page }) => {
 
   await expect(page).toHaveTitle('Fin-My');
   await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
-  await expect(page.getByRole('heading', { level: 1, name: 'Fin-My' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Entrar' })).toBeVisible();
 });
 
 test('não gera rolagem horizontal no viewport atual', async ({ page }) => {

@@ -12,6 +12,8 @@ export default defineConfig({
     baseURL,
     locale: 'pt-BR',
     trace: 'on-first-retry',
+    // O service worker do PWA (build de produção) escapa do page.route; os e2e simulam a API assim.
+    serviceWorkers: 'block',
   },
   projects: [
     {

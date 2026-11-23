@@ -10,7 +10,8 @@ public static class JwtClaims
     {
         var payload = jwt.Split('.')[1].Replace('-', '+').Replace('_', '/');
         payload = payload.PadRight(payload.Length + ((4 - (payload.Length % 4)) % 4), '=');
-        return JsonDocument.Parse(Encoding.UTF8.GetString(Convert.FromBase64String(payload))).RootElement.Clone();
+        using var document = JsonDocument.Parse(Encoding.UTF8.GetString(Convert.FromBase64String(payload)));
+        return document.RootElement.Clone();
     }
 
     public static string? Get(string jwt, string claim) =>
