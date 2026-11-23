@@ -37,6 +37,12 @@ public interface IRefreshTokenStore
     /// <summary>Troca o token apresentado por um novo (rotação) e prolonga a validade em 90 dias.</summary>
     Task<RefreshRotation> RotateAsync(string token, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Encerra a sessão a que o token pertence (logout). Não troca nem prolonga nada; token desconhecido ou
+    /// sessão já encerrada não é erro (idempotente).
+    /// </summary>
+    Task RevokeSessionByTokenAsync(string token, RefreshTokenRevocationReason reason, CancellationToken cancellationToken);
+
     /// <summary>Encerra a sessão (todos os tokens ainda ativos da família).</summary>
     Task RevokeSessionAsync(Guid sessionId, RefreshTokenRevocationReason reason, CancellationToken cancellationToken);
 

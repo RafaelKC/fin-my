@@ -56,7 +56,7 @@ public class LoggingOutputTests(PostgresFixture postgres) : ApiTestBase(postgres
         {
             // Novo host criado já com o console capturado (o sink do Serilog fixa Console.Out ao ser criado).
             var banco = await Postgres.CreateEmptyDatabaseAsync();
-            await using var factory = new ApiFactory(banco, null, new TestEndpoints());
+            await using var factory = new ApiFactory(banco, null, null, new TestEndpoints());
             await factory.MigrateAsync();
             using var client = factory.CreateClient();
 
@@ -86,7 +86,7 @@ public class LoggingOutputTests(PostgresFixture postgres) : ApiTestBase(postgres
         try
         {
             var banco = await Postgres.CreateEmptyDatabaseAsync();
-            await using var factory = new ApiFactory(banco, null, new TestEndpoints());
+            await using var factory = new ApiFactory(banco, null, null, new TestEndpoints());
             await factory.MigrateAsync();
             using var client = factory.CreateClient();
 
