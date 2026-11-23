@@ -1,5 +1,6 @@
 using FinMy.Api.Endpoints;
 using FinMy.Application.Tests.Infrastructure;
+using Npgsql;
 
 namespace FinMy.Api.Tests.Support;
 
@@ -48,6 +49,13 @@ public abstract class ApiTestBase(PostgresFixture postgres) : IAsyncLifetime
         if (_factory is not null)
         {
             await _factory.DisposeAsync();
+        }
+
+        // Cada classe usa um banco próprio e, portanto, um pool próprio: sem limpar, as conexões ociosas
+        // se acumulam entre as classes e estouram o max_connections do Postgres ("too many clients").
+        if (DatabaseConnection is not null)
+        {
+            NpgsqlConnection.ClearPool(new NpgsqlConnection(DatabaseConnection));
         }
     }
 }
