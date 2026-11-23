@@ -1,0 +1,22 @@
+<header class="topo">
+  <span class="marca">Fin-My</span>
+  <span class="espaco" data-testid="nome-do-espaco">{{ espaco()?.name }}</span>
+</header>
+
+<nav class="menu" aria-label="Principal">
+  @for (item of itens; track item.rota) {
+    <a
+      class="item"
+      [routerLink]="item.rota"
+      routerLinkActive="ativo"
+      [routerLinkActiveOptions]="{ exact: item.rota === '/' }"
+    >
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{ item.icone }}</mat-icon>
+      <span>{{ item.rotulo }}</span>
+    </a>
+  }
+</nav>
+
+<main class="conteudo">
+  <router-outlet />
+</main>
