@@ -32,7 +32,7 @@ EXPOSE 8080
 # Usuário não-root pré-criado na imagem aspnet (UID em $APP_UID).
 USER $APP_UID
 
-# O endpoint /health chega na T013; até lá o container aparece como unhealthy.
+# /health verifica o servidor e o banco; o compose usa este estado para subir o `web`.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD curl --fail --silent http://localhost:8080/health || exit 1
 
