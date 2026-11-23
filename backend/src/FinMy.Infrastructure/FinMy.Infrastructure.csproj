@@ -6,6 +6,9 @@
     <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="MailKit" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers" />
+    <PackageReference Include="Hangfire.AspNetCore" />
+    <PackageReference Include="Hangfire.PostgreSql" />
+    <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
 
   <ItemGroup>

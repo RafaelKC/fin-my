@@ -16,6 +16,8 @@
     <PackageVersion Include="Hangfire.Core" Version="1.8.25" />
     <PackageVersion Include="Hangfire.AspNetCore" Version="1.8.25" />
     <PackageVersion Include="Hangfire.PostgreSql" Version="1.21.1" />
+    <!-- Hangfire.Core 1.8 traz Newtonsoft.Json 11.0.1 (vulnerável, NU1903): fixado numa versão corrigida -->
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <!-- Testes -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
