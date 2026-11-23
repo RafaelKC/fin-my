@@ -20,6 +20,12 @@ public static class WebApplicationExtensions
         app.UseCurrentContext();
         app.UseAuthorization();
 
+        // O contrato gerado (/openapi/v1.json) alimenta a suíte de isolamento; não é publicado em produção.
+        if (!app.Environment.IsProduction())
+        {
+            app.MapOpenApi();
+        }
+
         app.MapFinMyHealth();
         foreach (var module in app.Services.GetServices<IEndpointModule>())
         {
