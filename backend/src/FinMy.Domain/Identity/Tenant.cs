@@ -21,6 +21,9 @@ public sealed class Tenant : IEntity, IAudited
 
     public Guid Id { get; private set; }
 
+    /// <summary>Altera o nome do Espaço; a auditoria (<c>updated_*</c>) é preenchida pelo interceptor.</summary>
+    public void Rename(string name) => Name = name.Trim();
+
     public string Name { get; private set; } = string.Empty;
 
     /// <summary>Estado do onboarding por etapa (usado pela feature 006); nasce vazio.</summary>

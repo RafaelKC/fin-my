@@ -41,6 +41,13 @@ public sealed class User : IEntity
 
     public DateTimeOffset UpdatedAt { get; private set; }
 
+    /// <summary>Altera o nome de exibição (já validado pela Application).</summary>
+    public void Rename(string name, DateTimeOffset now)
+    {
+        Name = name.Trim();
+        UpdatedAt = now;
+    }
+
     /// <summary>Troca a senha e renova o <see cref="SecurityStamp"/>.</summary>
     public void ChangePassword(string passwordHash, DateTimeOffset now)
     {

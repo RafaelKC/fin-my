@@ -40,6 +40,9 @@ public interface IRefreshTokenStore
     /// <summary>Encerra a sessão (todos os tokens ainda ativos da família).</summary>
     Task RevokeSessionAsync(Guid sessionId, RefreshTokenRevocationReason reason, CancellationToken cancellationToken);
 
-    /// <summary>Encerra todas as sessões ativas da pessoa (ex.: redefinição de senha), invalidando o cache de cada uma.</summary>
-    Task RevokeUserSessionsAsync(Guid userId, RefreshTokenRevocationReason reason, CancellationToken cancellationToken);
+    /// <summary>
+    /// Encerra todas as sessões ativas da pessoa (ex.: redefinição de senha), invalidando o cache de cada uma.
+    /// Com <paramref name="exceptSessionId"/>, essa sessão é mantida (ex.: troca de senha preserva a atual).
+    /// </summary>
+    Task RevokeUserSessionsAsync(Guid userId, RefreshTokenRevocationReason reason, CancellationToken cancellationToken, Guid? exceptSessionId = null);
 }
