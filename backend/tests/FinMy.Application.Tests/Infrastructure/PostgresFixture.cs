@@ -22,7 +22,7 @@ public sealed class PostgresFixture : IAsyncLifetime
         .WithPortBinding(5432, true)
         .Build();
 
-    private string ConnectionString =>
+    public string ConnectionString =>
         $"Host={_container.Hostname};Port={_container.GetMappedPublicPort(5432)};Username=postgres;Password={Password};Database=postgres";
 
     public async Task InitializeAsync()
