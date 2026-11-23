@@ -1,0 +1,443 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+import { MatDialogRef } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { Subject, catchError, of, switchMap, timer } from 'rxjs';
+import { asProblem, problemMessage } from '../../core/errors/problem-details';
+import { formatBrl, monthOfDate, parseValueExpression, today } from '../../core/money';
+import { DevicePrefsService } from '../../core/prefs/device-prefs.service';
+import { AmountInput } from '../../shared/amount-input/amount-input';
+import { WALLET_COLORS, Wallet } from '../carteiras/wallet.models';
+import { WalletsService } from '../carteiras/wallets.service';
+import { EntriesService } from './entries.service';
+import {
+  DESCRICAO_MAX,
+  Entry,
+  EntryCreate,
+  EntryKind,
+  EntryStatus,
+  EntrySuggestion,
+  OBSERVACAO_MAX,
+} from './entry.models';
+import { novaChaveIdempotencia, situacaoPadrao } from './lancamento-logic';
+
+export const MENSAGEM_SEM_CONEXAO_LANCAMENTO =
+  'Sem conexão. O lançamento não foi salvo; tente de novo.';
+export const AVISO_DATA_ANTERIOR =
+  'Esta data é anterior ao saldo inicial da carteira. O saldo inicial já deveria incluir este valor.';
+
+const DATA = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+
+/** Rascunho em `localStorage` (`finmy.draft.lancamento`, research R12). */
+interface Rascunho {
+  savedOn: string;
+  kind: EntryKind;
+  amount: string;
+  description: string;
+  date: string;
+  walletId: string;
+  walletManual: boolean;
+  status: EntryStatus | null;
+  refMonth: string | null;
+  notes: string;
+}
+
+/**
+ * Formulário rápido de lançamento (US2; FR-008..FR-013; contracts/ui-rotas.md). Aberto pelo "+"
+ * da casca (`LancamentoLauncher`): tela cheia no celular, diálogo no computador. Por ora cria
+ * Saída e Entrada; Transferência é da T016 e a edição, da T018.
+ */
+@Component({
+  selector: 'app-lancamento-sheet',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [FormsModule, MatIconModule, AmountInput],
+  templateUrl: './lancamento.sheet.html',
+  styleUrl: './lancamento.sheet.scss',
+})
+export class LancamentoSheet {
+  private readonly ref = inject<MatDialogRef<LancamentoSheet, Entry | undefined>>(MatDialogRef);
+  private readonly entries = inject(EntriesService);
+  private readonly wallets = inject(WalletsService);
+  private readonly prefs = inject(DevicePrefsService);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly valorCampo = viewChild(AmountInput);
+
+  protected readonly descricaoMax = DESCRICAO_MAX;
+  protected readonly observacaoMax = OBSERVACAO_MAX;
+
+  protected readonly hoje = signal(today());
+  protected readonly kind = signal<EntryKind>(this.prefs.lastKind());
+  protected readonly amount = signal('');
+  protected readonly description = signal('');
+  protected readonly date = signal(this.hoje());
+  protected readonly walletId = signal('');
+  /** `true` quando a pessoa escolheu a carteira à mão: sugestões não a trocam mais (FR-011). */
+  private readonly walletManual = signal(false);
+  /** Situação escolhida à mão; `null` = segue a data (FR-012). */
+  protected readonly statusManual = signal<EntryStatus | null>(null);
+  /** Mês de referência escolhido à mão; `null` = segue a data (RT-04). */
+  protected readonly refManual = signal<string | null>(null);
+  protected readonly notes = signal('');
+  protected readonly maisOpcoes = signal(false);
+
+  protected readonly carteiras = signal<Wallet[]>([]);
+  protected readonly carregandoCarteiras = signal(true);
+  protected readonly sugestoes = signal<EntrySuggestion[]>([]);
+  protected readonly tentou = signal(false);
+  protected readonly ocupado = signal(false);
+  protected readonly erro = signal<string | null>(null);
+
+  // criar carteira inline (nenhuma cadastrada)
+  protected readonly criandoCarteira = signal(false);
+  protected readonly novaNome = signal('');
+  protected readonly novaSaldo = signal('0');
+  protected readonly novaErro = signal<string | null>(null);
+
+  protected readonly status = computed<EntryStatus>(
+    () => this.statusManual() ?? situacaoPadrao(this.date(), this.hoje()),
+  );
+  protected readonly refMonth = computed(() => {
+    const manual = this.refManual();
+    if (manual !== null) return manual;
+    return DATA.test(this.date()) ? monthOfDate(this.date()) : '';
+  });
+  protected readonly rotuloRealizada = computed(() =>
+    this.kind() === 'income' ? 'Recebida' : 'Paga',
+  );
+
+  protected readonly valor = computed(() => parseValueExpression(this.amount()));
+  protected readonly carteiraEscolhida = computed(
+    () => this.carteiras().find((w) => w.id === this.walletId()) ?? null,
+  );
+  protected readonly avisoDataAnterior = computed(() => {
+    const carteira = this.carteiraEscolhida();
+    return carteira !== null && DATA.test(this.date()) && this.date() < carteira.initialBalanceDate;
+  });
+  protected readonly previaSaldoNovo = computed(() => {
+    const r = parseValueExpression(this.novaSaldo(), true);
+    return r.ok ? `= ${formatBrl(r.cents)}` : null;
+  });
+
+  protected readonly erroValor = computed(() => {
+    const r = this.valor();
+    if (r.ok) return null;
+    return this.amount().trim() === ''
+      ? 'Informe o valor.'
+      : null; /* a mensagem do parser já aparece na pré-visualização */
+  });
+  protected readonly erroDescricao = computed(() => {
+    const t = this.description().trim();
+    if (t.length === 0) return 'Informe a descrição.';
+    return t.length > DESCRICAO_MAX
+      ? `A descrição pode ter até ${DESCRICAO_MAX} caracteres.`
+      : null;
+  });
+
+  protected readonly termo$ = new Subject<string>();
+  private chave = novaChaveIdempotencia();
+  private ultimoCorpo = '';
+  private finalizado = false;
+
+  constructor() {
+    this.restaurarRascunho();
+
+    this.termo$
+      .pipe(
+        // `timer` (e não `debounceTime`): não depende de `Date.now`, que os testes congelam.
+        switchMap((q) =>
+          q.trim().length < 1
+            ? of<EntrySuggestion[]>([])
+            : timer(120).pipe(
+                switchMap(() => this.entries.suggestions(q.trim(), this.kind())),
+                catchError(() => of<EntrySuggestion[]>([])),
+              ),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe((lista) => this.sugestoes.set(lista));
+
+    this.wallets
+      .list('false')
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        next: (lista) => {
+          this.carteiras.set(lista);
+          this.carregandoCarteiras.set(false);
+          this.resolverCarteira();
+        },
+        error: (error: unknown) => {
+          this.carregandoCarteiras.set(false);
+          this.erro.set(problemMessage(error));
+        },
+      });
+
+    effect(() => this.guardarRascunho());
+
+    afterNextRender(() => this.valorCampo()?.focus());
+  }
+
+  protected escolherTipo(kind: EntryKind): void {
+    if (this.kind() === kind) return;
+    this.kind.set(kind);
+    this.sugestoes.set([]);
+    this.termo$.next(this.description());
+    if (!this.walletManual()) this.walletId.set(this.carteiraPadrao());
+  }
+
+  protected aoDigitarDescricao(texto: string): void {
+    this.description.set(texto);
+    this.termo$.next(texto);
+  }
+
+  /** FR-011: aplica a carteira da sugestão só se ainda não foi alterada à mão; nunca o valor. */
+  protected escolherSugestao(s: EntrySuggestion): void {
+    this.description.set(s.description);
+    this.termo$.next('');
+    this.sugestoes.set([]);
+    const ativa = s.walletId && this.carteiras().some((w) => w.id === s.walletId);
+    if (!this.walletManual() && ativa) this.walletId.set(s.walletId!);
+  }
+
+  protected escolherCarteira(id: string): void {
+    this.walletId.set(id);
+    this.walletManual.set(true);
+  }
+
+  protected escolherSituacao(status: EntryStatus): void {
+    this.statusManual.set(status);
+  }
+
+  protected abrirCriarCarteira(): void {
+    this.criandoCarteira.set(true);
+    this.novaErro.set(null);
+  }
+
+  protected criarCarteira(): void {
+    const nome = this.novaNome().trim();
+    const saldo = parseValueExpression(this.novaSaldo(), true);
+    if (nome.length === 0) {
+      this.novaErro.set('Informe o nome da carteira.');
+      return;
+    }
+    if (!saldo.ok) {
+      this.novaErro.set('Informe um saldo inicial válido.');
+      return;
+    }
+    this.ocupado.set(true);
+    this.novaErro.set(null);
+    this.wallets
+      .create({
+        name: nome,
+        type: 'checking',
+        color: WALLET_COLORS[0].value,
+        initialBalance: this.novaSaldo().trim(),
+        initialBalanceDate: today(),
+      })
+      .subscribe({
+        next: (w) => {
+          this.ocupado.set(false);
+          this.carteiras.set([w]);
+          this.walletId.set(w.id);
+          this.walletManual.set(false);
+          this.criandoCarteira.set(false);
+        },
+        error: (error: unknown) => {
+          this.ocupado.set(false);
+          this.novaErro.set(
+            this.semConexao(error) ? MENSAGEM_SEM_CONEXAO_LANCAMENTO : problemMessage(error),
+          );
+        },
+      });
+  }
+
+  protected salvar(lancarOutro: boolean): void {
+    if (this.ocupado()) return;
+    this.tentou.set(true);
+    this.erro.set(null);
+
+    const corpo = this.montarCorpo();
+    if (corpo === null) return;
+
+    // Mesma chave só para reenvio idêntico: outra chave com o mesmo corpo seria um lançamento novo,
+    // e a mesma chave com corpo diferente é recusada (422 `idempotency.key_reused`).
+    const serial = JSON.stringify(corpo);
+    if (serial !== this.ultimoCorpo) {
+      this.chave = novaChaveIdempotencia();
+      this.ultimoCorpo = serial;
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      this.avisarSemConexao();
+      return;
+    }
+
+    this.ocupado.set(true);
+    this.entries.create(corpo, this.chave).subscribe({
+      next: (entry) => {
+        this.ocupado.set(false);
+        this.aoSalvar(entry, lancarOutro);
+      },
+      error: (error: unknown) => {
+        this.ocupado.set(false);
+        if (this.semConexao(error)) {
+          this.avisarSemConexao();
+          return;
+        }
+        const problem = asProblem(error);
+        this.erro.set(
+          problem?.code === 'not_found'
+            ? 'Carteira não encontrada. Escolha outra carteira.'
+            : problemMessage(error),
+        );
+      },
+    });
+  }
+
+  protected fechar(): void {
+    this.ref.close(undefined);
+  }
+
+  private montarCorpo(): EntryCreate | null {
+    const valor = this.valor();
+    const descricao = this.description().trim();
+    const notas = this.notes().trim();
+    if (
+      !valor.ok ||
+      this.erroDescricao() !== null ||
+      !DATA.test(this.date()) ||
+      this.walletId() === '' ||
+      notas.length > OBSERVACAO_MAX
+    ) {
+      return null;
+    }
+
+    const corpo: EntryCreate = {
+      kind: this.kind(),
+      description: descricao,
+      amount: this.amount().trim(),
+      date: this.date(),
+      walletId: this.walletId(),
+    };
+    // Só enviamos o que a pessoa decidiu; o resto é regra do servidor (FR-012, RT-04).
+    const status = this.statusManual();
+    if (status !== null) corpo.status = status;
+    const ref = this.refManual();
+    if (ref !== null && ref !== '' && ref !== monthOfDate(this.date())) corpo.referenceMonth = ref;
+    if (notas !== '') corpo.notes = notas;
+    return corpo;
+  }
+
+  private aoSalvar(entry: Entry, lancarOutro: boolean): void {
+    this.prefs.rememberSaved(entry.kind, entry.walletId);
+    this.prefs.clearDraft();
+    this.snackBar.open('Lançamento salvo.', undefined, { duration: 4000, verticalPosition: 'top' });
+
+    if (!lancarOutro) {
+      this.finalizado = true;
+      this.ref.close(entry);
+      return;
+    }
+
+    // FR-013: reabre limpo mantendo tipo, data e carteira.
+    this.amount.set('');
+    this.description.set('');
+    this.notes.set('');
+    this.statusManual.set(null);
+    this.refManual.set(null);
+    this.walletManual.set(false);
+    this.sugestoes.set([]);
+    this.termo$.next('');
+    this.tentou.set(false);
+    this.maisOpcoes.set(false);
+    this.chave = novaChaveIdempotencia();
+    this.ultimoCorpo = '';
+    this.valorCampo()?.focus();
+  }
+
+  private avisarSemConexao(): void {
+    // No topo: embaixo o aviso cobriria os botões Salvar e impediria tentar de novo.
+    this.snackBar.open(MENSAGEM_SEM_CONEXAO_LANCAMENTO, 'Fechar', {
+      duration: 8000,
+      verticalPosition: 'top',
+    });
+  }
+
+  private semConexao(error: unknown): boolean {
+    return error instanceof HttpErrorResponse && error.status === 0;
+  }
+
+  /** FR-010: última carteira usada no tipo, se ainda ativa; senão a principal. */
+  private carteiraPadrao(): string {
+    const ativas = this.carteiras();
+    const ultima = this.prefs.lastWalletId(this.kind());
+    return (
+      ativas.find((w) => w.id === ultima)?.id ??
+      ativas.find((w) => w.isPrimary)?.id ??
+      ativas[0]?.id ??
+      ''
+    );
+  }
+
+  private resolverCarteira(): void {
+    const atual = this.walletId();
+    if (this.carteiras().some((w) => w.id === atual)) return;
+    this.walletManual.set(false);
+    this.walletId.set(this.carteiraPadrao());
+  }
+
+  private restaurarRascunho(): void {
+    const r = this.prefs.readDraft<Rascunho>();
+    if (r === null || typeof r !== 'object') return;
+    if ((r.amount ?? '') === '' && (r.description ?? '') === '' && (r.notes ?? '') === '') return;
+
+    if (r.kind === 'expense' || r.kind === 'income') this.kind.set(r.kind);
+    this.amount.set(r.amount ?? '');
+    this.description.set(r.description ?? '');
+    this.notes.set(r.notes ?? '');
+    if (r.savedOn === this.hoje() && DATA.test(r.date)) this.date.set(r.date);
+    if (r.status === 'planned' || r.status === 'settled') this.statusManual.set(r.status);
+    if (typeof r.refMonth === 'string') this.refManual.set(r.refMonth);
+    if (r.walletId) {
+      this.walletId.set(r.walletId);
+      this.walletManual.set(r.walletManual === true);
+    }
+    this.maisOpcoes.set(r.refMonth != null || (r.notes ?? '') !== '');
+  }
+
+  private guardarRascunho(): void {
+    const rascunho: Rascunho = {
+      savedOn: this.hoje(),
+      kind: this.kind(),
+      amount: this.amount(),
+      description: this.description(),
+      date: this.date(),
+      walletId: this.walletId(),
+      walletManual: this.walletManual(),
+      status: this.statusManual(),
+      refMonth: this.refManual(),
+      notes: this.notes(),
+    };
+    if (
+      this.finalizado ||
+      (rascunho.amount === '' && rascunho.description === '' && rascunho.notes === '')
+    ) {
+      if (!this.finalizado) this.prefs.clearDraft();
+      return;
+    }
+    this.prefs.saveDraft(rascunho);
+  }
+}

@@ -2,9 +2,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
   forwardRef,
   input,
   signal,
+  viewChild,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { formatBrl, parseValueExpression, valueExpressionMessages } from '../../core/money';
@@ -73,6 +75,8 @@ export class AmountInput implements ControlValueAccessor {
   /** Aceita zero e negativo (ex.: saldo inicial). */
   readonly allowNonPositive = input(false);
 
+  private readonly field = viewChild<ElementRef<HTMLInputElement>>('field');
+
   protected readonly keys = AMOUNT_KEYS;
   protected readonly maxLength = MAX_LENGTH;
   protected readonly text = signal('');
@@ -95,6 +99,11 @@ export class AmountInput implements ControlValueAccessor {
 
   private onChange: (value: string) => void = () => undefined;
   private onTouched: () => void = () => undefined;
+
+  /** Foca o campo (no celular o teclado do sistema não abre: o campo é só leitura). */
+  focus(): void {
+    this.field()?.nativeElement.focus();
+  }
 
   writeValue(value: string | null | undefined): void {
     this.text.set(value ?? '');

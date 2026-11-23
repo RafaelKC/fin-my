@@ -1,0 +1,235 @@
+<div class="folha">
+  <header class="topo">
+    <h2 class="titulo" id="lancamento-titulo">Novo lançamento</h2>
+    <button type="button" class="fechar" aria-label="Fechar" (click)="fechar()">
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">close</mat-icon>
+    </button>
+  </header>
+
+  <div class="corpo" role="group" aria-labelledby="lancamento-titulo">
+    <div class="tipos" role="radiogroup" aria-label="Tipo de lançamento">
+      <button
+        type="button"
+        role="radio"
+        class="tipo"
+        [attr.aria-checked]="kind() === 'expense'"
+        (click)="escolherTipo('expense')"
+      >
+        Saída
+      </button>
+      <button
+        type="button"
+        role="radio"
+        class="tipo"
+        [attr.aria-checked]="kind() === 'income'"
+        (click)="escolherTipo('income')"
+      >
+        Entrada
+      </button>
+    </div>
+
+    <app-amount-input
+      label="Valor"
+      [ngModel]="amount()"
+      (ngModelChange)="amount.set($event)"
+      [ngModelOptions]="{ standalone: true }"
+    />
+    @if (tentou() && erroValor(); as mensagem) {
+      <p class="erro" role="alert" data-testid="erro-valor">{{ mensagem }}</p>
+    }
+
+    <div class="campo">
+      <label for="lancamento-descricao">Descrição</label>
+      <input
+        id="lancamento-descricao"
+        type="text"
+        autocomplete="off"
+        [attr.maxlength]="descricaoMax + 20"
+        [value]="description()"
+        [attr.aria-invalid]="tentou() && erroDescricao() !== null"
+        (input)="aoDigitarDescricao($any($event.target).value)"
+      />
+      @if (sugestoes().length > 0) {
+        <ul class="sugestoes" aria-label="Sugestões">
+          @for (s of sugestoes(); track s.description) {
+            <li>
+              <button
+                type="button"
+                class="sugestao"
+                data-testid="sugestao"
+                (click)="escolherSugestao(s)"
+              >
+                {{ s.description }}
+              </button>
+            </li>
+          }
+        </ul>
+      }
+      @if (tentou() && erroDescricao(); as mensagem) {
+        <p class="erro" role="alert" data-testid="erro-descricao">{{ mensagem }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="lancamento-data">Data</label>
+      <input
+        id="lancamento-data"
+        type="date"
+        [value]="date()"
+        (input)="date.set($any($event.target).value)"
+      />
+    </div>
+
+    <div class="campo">
+      @if (carregandoCarteiras()) {
+        <span class="rotulo">Carteira</span>
+        <p role="status">Carregando…</p>
+      } @else if (carteiras().length === 0) {
+        <span class="rotulo">Carteira</span>
+        @if (!criandoCarteira()) {
+          <p class="ajuda">Você ainda não tem carteiras.</p>
+          <button type="button" class="botao secundario" (click)="abrirCriarCarteira()">
+            Criar carteira
+          </button>
+        } @else {
+          <div class="mini" role="group" aria-label="Nova carteira">
+            <label for="nova-carteira-nome">Nome da carteira</label>
+            <input
+              id="nova-carteira-nome"
+              type="text"
+              autocomplete="off"
+              maxlength="40"
+              [value]="novaNome()"
+              (input)="novaNome.set($any($event.target).value)"
+            />
+            <label for="nova-carteira-saldo">Saldo inicial</label>
+            <input
+              id="nova-carteira-saldo"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              [value]="novaSaldo()"
+              (input)="novaSaldo.set($any($event.target).value)"
+            />
+            @if (previaSaldoNovo(); as previa) {
+              <p class="ajuda" data-testid="nova-carteira-previa">{{ previa }}</p>
+            }
+            @if (novaErro(); as mensagem) {
+              <p class="erro" role="alert" data-testid="erro-nova-carteira">{{ mensagem }}</p>
+            }
+            <button
+              type="button"
+              class="botao secundario"
+              [disabled]="ocupado()"
+              (click)="criarCarteira()"
+            >
+              Criar
+            </button>
+          </div>
+        }
+      } @else {
+        <label for="lancamento-carteira">Carteira</label>
+        <select
+          id="lancamento-carteira"
+          [value]="walletId()"
+          (change)="escolherCarteira($any($event.target).value)"
+        >
+          @for (w of carteiras(); track w.id) {
+            <option [value]="w.id" [selected]="w.id === walletId()">{{ w.name }}</option>
+          }
+        </select>
+        @if (avisoDataAnterior()) {
+          <p class="aviso" role="status" data-testid="aviso-data-anterior">
+            Esta data é anterior ao saldo inicial da carteira. O saldo inicial já deveria incluir
+            este valor.
+          </p>
+        }
+      }
+      @if (tentou() && !carregandoCarteiras() && walletId() === '' && !criandoCarteira()) {
+        <p class="erro" role="alert" data-testid="erro-carteira">Escolha uma carteira.</p>
+      }
+    </div>
+
+    <div class="campo">
+      <span class="rotulo" id="lancamento-situacao">Situação</span>
+      <div class="tipos" role="radiogroup" aria-labelledby="lancamento-situacao">
+        <button
+          type="button"
+          role="radio"
+          class="tipo"
+          [attr.aria-checked]="status() === 'planned'"
+          (click)="escolherSituacao('planned')"
+        >
+          Prevista
+        </button>
+        <button
+          type="button"
+          role="radio"
+          class="tipo"
+          [attr.aria-checked]="status() === 'settled'"
+          (click)="escolherSituacao('settled')"
+        >
+          {{ rotuloRealizada() }}
+        </button>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      class="mais"
+      [attr.aria-expanded]="maisOpcoes()"
+      aria-controls="lancamento-mais"
+      (click)="maisOpcoes.set(!maisOpcoes())"
+    >
+      Mais opções
+    </button>
+    @if (maisOpcoes()) {
+      <div id="lancamento-mais" class="mais-corpo">
+        <div class="campo">
+          <label for="lancamento-mes">Mês de referência</label>
+          <input
+            id="lancamento-mes"
+            type="month"
+            [value]="refMonth()"
+            (input)="refManual.set($any($event.target).value)"
+          />
+        </div>
+        <div class="campo">
+          <label for="lancamento-obs">Observação</label>
+          <textarea
+            id="lancamento-obs"
+            rows="3"
+            [attr.maxlength]="observacaoMax"
+            [value]="notes()"
+            (input)="notes.set($any($event.target).value)"
+          ></textarea>
+        </div>
+      </div>
+    }
+
+    @if (erro(); as mensagem) {
+      <p class="erro" role="alert" data-testid="erro-lancamento">{{ mensagem }}</p>
+    }
+  </div>
+
+  <footer class="rodape">
+    <button
+      type="button"
+      class="botao principal"
+      data-testid="salvar"
+      [disabled]="ocupado()"
+      (click)="salvar(false)"
+    >
+      Salvar
+    </button>
+    <button
+      type="button"
+      class="botao secundario"
+      data-testid="salvar-outro"
+      [disabled]="ocupado()"
+      (click)="salvar(true)"
+    >
+      Salvar e lançar outro
+    </button>
+  </footer>
+</div>

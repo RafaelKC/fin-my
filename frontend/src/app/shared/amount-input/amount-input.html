@@ -1,6 +1,7 @@
 <div class="amount">
   <label class="amount__label" [attr.for]="'amount-field'">{{ label() }}</label>
   <input
+    #field
     id="amount-field"
     class="amount__field"
     type="text"
