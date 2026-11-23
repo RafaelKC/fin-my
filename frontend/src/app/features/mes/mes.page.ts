@@ -42,6 +42,8 @@ import {
 } from './mes-logic';
 import { MonthView, SummaryColumn } from './month.models';
 import { MonthsService } from './months.service';
+import { PendenciasComponent } from './pendencias/pendencias.component';
+import { PendenciasService } from './pendencias/pendencias.service';
 
 const DESKTOP = '(min-width: 1024px)';
 
@@ -59,13 +61,13 @@ interface LinhaResumo {
  * Visão do mês (US3; FR-014..FR-018, FR-026; contracts/ui-rotas.md): resumo Previsto | Realizado,
  * listas de Entradas, Saídas e Transferências, caixinha de situação de um toque, navegação por
  * setas e deslizar (filtros ficam na query string `carteiras` e `situacao`). A lista vira tabela
- * ordenável a partir de 1024 px. Pendências (T014) e o recorte por carteira das transferências
+ * ordenável a partir de 1024 px. O aviso de pendências (T014) é do componente `app-pendencias`; o recorte por carteira das transferências
  * (T016) ficam para as próximas tarefas.
  */
 @Component({
   selector: 'app-mes-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BrlPipe, MatIconModule],
+  imports: [BrlPipe, MatIconModule, PendenciasComponent],
   templateUrl: './mes.page.html',
   styleUrl: './mes.page.scss',
 })
@@ -76,6 +78,7 @@ export class MesPage {
   private readonly entries = inject(EntriesService);
   private readonly wallets = inject(WalletsService);
   private readonly launcher = inject(LancamentoLauncher);
+  private readonly pendencias = inject(PendenciasService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly recarregar$ = new Subject<void>();
 
@@ -93,6 +96,11 @@ export class MesPage {
   protected readonly desktop = signal(false);
 
   protected readonly rotuloMes = computed(() => (this.mes() ? monthLabel(this.mes()) : ''));
+  /** FR-019: o aviso só aparece no mês de hoje e quando há pendências. */
+  protected readonly mostraPendencias = computed(() => {
+    const v = this.visao();
+    return v !== null && v.month === v.today.slice(0, 7) && v.pending.count > 0;
+  });
   protected readonly noMinimo = computed(() => this.mes() <= MES_MINIMO);
   protected readonly noMaximo = computed(() => this.mes() >= MES_MAXIMO);
 
@@ -200,7 +208,7 @@ export class MesPage {
       });
 
     // FR-016: o que mudar um lançamento (aqui, no formulário rápido) recarrega a visão.
-    merge(this.entries.criados$, this.entries.alterados$)
+    merge(this.entries.criados$, this.entries.alterados$, this.pendencias.alteradas$)
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.recarregar$.next());
     this.entries.criados$.pipe(takeUntilDestroyed()).subscribe(() => this.carregarCarteiras());

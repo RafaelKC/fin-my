@@ -142,6 +142,10 @@
       </tbody>
     </table>
 
+    @if (mostraPendencias()) {
+      <app-pendencias [resumo]="visao()!.pending" [carteiras]="carteiras()" />
+    }
+
     @if (mesVazio()) {
       <p class="vazio" data-testid="mes-vazio">Nada lançado neste mês. Toque em + para lançar.</p>
     } @else if (semResultadoNoFiltro()) {
