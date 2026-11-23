@@ -62,7 +62,7 @@ description: "Tarefas da feature 002 — Carteiras, Entradas, Saídas e visão d
 
 ## Phase 6: US5 — Transferências (P2)
 
-- [ ] T015 [US5] API `/transfers` (criar com idempotência, obter, editar com `version`, excluir com lote) em `Application/Transfers/` e `Endpoints/Transfers/`; testes HTTP de US5.1 (saldos das carteiras via `GET /wallets`), US5.3 e da exclusão + restaurar. Depende de T003, T005
+- [x] T015 [US5] API `/transfers` (criar com idempotência, obter, editar com `version`, excluir com lote) em `Application/Transfers/` e `Endpoints/Transfers/`; testes HTTP de US5.1 (saldos das carteiras via `GET /wallets`), US5.3 e da exclusão + restaurar. Depende de T003, T005
 - [ ] T016 [P] [US5] Transferência no formulário rápido (tipo "Transferência": De/Para, descrição padrão, sem situação nem sugestões) e na visão do mês (lista recolhida; com filtro de uma carteira "Transferência recebida/enviada" e linhas de transferências no resumo); e2e `transferencias.spec.ts` (US5.1–US5.3). Depende de T012, T015
 
 ---
