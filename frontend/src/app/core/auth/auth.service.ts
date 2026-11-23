@@ -11,7 +11,7 @@ import {
   throwError,
 } from 'rxjs';
 import { url } from '../api/api-client';
-import { SessionResponse } from './session';
+import { SessionResponse, TenantDto, UserDto } from './session';
 
 /**
  * Sessão do app (research R4). O access token vive só em memória: o refresh token é um cookie
@@ -65,6 +65,24 @@ export class AuthService {
       shareReplay({ bufferSize: 1, refCount: false }),
     );
     return this.refreshing;
+  }
+
+  /** Reflete na sessão em memória o nome do usuário/do Espaço alterados em `/perfil`. */
+  updateProfile(changes: { user?: UserDto; tenant?: TenantDto }): void {
+    this.session.update((s) => (s ? { ...s, ...changes } : s));
+  }
+
+  /**
+   * Sair neste aparelho (US5): `POST /auth/logout` apaga o cookie e revoga a sessão; é idempotente.
+   * Mesmo se a chamada falhar, a sessão local é descartada — o usuário pediu para sair.
+   */
+  logout(): Observable<void> {
+    return this.http.post<void>(url('/auth/logout'), null).pipe(
+      finalize(() => {
+        this.session.set(null);
+        void this.router.navigate(['/entrar']);
+      }),
+    );
   }
 
   /** Esquece a sessão local e leva ao login, guardando a rota atual para voltar depois. */

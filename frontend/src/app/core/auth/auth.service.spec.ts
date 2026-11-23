@@ -107,4 +107,32 @@ describe('AuthService', () => {
     auth.endSession();
     expect(navigate).toHaveBeenCalledWith(['/entrar'], { queryParams: { returnUrl: '/perfil' } });
   });
+
+  it('updateProfile troca usuário e Espaço na sessão em memória', () => {
+    auth.startSession(sessao());
+    auth.updateProfile({ user: { id: 'u1', name: 'Ana Souza', email: 'ana@example.com' } });
+    auth.updateProfile({ tenant: { id: 't1', name: 'Casa', role: 'owner' } });
+    expect(auth.user()?.name).toBe('Ana Souza');
+    expect(auth.tenant()?.name).toBe('Casa');
+    expect(auth.accessToken).toBe('token-1');
+  });
+
+  it('logout chama /auth/logout, descarta a sessão e vai para /entrar sem returnUrl', () => {
+    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    auth.startSession(sessao());
+    auth.logout().subscribe();
+    const req = http.expectOne('/api/v1/auth/logout');
+    expect(req.request.method).toBe('POST');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    expect(auth.isAuthenticated()).toBe(false);
+    expect(navigate).toHaveBeenCalledWith(['/entrar']);
+  });
+
+  it('logout descarta a sessão local mesmo se a API falhar', () => {
+    vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    auth.startSession(sessao());
+    auth.logout().subscribe({ error: () => undefined });
+    http.expectOne('/api/v1/auth/logout').error(new ProgressEvent('error'));
+    expect(auth.isAuthenticated()).toBe(false);
+  });
 });
