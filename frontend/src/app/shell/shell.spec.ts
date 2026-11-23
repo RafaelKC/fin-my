@@ -33,4 +33,13 @@ describe('Shell', () => {
     expect(nav?.querySelector('a')?.getAttribute('href')).toBe('/');
     expect(el.querySelector('main')).not.toBeNull();
   });
+
+  it('tem o item "Carteiras" levando a /carteiras', () => {
+    const fixture = TestBed.createComponent(Shell);
+    fixture.detectChanges();
+    const link = (fixture.nativeElement as HTMLElement).querySelector(
+      'nav[aria-label="Principal"] a[href="/carteiras"]',
+    );
+    expect(link?.textContent).toContain('Carteiras');
+  });
 });

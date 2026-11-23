@@ -1,0 +1,54 @@
+<main class="pagina">
+  <header class="cabecalho">
+    <h1>Carteiras</h1>
+    <a class="nova" routerLink="/carteiras/nova">Nova carteira</a>
+  </header>
+
+  <label class="filtro">
+    <input
+      type="checkbox"
+      [checked]="arquivadas()"
+      (change)="alternarArquivadas()"
+      data-testid="filtro-arquivadas"
+    />
+    Arquivadas
+  </label>
+
+  @if (erro(); as mensagem) {
+    <div class="aviso" role="alert" data-testid="erro-lista">{{ mensagem }}</div>
+  }
+
+  @if (carregando()) {
+    <p role="status">Carregando…</p>
+  } @else if (carteiras().length === 0 && !erro()) {
+    <p class="vazio" data-testid="lista-vazia">
+      {{
+        arquivadas()
+          ? 'Nenhuma carteira arquivada.'
+          : 'Você ainda não tem carteiras. Toque em "Nova carteira" para começar.'
+      }}
+    </p>
+  } @else {
+    <ul class="lista" data-testid="lista-carteiras">
+      @for (c of carteiras(); track c.id) {
+        <li>
+          <a class="linha" [routerLink]="['/carteiras', c.id]" data-testid="carteira">
+            <span class="cor" [style.background]="c.color" aria-hidden="true"></span>
+            <span class="nome">
+              {{ c.name }}
+              @if (c.isPrimary) {
+                <span class="selo" data-testid="principal">Principal</span>
+              }
+              @if (c.archived) {
+                <span class="selo cinza">Arquivada</span>
+              }
+            </span>
+            <span class="saldo" [class.negativo]="c.currentBalanceCents < 0">{{
+              c.currentBalanceCents | brl
+            }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</main>
