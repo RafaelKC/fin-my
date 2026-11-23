@@ -130,6 +130,29 @@ public sealed class CardPurchase : TenantEntity
 
     public void ChangeAmount(Money amount) => AmountCents = Rules.EntryAmount(amount);
 
+    /// <summary>Débito ou crédito. Parcela é sempre débito: estorno é à vista (003 FR-009, research R6).</summary>
+    public void ChangeNature(PurchaseNature nature)
+    {
+        if (nature == PurchaseNature.Credit && InstallmentPlanId is not null)
+        {
+            throw Rules.Invalid("card_purchase.credit_must_be_single", "nature", "Estorno ou crédito não pode ser parcelado");
+        }
+
+        Nature = nature;
+    }
+
+    public void ChangeDate(DateOnly purchaseDate) => PurchaseDate = Rules.Date(purchaseDate, "purchaseDate");
+
+    /// <summary>
+    /// Passa a compra para outro cartão e fatura (FR-015). A FK tripla garante que a fatura é do cartão; a marca de
+    /// "movida à mão" não muda.
+    /// </summary>
+    public void Reassign(Guid creditCardId, Guid invoiceId)
+    {
+        CreditCardId = creditCardId;
+        InvoiceId = invoiceId;
+    }
+
     public void ChangeNotes(string? notes) =>
         Notes = Rules.OptionalText(notes, Rules.NotesMaxLength, "notes", "notes", "a observação");
 
