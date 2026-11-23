@@ -263,16 +263,9 @@ test.describe('carteiras (US1) — API simulada', () => {
   });
 });
 
-// Contra a stack real (E2E_BASE_URL). Depende da API de carteiras (T006): enquanto
-// `/api/v1/wallets` não existir (404), os testes são pulados; com a rota no ar (401 sem token)
-// rodam normalmente.
+// Contra a stack real (E2E_BASE_URL); sem ela, são pulados.
 test.describe('carteiras (US1) — stack real', () => {
   test.skip(!process.env['E2E_BASE_URL'], 'precisa da stack real (E2E_BASE_URL)');
-
-  test.beforeEach(async ({ request }) => {
-    const resposta = await request.get('/api/v1/wallets');
-    test.skip(resposta.status() === 404, 'API de carteiras (T006) ainda não está na stack');
-  });
 
   async function criarConta(page: Page) {
     const email = `lia+${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;

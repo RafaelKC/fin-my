@@ -4,7 +4,7 @@ Rodam em dois viewports: `mobile` (360×800) e `desktop` (1280×800). Como rodar
 [`../../README.md`](../../README.md#e2e-playwright-360-px-e-1280-px).
 
 - Arquivos que dizem **"API simulada"** usam `page.route`; rodam também com o `ng serve`.
-- Testes **"stack real"** e `pwa.spec.ts` precisam do compose no ar e de `E2E_BASE_URL` (ignorados sem ele).
+- Testes **"stack real"** e `pwa.spec.ts` precisam do compose no ar e de `E2E_BASE_URL` (pulados com `test.skip` quando ele não está definido).
 - `playwright.config.ts` usa `serviceWorkers: 'block'`: o service worker do build de produção
   intercepta as requisições antes do `page.route`. Só `pwa.spec.ts` liga o worker (`test.use`).
 
