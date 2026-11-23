@@ -20,6 +20,10 @@ public static class JobsServiceCollectionExtensions
     public static IServiceCollection AddFinMyDeletionPurge(this IServiceCollection services)
         => services.AddTransient<DeletionPurgeJob>();
 
+    /// <summary>Registra o job de expurgo das chaves de idempotência.</summary>
+    public static IServiceCollection AddFinMyIdempotencyPurge(this IServiceCollection services)
+        => services.AddTransient<IdempotencyPurgeJob>();
+
     /// <summary>Agenda os jobs recorrentes no Hangfire (idempotente: atualiza se já existir).</summary>
     public static void RegisterFinMyRecurringJobs(this IRecurringJobManager manager)
     {
@@ -27,6 +31,8 @@ public static class JobsServiceCollectionExtensions
             manager.AddOrUpdate<TokenCleanupJob>(id, job => job.RunAsync(CancellationToken.None), cron, new RecurringJobOptions { TimeZone = zone ?? TimeZoneInfo.Utc }));
         DeletionPurgeJob.Describe((id, cron, zone) =>
             manager.AddOrUpdate<DeletionPurgeJob>(id, job => job.RunAsync(CancellationToken.None), cron, new RecurringJobOptions { TimeZone = zone ?? TimeZoneInfo.Utc }));
+        IdempotencyPurgeJob.Describe((id, cron, zone) =>
+            manager.AddOrUpdate<IdempotencyPurgeJob>(id, job => job.RunAsync(CancellationToken.None), cron, new RecurringJobOptions { TimeZone = zone ?? TimeZoneInfo.Utc }));
     }
 
     /// <summary>Hangfire com armazenamento no PostgreSQL (docs/arquitetura.md §2) e o <see cref="ITenantJobRunner"/>.</summary>
@@ -35,6 +41,7 @@ public static class JobsServiceCollectionExtensions
         services.AddFinMyTenantJobRunner();
         services.AddFinMyTokenCleanup();
         services.AddFinMyDeletionPurge();
+        services.AddFinMyIdempotencyPurge();
         services.AddScoped<ITenantIdSource, EfTenantIdSource>();
         services.AddTransient<PasswordResetEmailJob>();
         services.Replace(ServiceDescriptor.Scoped<IPasswordResetDispatcher, HangfirePasswordResetDispatcher>());
