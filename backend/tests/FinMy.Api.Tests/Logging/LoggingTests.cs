@@ -73,4 +73,48 @@ public class LoggingOutputTests(PostgresFixture postgres) : ApiTestBase(postgres
         output.ShouldContain("\"@l\":\"Error\"");
         output.ShouldNotContain("ana@exemplo.com");
     }
+
+    [Fact]
+    public async Task Logs_nao_contem_email_nem_senha_enviados_em_query_corpo_e_cabecalhos()
+    {
+        const string email = "carla.segredo@exemplo.com";
+        const string senha = "S3nha-Super-Secreta-9876";
+
+        var original = Console.Out;
+        using var captured = new StringWriter();
+        Console.SetOut(captured);
+        try
+        {
+            var banco = await Postgres.CreateEmptyDatabaseAsync();
+            await using var factory = new ApiFactory(banco, null, new TestEndpoints());
+            await factory.MigrateAsync();
+            using var client = factory.CreateClient();
+
+            // Erro 500 com e-mail na URL e na mensagem da exceção.
+            await client.GetAsync($"/test/boom?email={Uri.EscapeDataString(email)}");
+
+            // Corpo com e-mail/senha em rota existente e em rota de auth (ainda inexistente = 404/405).
+            using var body = System.Net.Http.Json.JsonContent.Create(new { name = "Carla", email, password = senha });
+            await client.PostAsync("/test/echo", body);
+            await client.PostAsync("/api/v1/auth/login", System.Net.Http.Json.JsonContent.Create(new { email, password = senha }));
+
+            // Cabeçalhos com credenciais.
+            using var request = new HttpRequestMessage(HttpMethod.Get, "/test/validation");
+            request.Headers.TryAddWithoutValidation("Authorization", $"Basic {email}:{senha}");
+            request.Headers.TryAddWithoutValidation("Cookie", $"finmy_rt={senha}");
+            await client.SendAsync(request);
+
+            await Task.Delay(200);
+        }
+        finally
+        {
+            Console.SetOut(original);
+        }
+
+        var output = captured.ToString();
+        output.ShouldContain("\"@l\"");
+        output.ShouldNotContain(email);
+        output.ShouldNotContain("carla.segredo");
+        output.ShouldNotContain(senha);
+    }
 }
