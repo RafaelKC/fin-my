@@ -24,7 +24,9 @@ export interface CardPurchaseCreate {
   confirmPaidInvoice?: boolean;
 }
 
-/** `CardPurchase` do contrato (só o que o formulário usa). */
+export type PurchaseOrigin = 'manual' | 'installment' | 'carry_over';
+
+/** `CardPurchase` do contrato. */
 export interface CardPurchase {
   id: string;
   creditCardId: string;
@@ -34,8 +36,30 @@ export interface CardPurchase {
   amountCents: number;
   nature: 'debit' | 'credit';
   date: string;
+  origin: PurchaseOrigin;
+  reconciled: boolean;
+  manuallyMoved: boolean;
+  notes?: string | null;
+  installmentPlanId?: string | null;
   installmentNumber?: number | null;
   installmentTotal?: number | null;
+  createdAt: string;
+  version: number;
+}
+
+/** Escopo da edição/exclusão/movimento em parcelas (contracts/openapi.yaml). */
+export type EscopoCompra = 'this' | 'this_and_following' | 'all';
+
+/** Corpo de `PUT /card-purchases/{id}` (FR-015); `amount` é sempre positivo, o sinal vem de `nature`. */
+export interface CardPurchaseUpdate {
+  description: string;
+  amount: string;
+  nature: 'debit' | 'credit';
+  date: string;
+  creditCardId: string;
+  notes: string | null;
+  scope: 'this' | 'all';
+  confirmPaidInvoice?: boolean;
   version: number;
 }
 

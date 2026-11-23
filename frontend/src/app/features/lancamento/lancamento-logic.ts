@@ -17,3 +17,10 @@ export function novaChaveIdempotencia(): string {
   const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
+
+/** Centavos como expressão de valor aceita pelo servidor: `4499` → `44,99`, `-9990` → `-99,90`. */
+export function centavosParaExpressao(cents: number): string {
+  const abs = Math.abs(cents);
+  const reais = Math.floor(abs / 100);
+  return `${cents < 0 ? '-' : ''}${reais},${(abs % 100).toString().padStart(2, '0')}`;
+}

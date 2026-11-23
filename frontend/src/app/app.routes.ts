@@ -77,6 +77,11 @@ export const routes: Routes = [
           import('./features/cartoes/cartao-form.page').then((m) => m.CartaoFormPage),
       },
       {
+        path: 'cartoes/:id/faturas/:mes',
+        loadComponent: () =>
+          import('./features/cartoes/fatura/fatura.page').then((m) => m.FaturaPage),
+      },
+      {
         path: 'busca',
         loadComponent: () => import('./features/busca/busca.page').then((m) => m.BuscaPage),
       },

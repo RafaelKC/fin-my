@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { CardPurchase } from './card-purchase.models';
 import { Entry } from './entry.models';
 import { LancamentoSheet, LancamentoSheetData } from './lancamento.sheet';
 
@@ -14,9 +15,17 @@ export class LancamentoLauncher {
 
   /** Sem `entry`, abre para lançar; com `entry`, abre para editar esse lançamento. */
   abrir(entry?: Entry): MatDialogRef<LancamentoSheet, Entry | undefined> {
+    return this.abrirCom(entry ? { entry } : {});
+  }
+
+  /** Abre o formulário editando uma compra no cartão (003 FR-015). */
+  abrirCompra(purchase: CardPurchase): MatDialogRef<LancamentoSheet, Entry | undefined> {
+    return this.abrirCom({ purchase });
+  }
+
+  private abrirCom(data: LancamentoSheetData): MatDialogRef<LancamentoSheet, Entry | undefined> {
     if (this.aberto !== null) return this.aberto;
 
-    const data: LancamentoSheetData = entry ? { entry } : {};
     const desktop = typeof matchMedia === 'function' && matchMedia(DESKTOP).matches;
     const ref = this.dialog.open<LancamentoSheet, LancamentoSheetData, Entry | undefined>(
       LancamentoSheet,

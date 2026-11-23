@@ -42,3 +42,46 @@ describe('CardPurchasesService', () => {
     expect(avisadas).toHaveLength(1);
   });
 });
+
+describe('CardPurchasesService — fatura (003 T009)', () => {
+  let service: CardPurchasesService;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    service = TestBed.inject(CardPurchasesService);
+    http = TestBed.inject(HttpTestingController);
+  });
+  afterEach(() => http.verify());
+
+  it('confere, move, edita e exclui com escopo', () => {
+    service.setReconciled('p1', true).subscribe();
+    const conferir = http.expectOne('/api/v1/card-purchases/p1/reconciled');
+    expect(conferir.request.method).toBe('PATCH');
+    expect(conferir.request.body).toEqual({ reconciled: true });
+
+    service.move('p1', 'next', 'this_and_following').subscribe();
+    const mover = http.expectOne('/api/v1/card-purchases/p1/move');
+    expect(mover.request.body).toEqual({ direction: 'next', scope: 'this_and_following' });
+
+    service.delete('p1', 'all').subscribe();
+    const excluir = http.expectOne('/api/v1/card-purchases/p1?scope=all');
+    expect(excluir.request.method).toBe('DELETE');
+
+    service
+      .update('p1', {
+        description: 'Uber',
+        amount: '12,95',
+        nature: 'debit',
+        date: '2026-03-10',
+        creditCardId: 'c1',
+        notes: null,
+        scope: 'this',
+        version: 3,
+      })
+      .subscribe();
+    expect(http.expectOne('/api/v1/card-purchases/p1').request.method).toBe('PUT');
+  });
+});
