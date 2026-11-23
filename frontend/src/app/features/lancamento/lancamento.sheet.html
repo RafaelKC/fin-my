@@ -28,6 +28,17 @@
       >
         Entrada
       </button>
+      @if (!editando) {
+        <button
+          type="button"
+          role="radio"
+          class="tipo"
+          [attr.aria-checked]="kind() === 'transfer'"
+          (click)="escolherTipo('transfer')"
+        >
+          Transferência
+        </button>
+      }
     </div>
 
     <app-amount-input
@@ -48,10 +59,11 @@
         autocomplete="off"
         [attr.maxlength]="descricaoMax + 20"
         [value]="description()"
+        [attr.placeholder]="ehTransferencia() ? descricaoPadrao : null"
         [attr.aria-invalid]="tentou() && erroDescricao() !== null"
         (input)="aoDigitarDescricao($any($event.target).value)"
       />
-      @if (sugestoes().length > 0) {
+      @if (!ehTransferencia() && sugestoes().length > 0) {
         <ul class="sugestoes" aria-label="Sugestões">
           @for (s of sugestoes(); track s.description) {
             <li>
@@ -130,7 +142,7 @@
           </div>
         }
       } @else {
-        <label for="lancamento-carteira">Carteira</label>
+        <label for="lancamento-carteira">{{ ehTransferencia() ? 'De' : 'Carteira' }}</label>
         <select
           id="lancamento-carteira"
           [value]="walletId()"
@@ -147,34 +159,56 @@
           </p>
         }
       }
+      @if (ehTransferencia() && carteiras().length > 0) {
+        <label for="lancamento-destino">Para</label>
+        <select
+          id="lancamento-destino"
+          [value]="toWalletId()"
+          (change)="escolherDestino($any($event.target).value)"
+        >
+          @if (toWalletId() === '') {
+            <option value="" selected>Escolha a carteira</option>
+          }
+          @for (w of carteiras(); track w.id) {
+            <option [value]="w.id" [selected]="w.id === toWalletId()">{{ w.name }}</option>
+          }
+        </select>
+        @if (erroDestino(); as mensagem) {
+          @if (tentou()) {
+            <p class="erro" role="alert" data-testid="erro-destino">{{ mensagem }}</p>
+          }
+        }
+      }
       @if (tentou() && !carregandoCarteiras() && walletId() === '' && !criandoCarteira()) {
         <p class="erro" role="alert" data-testid="erro-carteira">Escolha uma carteira.</p>
       }
     </div>
 
-    <div class="campo">
-      <span class="rotulo" id="lancamento-situacao">Situação</span>
-      <div class="tipos" role="radiogroup" aria-labelledby="lancamento-situacao">
-        <button
-          type="button"
-          role="radio"
-          class="tipo"
-          [attr.aria-checked]="status() === 'planned'"
-          (click)="escolherSituacao('planned')"
-        >
-          Prevista
-        </button>
-        <button
-          type="button"
-          role="radio"
-          class="tipo"
-          [attr.aria-checked]="status() === 'settled'"
-          (click)="escolherSituacao('settled')"
-        >
-          {{ rotuloRealizada() }}
-        </button>
+    @if (!ehTransferencia()) {
+      <div class="campo">
+        <span class="rotulo" id="lancamento-situacao">Situação</span>
+        <div class="tipos" role="radiogroup" aria-labelledby="lancamento-situacao">
+          <button
+            type="button"
+            role="radio"
+            class="tipo"
+            [attr.aria-checked]="status() === 'planned'"
+            (click)="escolherSituacao('planned')"
+          >
+            Prevista
+          </button>
+          <button
+            type="button"
+            role="radio"
+            class="tipo"
+            [attr.aria-checked]="status() === 'settled'"
+            (click)="escolherSituacao('settled')"
+          >
+            {{ rotuloRealizada() }}
+          </button>
+        </div>
       </div>
-    </div>
+    }
 
     <button
       type="button"
@@ -187,15 +221,17 @@
     </button>
     @if (maisOpcoes()) {
       <div id="lancamento-mais" class="mais-corpo">
-        <div class="campo">
-          <label for="lancamento-mes">Mês de referência</label>
-          <input
-            id="lancamento-mes"
-            type="month"
-            [value]="refMonth()"
-            (input)="refManual.set($any($event.target).value)"
-          />
-        </div>
+        @if (!ehTransferencia()) {
+          <div class="campo">
+            <label for="lancamento-mes">Mês de referência</label>
+            <input
+              id="lancamento-mes"
+              type="month"
+              [value]="refMonth()"
+              (input)="refManual.set($any($event.target).value)"
+            />
+          </div>
+        }
         <div class="campo">
           <label for="lancamento-obs">Observação</label>
           <textarea

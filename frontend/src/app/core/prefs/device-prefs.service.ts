@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
-/** Tipos que o formulário rápido grava por aparelho (Transferência entra na T016). */
-export type LancamentoKind = 'expense' | 'income';
+/** Tipos que o formulário rápido grava por aparelho (FR-009). */
+export type LancamentoKind = 'expense' | 'income' | 'transfer';
 
 const PREFS_KEY = 'finmy.prefs.v1';
 const DRAFT_KEY = 'finmy.draft.lancamento';
@@ -12,7 +12,7 @@ interface Prefs {
 }
 
 function isKind(value: unknown): value is LancamentoKind {
-  return value === 'expense' || value === 'income';
+  return value === 'expense' || value === 'income' || value === 'transfer';
 }
 
 /**

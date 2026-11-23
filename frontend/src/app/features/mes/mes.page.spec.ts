@@ -6,7 +6,8 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { carteira } from '../carteiras/testing';
 import { Entry } from '../lancamento/entry.models';
 import { LancamentoLauncher } from '../lancamento/lancamento.launcher';
-import { MonthView, SummaryColumn } from './month.models';
+import { TransfersService } from '../lancamento/transfers.service';
+import { MonthView, SummaryColumn, Transfer } from './month.models';
 import { MesPage } from './mes.page';
 
 const col = (p: Partial<SummaryColumn>): SummaryColumn => ({
@@ -29,6 +30,17 @@ const entry = (p: Partial<Entry>): Entry => ({
   referenceMonth: '2026-03',
   status: 'settled',
   walletId: 'w-azul',
+  createdAt: '',
+  version: 1,
+  ...p,
+});
+const transferencia = (p: Partial<Transfer> = {}): Transfer => ({
+  id: 't1',
+  fromWalletId: 'w-azul',
+  toWalletId: 'w-verde',
+  amountCents: 2000,
+  date: '2026-03-12',
+  description: 'Transferência',
   createdAt: '',
   version: 1,
   ...p,
@@ -189,5 +201,65 @@ describe('MesPage', () => {
   it('não mostra o aviso quando não há pendências', async () => {
     await abrir();
     expect(el.querySelector('[data-testid="pendencias"]')).toBeNull();
+  });
+
+  describe('transferências (US5)', () => {
+    const abrirLista = () => {
+      el.querySelector<HTMLButtonElement>('[data-testid="transferencias-alternar"]')!.click();
+      harness.detectChanges();
+    };
+
+    it('lista recolhida por padrão; sem filtro mostra "Transferência" e De → Para', async () => {
+      await abrir('/mes/2026-03', visao({ transfers: [transferencia()] }));
+      expect(el.querySelector('[data-testid="lista-transferencias"]')).toBeNull();
+      expect(txt('transferencias-alternar')).toContain('Transferências (1)');
+      abrirLista();
+      expect(txt('transferencia')).toContain('Azul → Verde');
+      expect(txt('transferencia-rotulo')).toBe('Transferência');
+      // todas as carteiras: as transferências se anulam e o resumo não ganha linhas
+      expect(el.querySelector('[data-testid="resumo-transferencias-enviadas"]')).toBeNull();
+    });
+
+    it('filtro de uma carteira: "Transferência enviada" e linhas no resumo (US5.2)', async () => {
+      await abrir(
+        '/mes/2026-03?carteiras=w-azul',
+        visao({
+          walletIds: ['w-azul'],
+          actual: col({ transfersOutCents: 2000, finalBalanceCents: 48000 }),
+          transfers: [transferencia()],
+        }),
+      );
+      abrirLista();
+      expect(txt('transferencia-rotulo')).toBe('Transferência enviada');
+      expect(
+        el.querySelector('[data-testid="resumo-transferencias-enviadas"] [data-testid="realizado"]')
+          ?.textContent,
+      ).toContain('R$ 20,00');
+      expect(txt('resumo-transferencias-recebidas')).toContain('Transferências recebidas');
+    });
+
+    it('filtro pela carteira de destino: "Transferência recebida"', async () => {
+      await abrir(
+        '/mes/2026-03?carteiras=w-verde',
+        visao({ walletIds: ['w-verde'], transfers: [transferencia()] }),
+      );
+      abrirLista();
+      expect(txt('transferencia-rotulo')).toBe('Transferência recebida');
+    });
+
+    it('recarrega a visão quando uma transferência é criada (FR-016)', async () => {
+      await abrir();
+      TestBed.inject(TransfersService)
+        .create(
+          { fromWalletId: 'w-azul', toWalletId: 'w-verde', amount: '20', date: '2026-03-12' },
+          'k',
+        )
+        .subscribe();
+      http.expectOne('/api/v1/transfers').flush(transferencia());
+      http.expectOne('/api/v1/months/2026-03').flush(visao({ transfers: [transferencia()] }));
+      http.expectOne('/api/v1/wallets?archived=all').flush([]);
+      harness.detectChanges();
+      expect(txt('transferencias-alternar')).toContain('Transferências (1)');
+    });
   });
 });

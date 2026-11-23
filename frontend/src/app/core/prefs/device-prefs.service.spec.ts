@@ -30,8 +30,14 @@ describe('DevicePrefsService', () => {
   it('ignora preferências corrompidas', () => {
     localStorage.setItem('finmy.prefs.v1', '{não é json');
     expect(prefs.lastKind()).toBe('expense');
-    localStorage.setItem('finmy.prefs.v1', JSON.stringify({ lastKind: 'transfer' }));
+    localStorage.setItem('finmy.prefs.v1', JSON.stringify({ lastKind: 'cartao' }));
     expect(prefs.lastKind()).toBe('expense');
+  });
+
+  it('lembra Transferência como último tipo e a origem usada (FR-009)', () => {
+    prefs.rememberSaved('transfer', 'w-azul');
+    expect(prefs.lastKind()).toBe('transfer');
+    expect(prefs.lastWalletId('transfer')).toBe('w-azul');
   });
 
   it('guarda e apaga o rascunho', () => {
