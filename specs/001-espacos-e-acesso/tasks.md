@@ -117,7 +117,7 @@ autenticação e casca do front prontas para as telas.
 
 **Independent Test**: alterar nome e senha, sair, entrar com a nova senha (spec US5).
 
-- [ ] T027 [US5] Implementar `UpdateMyName` (`PATCH /api/v1/me`, `User.name` conforme data-model.md), `ChangePassword` (`POST /api/v1/me/password`; senha atual errada → 422 `current_password_incorrect`; revoga as OUTRAS sessões com `RefreshToken.revoked_reason = password_changed`) e `RenameTenant` (`PATCH /api/v1/tenant`, `Tenant.name` conforme data-model.md) em `backend/src/FinMy.Application/Me/` e `backend/src/FinMy.Api/Endpoints/Me/`; testes dos cenários 5.1–5.3 e do Edge Case de dois aparelhos (o outro cai na próxima ação)
+- [x] T027 [US5] Implementar `UpdateMyName` (`PATCH /api/v1/me`, `User.name` conforme data-model.md), `ChangePassword` (`POST /api/v1/me/password`; senha atual errada → 422 `current_password_incorrect`; revoga as OUTRAS sessões com `RefreshToken.revoked_reason = password_changed`) e `RenameTenant` (`PATCH /api/v1/tenant`, `Tenant.name` conforme data-model.md) em `backend/src/FinMy.Application/Me/` e `backend/src/FinMy.Api/Endpoints/Me/`; testes dos cenários 5.1–5.3 e do Edge Case de dois aparelhos (o outro cai na próxima ação)
 - [x] T028 [US5] Criar a tela `/perfil` em `frontend/src/app/features/perfil/` (nome, nome do Espaço refletido no topo, trocar senha, sair) e o e2e `frontend/e2e/perfil.spec.ts` incluindo dois contextos de navegador para o Edge Case de troca de senha
 
 **Checkpoint**: todas as user stories da 001 funcionando.
