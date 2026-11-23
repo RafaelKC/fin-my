@@ -11,7 +11,7 @@ namespace FinMy.Infrastructure.Auth;
 /// Refresh tokens opacos de 256 bits; o banco guarda só o SHA-256. Validade deslizante de 90 dias (001 FR-009),
 /// rotação a cada uso e revogação da sessão inteira quando um token já trocado reaparece (docs/arquitetura.md §7).
 /// </summary>
-public sealed class RefreshTokenStore(FinMyDbContext db, IClock clock) : IRefreshTokenStore
+public sealed class RefreshTokenStore(FinMyDbContext db, IClock clock, ISessionRegistry sessions) : IRefreshTokenStore
 {
     /// <summary>Validade desde o último uso; também o <c>Max-Age</c> do cookie.</summary>
     public static readonly TimeSpan Lifetime = TimeSpan.FromDays(90);
@@ -111,6 +111,9 @@ public sealed class RefreshTokenStore(FinMyDbContext db, IClock clock) : IRefres
                     .SetProperty(r => r.RevokedAt, now)
                     .SetProperty(r => r.RevokedReason, reason),
                 cancellationToken);
+
+        // Depois de gravar: a próxima requisição com esse `sid` já enxerga a sessão revogada.
+        sessions.Forget(sessionId);
     }
 
     private async Task<RefreshRotation> RejectRevokedAsync(RefreshToken current, CancellationToken cancellationToken)

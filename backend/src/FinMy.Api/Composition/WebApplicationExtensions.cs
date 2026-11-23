@@ -6,7 +6,7 @@ namespace FinMy.Api.Composition;
 
 public static class WebApplicationExtensions
 {
-    /// <summary>Pipeline HTTP na ordem: proxy → log → erros → rate limiting → autenticação → contexto → autorização → endpoints.</summary>
+    /// <summary>Pipeline HTTP na ordem: proxy → log → erros → rate limiting → autenticação → sessão → contexto → autorização → endpoints.</summary>
     public static WebApplication UseFinMyPipeline(this WebApplication app)
     {
         app.UseForwardedHeaders();
@@ -16,6 +16,7 @@ public static class WebApplicationExtensions
         app.UseRouting();
         app.UseRateLimiter();
         app.UseAuthentication();
+        app.UseSessionValidation();
         app.UseCurrentContext();
         app.UseAuthorization();
 

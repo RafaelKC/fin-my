@@ -5,6 +5,7 @@ using FinMy.Infrastructure.Auth;
 using FinMy.Infrastructure.Context;
 using FinMy.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace FinMy.Application.Tests.Auth;
 
@@ -26,7 +27,7 @@ public class RefreshTokenStoreTests(PostgresFixture postgres)
     {
         clock ??= new FakeClock(Start);
         var db = postgres.CreateContext(new CurrentContext(), clock);
-        return (new RefreshTokenStore(db, clock), db, clock);
+        return (new RefreshTokenStore(db, clock, new SessionRegistry(db, clock, new MemoryCache(new MemoryCacheOptions()))), db, clock);
     }
 
     private async Task<RefreshToken> LoadAsync(string token)
