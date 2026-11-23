@@ -55,7 +55,7 @@ description: "Tarefas da feature 002 — Carteiras, Entradas, Saídas e visão d
 
 ## Phase 5: US4 — Pendências (P2)
 
-- [ ] T013 [US4] `GET /entries/pending` e `POST /entries/bulk` (research R9; `delete` com um único lote) em `Application/Entries/`; testes HTTP de US4.1–US4.4 (inclui desfazer pelo `/deletions/{batchId}/restore`) e tudo-ou-nada com id inexistente. Depende de T005, T008
+- [x] T013 [US4] `GET /entries/pending` e `POST /entries/bulk` (research R9; `delete` com um único lote) em `Application/Entries/`; testes HTTP de US4.1–US4.4 (inclui desfazer pelo `/deletions/{batchId}/restore`) e tudo-ou-nada com id inexistente. Depende de T005, T008
 - [ ] T014 [P] [US4] Aviso e lista de pendências na visão do mês (`frontend/src/app/features/mes/pendencias/`): aviso só no mês de hoje com contagem e totais, lista com seleção múltipla e as três ações, Desfazer de 8 s na exclusão; e2e `pendencias.spec.ts` (US4.1–US4.4). Depende de T012, T013
 
 ---
