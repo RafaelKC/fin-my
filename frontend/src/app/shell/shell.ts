@@ -25,5 +25,6 @@ export class Shell {
 
   protected readonly itens: readonly ItemDeMenu[] = [
     { rotulo: 'Mês', icone: 'calendar_month', rota: '/' },
+    { rotulo: 'Perfil', icone: 'person', rota: '/perfil' },
   ];
 }
