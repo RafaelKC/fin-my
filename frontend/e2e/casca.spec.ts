@@ -70,6 +70,31 @@ test.describe('casca do app logado', () => {
     expect(alvo!.height).toBeGreaterThanOrEqual(44);
   });
 
+  test('Cartões na barra; Carteiras e Perfil em "Mais" no celular e direto no menu lateral', async ({
+    page,
+  }, info) => {
+    await page.route('**/api/v1/credit-cards**', (route) => route.fulfill({ json: [] }));
+    await page.goto('/');
+    const nav = page.getByRole('navigation', { name: 'Principal' });
+    await expect(nav.getByRole('link', { name: 'Cartões' })).toBeVisible();
+
+    if (info.project.name === 'mobile') {
+      await expect(nav.getByRole('link', { name: 'Carteiras' })).toBeHidden();
+      await nav.getByTestId('mais').click();
+      await expect(nav.getByRole('link', { name: 'Carteiras' })).toBeVisible();
+      await expect(nav.getByRole('link', { name: 'Perfil' })).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(nav.getByRole('link', { name: 'Carteiras' })).toBeHidden();
+    } else {
+      await expect(nav.getByTestId('mais')).toBeHidden();
+      await expect(nav.getByRole('link', { name: 'Carteiras' })).toBeVisible();
+      await expect(nav.getByRole('link', { name: 'Perfil' })).toBeVisible();
+    }
+
+    await nav.getByRole('link', { name: 'Cartões' }).click();
+    await expect(page).toHaveURL(/\/cartoes$/);
+  });
+
   test('serve o manifest do PWA com o nome Fin-My', async ({ request }) => {
     const manifest = await (await request.get('/manifest.webmanifest')).json();
     expect(manifest.name).toBe('Fin-My');

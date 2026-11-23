@@ -69,6 +69,57 @@
   }
 }
 
+// "Mais" (celular): botão na barra; o painel com Carteiras e Perfil abre acima dela.
+.mais {
+  position: relative;
+  flex: 1;
+  display: flex;
+
+  > .item {
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+
+  &.mais-ativo > .mais-botao {
+    color: var(--mat-sys-primary);
+  }
+}
+
+@media (max-width: 1023.98px) {
+  .mais-painel {
+    display: none;
+    position: absolute;
+    right: 4px;
+    bottom: calc(100% + 4px);
+    min-width: 160px;
+    padding: 8px;
+    background: var(--mat-sys-surface-container-high);
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: 16px;
+    box-shadow: var(--mat-sys-level2);
+
+    .item {
+      flex-direction: row;
+      justify-content: flex-start;
+      gap: 12px;
+      min-height: 48px;
+      padding: 0 16px;
+      border-radius: 24px;
+
+      &.ativo {
+        background: var(--mat-sys-secondary-container);
+        color: var(--mat-sys-on-secondary-container);
+      }
+    }
+  }
+
+  .mais.aberto .mais-painel {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
 // "+" global: destacado no meio da barra inferior.
 .lancar {
   font: var(--mat-sys-label-medium);
@@ -120,6 +171,20 @@
       background: var(--mat-sys-secondary-container);
       color: var(--mat-sys-on-secondary-container);
     }
+  }
+
+  // Menu lateral: sem "Mais"; Carteiras e Perfil aparecem direto, na ordem do contrato.
+  .mais,
+  .mais-painel {
+    display: contents;
+  }
+
+  .mais-botao {
+    display: none;
+  }
+
+  .mais-painel .item {
+    padding: 0 16px;
   }
 
   .lancar {

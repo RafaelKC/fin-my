@@ -35,13 +35,47 @@ describe('Shell', () => {
     expect(el.querySelector('main')).not.toBeNull();
   });
 
-  it('tem o item "Carteiras" levando a /carteiras', () => {
+  it('tem o item "Cartões" levando a /cartoes, logo depois de "Mês"', () => {
     const fixture = TestBed.createComponent(Shell);
     fixture.detectChanges();
-    const link = (fixture.nativeElement as HTMLElement).querySelector(
-      'nav[aria-label="Principal"] a[href="/carteiras"]',
+    const nav = (fixture.nativeElement as HTMLElement).querySelector(
+      'nav[aria-label="Principal"]',
+    )!;
+    const links = Array.from(nav.querySelectorAll(':scope > a'));
+    expect(links[1].getAttribute('href')).toBe('/cartoes');
+    expect(links[1].textContent).toContain('Cartões');
+  });
+
+  it('"Carteiras" e "Perfil" ficam em "Mais" (painel fechado até tocar)', () => {
+    const fixture = TestBed.createComponent(Shell);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const nav = el.querySelector('nav[aria-label="Principal"]')!;
+    // fora da barra principal: só dentro do painel de "Mais"
+    expect(nav.querySelector(':scope > a[href="/carteiras"]')).toBeNull();
+    const painel = nav.querySelector('#mais-painel')!;
+    expect(painel.querySelector('a[href="/carteiras"]')?.textContent).toContain('Carteiras');
+    expect(painel.querySelector('a[href="/perfil"]')?.textContent).toContain('Perfil');
+
+    const mais = nav.querySelector<HTMLButtonElement>('[data-testid="mais"]')!;
+    expect(mais.textContent).toContain('Mais');
+    expect(mais.getAttribute('aria-expanded')).toBe('false');
+    mais.click();
+    fixture.detectChanges();
+    expect(mais.getAttribute('aria-expanded')).toBe('true');
+    expect(nav.querySelector('.mais.aberto')).not.toBeNull();
+  });
+
+  it('a barra segue Mês · Cartões · + · Busca · Mais', () => {
+    const fixture = TestBed.createComponent(Shell);
+    fixture.detectChanges();
+    const nav = (fixture.nativeElement as HTMLElement).querySelector(
+      'nav[aria-label="Principal"]',
+    )!;
+    const ordem = Array.from(nav.children).map((c) =>
+      ['Mês', 'Cartões', 'Lançar', 'Busca', 'Mais'].find((t) => c.textContent?.includes(t)),
     );
-    expect(link?.textContent).toContain('Carteiras');
+    expect(ordem).toEqual(['Mês', 'Cartões', 'Lançar', 'Busca', 'Mais']);
   });
 
   it('tem o "+" Lançar na barra, que abre o formulário rápido (FR-008)', () => {

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { irPara } from './navegacao';
 
 const sessao = {
   accessToken: 'token',
@@ -251,13 +252,13 @@ test.describe('carteiras (US1) — API simulada', () => {
     await expect(page.getByTestId('carteira')).toHaveCount(1);
   });
 
-  test('"Carteiras" aparece na navegação da casca', async ({ page }) => {
+  test('"Carteiras" é alcançável pela navegação da casca (em "Mais" no celular)', async ({
+    page,
+  }) => {
     await simularApi(page);
     await page.goto('/');
-    await page
-      .getByRole('navigation', { name: 'Principal' })
-      .getByRole('link', { name: 'Carteiras' })
-      .click();
+    await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
+    await irPara(page, 'Carteiras');
     await expect(page).toHaveURL(/\/carteiras$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Carteiras' })).toBeVisible();
   });

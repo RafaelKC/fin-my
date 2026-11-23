@@ -63,6 +63,20 @@ export const routes: Routes = [
           import('./features/carteiras/carteira-form.page').then((m) => m.CarteiraFormPage),
       },
       {
+        path: 'cartoes',
+        loadComponent: () => import('./features/cartoes/cartoes.page').then((m) => m.CartoesPage),
+      },
+      {
+        path: 'cartoes/novo',
+        loadComponent: () =>
+          import('./features/cartoes/cartao-form.page').then((m) => m.CartaoFormPage),
+      },
+      {
+        path: 'cartoes/:id/editar',
+        loadComponent: () =>
+          import('./features/cartoes/cartao-form.page').then((m) => m.CartaoFormPage),
+      },
+      {
         path: 'busca',
         loadComponent: () => import('./features/busca/busca.page').then((m) => m.BuscaPage),
       },
