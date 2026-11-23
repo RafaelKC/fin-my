@@ -92,7 +92,7 @@ autenticação e casca do front prontas para as telas.
 
 **Independent Test**: com duas contas, nenhum dado de A é visível ou alterável por B (spec US3, SC-003).
 
-- [ ] T024 [US3] Criar a suíte de isolamento em `backend/tests/FinMy.Api.Tests/Isolation/`: (a) descoberta por reflexão de todos os tipos `ITenantEntity` mapeados, exigindo uma fábrica de dados por tipo (falha se faltar — nesta feature só as sondas, no contexto de teste); (b) para cada operação do OpenAPI gerado pela API, chamadas como B após dados criados por A, verificando ausência de dados de A, 404 `not_found` em ids de A e nada gravado; (c) teste de que o `tid` do token só é emitido para quem tem `TenantMember` (arquitetura §3.6); incluir o comando no README de testes
+- [x] T024 [US3] Criar a suíte de isolamento em `backend/tests/FinMy.Api.Tests/Isolation/`: (a) descoberta por reflexão de todos os tipos `ITenantEntity` mapeados, exigindo uma fábrica de dados por tipo (falha se faltar — nesta feature só as sondas, no contexto de teste); (b) para cada operação do OpenAPI gerado pela API, chamadas como B após dados criados por A, verificando ausência de dados de A, 404 `not_found` em ids de A e nada gravado; (c) teste de que o `tid` do token só é emitido para quem tem `TenantMember` (arquitetura §3.6); incluir o comando no README de testes
 
 **Checkpoint**: SC-003 coberto e a suíte cresce sozinha com as próximas features.
 
