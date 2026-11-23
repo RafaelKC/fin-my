@@ -53,6 +53,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IDeletionStore, DeletionStore>();
         services.AddScoped<IWalletStore, WalletStore>();
         services.AddScoped<ITransferStore, TransferStore>();
+        services.AddScoped<IInvoiceRepository, InvoiceRepository>();
         services.AddScoped<IMonthReader, MonthReader>();
         services.AddScoped<IIdempotencyStore, IdempotencyStore>();
         services.AddScoped<IEntryStore, EntryStore>();
