@@ -26,5 +26,8 @@ public static class OperationSamples
             ["PATCH /api/v1/me"] = _ => new { name = "Nome Novo de B" },
             ["POST /api/v1/me/password"] = c => new { currentPassword = c.PasswordOfB, newPassword = NewPassword },
             ["PATCH /api/v1/tenant"] = _ => new { name = "Espaço Novo de B" },
+            ["POST /api/v1/entries"] = _ => new { kind = "expense", description = "Tim", amount = "44,99", date = "2026-03-10", walletId = Guid.NewGuid() },
+            ["PUT /api/v1/entries/{id}"] = _ => new { kind = "expense", description = "Tim", amount = "44,99", date = "2026-03-10", walletId = Guid.NewGuid(), status = "settled", version = 1 },
+            ["PATCH /api/v1/entries/{id}/status"] = _ => new { status = "planned" },
         };
 }
