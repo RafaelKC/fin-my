@@ -6,6 +6,9 @@ namespace FinMy.Application.Abstractions;
 /// <summary>Persistência do perfil (US5): nome da pessoa, senha e nome do Espaço.</summary>
 public interface IProfileStore
 {
+    /// <summary>Usuário e Espaço da pessoa, ou <c>null</c> se a conta não existe mais.</summary>
+    Task<MeResult?> GetAsync(Guid userId, CancellationToken cancellationToken);
+
     /// <summary>Altera o nome do usuário e devolve o usuário e o Espaço, ou <c>null</c> se a conta não existe mais.</summary>
     Task<MeResult?> RenameUserAsync(Guid userId, string name, DateTimeOffset now, CancellationToken cancellationToken);
 

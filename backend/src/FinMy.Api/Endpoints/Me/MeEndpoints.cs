@@ -7,7 +7,7 @@ using FinMy.Infrastructure.Auth;
 
 namespace FinMy.Api.Endpoints.Profile;
 
-/// <summary>Perfil (US5): <c>PATCH /me</c>, <c>POST /me/password</c> e <c>PATCH /tenant</c> (contracts/openapi.yaml).</summary>
+/// <summary>Contexto e perfil (US2/US5): <c>GET /me</c>, <c>PATCH /me</c>, <c>POST /me/password</c> e <c>PATCH /tenant</c> (contracts/openapi.yaml).</summary>
 public sealed class MeEndpoints : IEndpointModule
 {
     public void MapEndpoints(IEndpointRouteBuilder app)
@@ -15,6 +15,13 @@ public sealed class MeEndpoints : IEndpointModule
         ArgumentNullException.ThrowIfNull(app);
 
         var group = app.MapGroup("/api/v1").WithTags("me").RequireAuthorization();
+
+        group.MapGet("/me", async (GetMeHandler handler, HttpContext http, CancellationToken cancellationToken) =>
+        {
+            var result = await handler.HandleAsync(cancellationToken);
+            http.Response.Headers.CacheControl = "no-store";
+            return Results.Ok(new MeResponse(ToDto(result.User), ToDto(result.Tenant)));
+        });
 
         group.MapPatch("/me", async (RenameRequest body, UpdateMyNameHandler handler, CancellationToken cancellationToken) =>
         {
