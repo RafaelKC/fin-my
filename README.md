@@ -10,7 +10,7 @@ Stack: .NET 10 · PostgreSQL 17 · Angular (PWA) · Docker Compose.
 
 | O quê | Onde |
 |---|---|
-| Specs por feature (spec-kit): `spec.md`, `plan.md`, `tasks.md`, `quickstart.md`, `contracts/` | [`specs/`](specs/README.md) (a feature em andamento é a [`001-espacos-e-acesso`](specs/001-espacos-e-acesso/)) |
+| Specs por feature (spec-kit): `spec.md`, `plan.md`, `tasks.md`, `quickstart.md`, `contracts/` | [`specs/`](specs/README.md) (a 001 está pronta; a 002 é a [`002-carteiras-e-lancamentos`](specs/002-carteiras-e-lancamentos/)) |
 | Constituição: princípios, glossário, regras transversais | [`.specify/memory/constitution.md`](.specify/memory/constitution.md) |
 | Arquitetura técnica (normativa) e desvios registrados | [`docs/arquitetura.md`](docs/arquitetura.md) |
 | Modelo de dados | [`docs/modelo-de-dados.md`](docs/modelo-de-dados.md) |
@@ -116,6 +116,29 @@ E2E_BASE_URL=http://localhost:8080 npm run e2e
 `MAILPIT_URL` muda o endereço) e sobe o limite de requisições de auth, que derrubaria execuções
 seguidas. O roteiro manual do quickstart e a especificação de qual e2e cobre cada passo estão em
 [`frontend/e2e/README.md`](frontend/e2e/README.md).
+
+## Rotas do app e da API
+
+Telas (Angular; as públicas são `/entrar`, `/criar-conta`, `/esqueci-senha` e `/redefinir-senha`):
+
+| Rota | Tela |
+|---|---|
+| `/mes/:mes` (`/` e `/mes` abrem o mês atual) | Visão do mês: resumo Previsto x Realizado, lançamentos, transferências, filtro por carteira e pendências |
+| `/carteiras`, `/carteiras/nova`, `/carteiras/:id` | Lista, cadastro e edição de carteiras (arquivar, tornar principal, excluir) |
+| `/busca` | Busca de lançamentos e transferências por texto, sem acento nem caixa |
+| `/perfil` | Nome do usuário e do Espaço, troca de senha, sair |
+
+API (`/api/v1`, tudo com sessão; contrato em
+[`specs/002-carteiras-e-lancamentos/contracts/openapi.yaml`](specs/002-carteiras-e-lancamentos/contracts/openapi.yaml)).
+Os `POST` de criação aceitam `Idempotency-Key`:
+
+| Recurso | Rotas |
+|---|---|
+| Carteiras | `GET/POST /wallets`, `GET/PUT/DELETE /wallets/{id}`, `POST /wallets/{id}/make-primary`, `/archive`, `/unarchive` |
+| Lançamentos | `POST /entries`, `GET/PUT/DELETE /entries/{id}`, `PATCH /entries/{id}/status`, `POST /entries/{id}/duplicate`, `POST /entries/bulk`, `GET /entries/pending`, `/suggestions`, `/search` |
+| Transferências | `POST /transfers`, `GET/PUT/DELETE /transfers/{id}` |
+| Mês | `GET /months/{yyyy-MM}?walletIds=` |
+| Desfazer exclusão | `POST /deletions/{batchId}/restore` (até 10 min) |
 
 ## Migrações (EF Core)
 
