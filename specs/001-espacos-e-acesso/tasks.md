@@ -66,7 +66,7 @@ autenticação e casca do front prontas para as telas.
 **Independent Test**: criar uma conta nova e ver o app logado com "Finanças de <primeiro nome>" (spec US1).
 
 - [ ] T019 [US1] Implementar o caso de uso `SignUp` em `backend/src/FinMy.Application/Auth/` (validação de `User.name`, `User.email` e senha conforme data-model.md e spec FR-001/FR-002; normalização de `User.email_normalized`; nome do Espaço por `TenantNaming` em `backend/src/FinMy.Domain/Tenants/` conforme research R10; `User` + `Tenant` + `TenantMember` (`role = owner`) na mesma transação; violação de unicidade → 409 `email_already_registered`, research R7) e o endpoint `POST /api/v1/auth/signup` em `backend/src/FinMy.Api/Endpoints/Auth/` conforme contracts/openapi.yaml; testes de API dos cenários 1.1–1.3 e dos Edge Cases de e-mail (maiúsculas/espaços e duas criações simultâneas)
-- [ ] T020 [US1] Criar a tela `/criar-conta` em `frontend/src/app/features/auth/criar-conta/` (campos, mostrar/ocultar senha, mensagens do cenário 1.2 com atalhos para entrar e recuperar senha, requisito de 8 caracteres) e o teste e2e `frontend/e2e/criar-conta.spec.ts` (mobile e desktop)
+- [x] T020 [US1] Criar a tela `/criar-conta` em `frontend/src/app/features/auth/criar-conta/` (campos, mostrar/ocultar senha, mensagens do cenário 1.2 com atalhos para entrar e recuperar senha, requisito de 8 caracteres) e o teste e2e `frontend/e2e/criar-conta.spec.ts` (mobile e desktop)
 
 **Checkpoint**: US1 funcional e testável sozinha.
 
