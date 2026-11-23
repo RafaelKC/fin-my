@@ -50,4 +50,26 @@ public sealed class RefreshToken : IEntity
     public RefreshTokenRevocationReason? RevokedReason { get; private set; }
 
     public Guid? ReplacedById { get; private set; }
+
+    /// <summary>Ativo = não revogado e ainda dentro da validade.</summary>
+    public bool IsActive(DateTimeOffset now) => RevokedAt is null && ExpiresAt > now;
+
+    /// <summary>Marca este token como trocado por <paramref name="replacedById"/> (rotação).</summary>
+    public void MarkRotated(Guid replacedById, DateTimeOffset now)
+    {
+        Revoke(RefreshTokenRevocationReason.Rotated, now);
+        ReplacedById = replacedById;
+    }
+
+    /// <summary>Encerra o token; não altera um token que já foi revogado antes.</summary>
+    public void Revoke(RefreshTokenRevocationReason reason, DateTimeOffset now)
+    {
+        if (RevokedAt is not null)
+        {
+            return;
+        }
+
+        RevokedAt = now;
+        RevokedReason = reason;
+    }
 }

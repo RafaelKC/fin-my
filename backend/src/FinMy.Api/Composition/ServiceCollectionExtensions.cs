@@ -26,6 +26,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddApplication();
         services.AddFinMyInfrastructure(configuration);
+        services.AddFinMyAuthentication(configuration);
 
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
