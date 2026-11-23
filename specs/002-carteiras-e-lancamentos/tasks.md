@@ -76,7 +76,7 @@ description: "Tarefas da feature 002 — Carteiras, Entradas, Saídas e visão d
 
 ## Phase 8: Polish
 
-- [ ] T019 Validação final: conferir que a suíte de isolamento cobre todas as rotas novas, rodar o quickstart.md §3 inteiro contra a stack real nos dois viewports (registrar no PR), atualizar `docs/modelo-de-dados.md` (`transfers.description_normalized` e `notes`; `idempotency_keys` na lista global), `docs/arquitetura.md` §14 com os desvios da 002 (se houver) e o README (rotas novas). Depende de todas
+- [x] T019 Validação final: conferir que a suíte de isolamento cobre todas as rotas novas, rodar o quickstart.md §3 inteiro contra a stack real nos dois viewports (registrar no PR), atualizar `docs/modelo-de-dados.md` (`transfers.description_normalized` e `notes`; `idempotency_keys` na lista global), `docs/arquitetura.md` §14 com os desvios da 002 (se houver) e o README (rotas novas). Depende de todas
 
 ## Dependências (resumo)
 
