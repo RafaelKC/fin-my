@@ -1,0 +1,74 @@
+# Compose base (produção / ponta a ponta). Variáveis vêm do `.env` (veja `.env.example`).
+# Em desenvolvimento: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+services:
+  db:
+    image: docker.io/library/postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?defina POSTGRES_DB no .env}
+      POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # --- Migrações (T013) ---------------------------------------------------
+  # O comando `migrate` (dotnet FinMy.Api.dll migrate) e o /health só existem a
+  # partir da T013. Até lá a API ignora o argumento e sobe como servidor, o que
+  # nunca terminaria e travaria o `api`. Quando a T013 chegar: descomente este
+  # serviço e o `depends_on.migrate` do `api` abaixo.
+  #
+  # migrate:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   command: ["migrate"]
+  #   restart: "no"
+  #   environment:
+  #     ConnectionStrings__Default: ${ConnectionStrings__Default:?defina ConnectionStrings__Default no .env}
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      ConnectionStrings__Default: ${ConnectionStrings__Default:?defina ConnectionStrings__Default no .env}
+      Jwt__SigningKey: ${Jwt__SigningKey:?defina Jwt__SigningKey no .env}
+      Smtp__Host: ${Smtp__Host:-mailpit}
+      Smtp__Port: ${Smtp__Port:-1025}
+      Smtp__User: ${Smtp__User:-}
+      Smtp__Password: ${Smtp__Password:-}
+      Smtp__UseSsl: ${Smtp__UseSsl:-false}
+      Smtp__From: ${Smtp__From:-no-reply@finmy.local}
+      APP_URL: ${APP_URL:-http://localhost:8080}
+    depends_on:
+      db:
+        condition: service_healthy
+      # T013: adicionar também
+      # migrate:
+      #   condition: service_completed_successfully
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      # Hoje o `api` só "iniciou" (sem /health). Na T013 trocar por
+      # `condition: service_healthy` (o HEALTHCHECK da imagem já aponta para /health).
+      - api
+
+volumes:
+  db-data:
