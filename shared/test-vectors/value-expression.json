@@ -1,0 +1,666 @@
+{
+  "rule": "ValueExpressionParser",
+  "description": "Texto digitado no campo de valor → centavos ou erro amount.* (RT-05, RT-02; research R1). Menos unário só no início ou após '('; '=' inicial ignorado; espaços ignorados.",
+  "cases": [
+    {
+      "id": "plain-decimal-comma",
+      "description": "Número simples com vírgula decimal",
+      "input": {
+        "text": "44,99"
+      },
+      "expected": {
+        "amountCents": 4499
+      }
+    },
+    {
+      "id": "plain-integer",
+      "description": "Inteiro vira reais cheios",
+      "input": {
+        "text": "5"
+      },
+      "expected": {
+        "amountCents": 500
+      }
+    },
+    {
+      "id": "sum-with-decimal",
+      "description": "29+73,2 (002 US2.2, RT-05)",
+      "input": {
+        "text": "29+73,2"
+      },
+      "expected": {
+        "amountCents": 10220
+      }
+    },
+    {
+      "id": "leading-equals-ignored",
+      "description": "'=' inicial é ignorado (planilha; 007 FR-006)",
+      "input": {
+        "text": "=1100-500"
+      },
+      "expected": {
+        "amountCents": 60000
+      }
+    },
+    {
+      "id": "division-by-integer",
+      "description": "239,8/2",
+      "input": {
+        "text": "239,8/2"
+      },
+      "expected": {
+        "amountCents": 11990
+      }
+    },
+    {
+      "id": "parentheses-then-division",
+      "description": "(37,02+37,87)/3 arredonda uma vez no fim",
+      "input": {
+        "text": "(37,02+37,87)/3"
+      },
+      "expected": {
+        "amountCents": 2496
+      }
+    },
+    {
+      "id": "thousand-dot-with-comma",
+      "description": "Ponto + 3 dígitos é milhar",
+      "input": {
+        "text": "1.234,56"
+      },
+      "expected": {
+        "amountCents": 123456
+      }
+    },
+    {
+      "id": "thousand-dot-integer",
+      "description": "1.234 é mil duzentos e trinta e quatro",
+      "input": {
+        "text": "1.234"
+      },
+      "expected": {
+        "amountCents": 123400
+      }
+    },
+    {
+      "id": "thousand-dot-twice",
+      "description": "Dois pontos de milhar",
+      "input": {
+        "text": "1.234.567"
+      },
+      "expected": {
+        "amountCents": 123456700
+      }
+    },
+    {
+      "id": "dot-one-digit-is-decimal",
+      "description": "Ponto + 1 dígito é decimal",
+      "input": {
+        "text": "12.5"
+      },
+      "expected": {
+        "amountCents": 1250
+      }
+    },
+    {
+      "id": "dot-two-digits-is-decimal",
+      "description": "Ponto + 2 dígitos é decimal",
+      "input": {
+        "text": "1.23"
+      },
+      "expected": {
+        "amountCents": 123
+      }
+    },
+    {
+      "id": "multiply-x",
+      "description": "'x' minúsculo multiplica",
+      "input": {
+        "text": "2x3"
+      },
+      "expected": {
+        "amountCents": 600
+      }
+    },
+    {
+      "id": "multiply-star",
+      "description": "'*' multiplica",
+      "input": {
+        "text": "2*3,5"
+      },
+      "expected": {
+        "amountCents": 700
+      }
+    },
+    {
+      "id": "divide-sign",
+      "description": "'÷' divide",
+      "input": {
+        "text": "9÷2"
+      },
+      "expected": {
+        "amountCents": 450
+      }
+    },
+    {
+      "id": "divide-slash",
+      "description": "'/' divide",
+      "input": {
+        "text": "9/2"
+      },
+      "expected": {
+        "amountCents": 450
+      }
+    },
+    {
+      "id": "rounding-half-up",
+      "description": "0,005 arredonda para cima (RT-02)",
+      "input": {
+        "text": "0,005"
+      },
+      "expected": {
+        "amountCents": 1
+      }
+    },
+    {
+      "id": "rounding-one-third",
+      "description": "1/3 = 0,3333 → 33",
+      "input": {
+        "text": "1/3"
+      },
+      "expected": {
+        "amountCents": 33
+      }
+    },
+    {
+      "id": "rounding-two-thirds",
+      "description": "2/3 = 0,6666 → 67",
+      "input": {
+        "text": "2/3"
+      },
+      "expected": {
+        "amountCents": 67
+      }
+    },
+    {
+      "id": "rounding-only-at-the-end",
+      "description": "(0,004+0,004)*100 não arredonda nos passos intermediários",
+      "input": {
+        "text": "(0,004+0,004)*100"
+      },
+      "expected": {
+        "amountCents": 80
+      }
+    },
+    {
+      "id": "max-amount",
+      "description": "Valor máximo aceito: 9.999.999,99",
+      "input": {
+        "text": "9999999,99"
+      },
+      "expected": {
+        "amountCents": 999999999
+      }
+    },
+    {
+      "id": "spaces-ignored",
+      "description": "Espaços são ignorados",
+      "input": {
+        "text": " 1 + 2 "
+      },
+      "expected": {
+        "amountCents": 300
+      }
+    },
+    {
+      "id": "precedence",
+      "description": "Multiplicação antes da soma",
+      "input": {
+        "text": "2+3*4"
+      },
+      "expected": {
+        "amountCents": 1400
+      }
+    },
+    {
+      "id": "nested-parentheses",
+      "description": "Parênteses aninhados",
+      "input": {
+        "text": "((1+2))*(3+1)"
+      },
+      "expected": {
+        "amountCents": 1200
+      }
+    },
+    {
+      "id": "unary-minus-after-open-paren",
+      "description": "Menos unário após '('",
+      "input": {
+        "text": "(-5+10)"
+      },
+      "expected": {
+        "amountCents": 500
+      }
+    },
+    {
+      "id": "unary-minus-after-open-paren-in-sum",
+      "description": "Menos unário após '(' no meio",
+      "input": {
+        "text": "3+(-1)"
+      },
+      "expected": {
+        "amountCents": 200
+      }
+    },
+    {
+      "id": "zero-comma-five",
+      "description": "0,5 é cinquenta centavos",
+      "input": {
+        "text": "0,5"
+      },
+      "expected": {
+        "amountCents": 50
+      }
+    },
+    {
+      "id": "zero-is-not-positive",
+      "description": "Zero é rejeitado (RT-02)",
+      "input": {
+        "text": "0"
+      },
+      "expected": {
+        "error": "amount.must_be_positive"
+      }
+    },
+    {
+      "id": "sub-cent-rounds-to-zero",
+      "description": "0,004 arredonda para 0",
+      "input": {
+        "text": "0,004"
+      },
+      "expected": {
+        "error": "amount.must_be_positive"
+      }
+    },
+    {
+      "id": "subtraction-to-zero",
+      "description": "10-10 dá zero",
+      "input": {
+        "text": "10-10"
+      },
+      "expected": {
+        "error": "amount.must_be_positive"
+      }
+    },
+    {
+      "id": "unary-minus-at-start",
+      "description": "-5 é negativo",
+      "input": {
+        "text": "-5"
+      },
+      "expected": {
+        "error": "amount.must_be_positive"
+      }
+    },
+    {
+      "id": "unary-minus-group-negative",
+      "description": "-(2+3) é negativo",
+      "input": {
+        "text": "-(2+3)"
+      },
+      "expected": {
+        "error": "amount.must_be_positive"
+      }
+    },
+    {
+      "id": "negative-result",
+      "description": "1+(-2) é negativo",
+      "input": {
+        "text": "1+(-2)"
+      },
+      "expected": {
+        "error": "amount.must_be_positive"
+      }
+    },
+    {
+      "id": "division-by-zero",
+      "description": "1/0",
+      "input": {
+        "text": "1/0"
+      },
+      "expected": {
+        "error": "amount.division_by_zero"
+      }
+    },
+    {
+      "id": "division-by-zero-expression",
+      "description": "10/(5-5)",
+      "input": {
+        "text": "10/(5-5)"
+      },
+      "expected": {
+        "error": "amount.division_by_zero"
+      }
+    },
+    {
+      "id": "division-by-zero-symbol",
+      "description": "9÷0",
+      "input": {
+        "text": "9÷0"
+      },
+      "expected": {
+        "error": "amount.division_by_zero"
+      }
+    },
+    {
+      "id": "syntax-error-beats-division-by-zero",
+      "description": "Erro de sintaxe tem prioridade sobre divisão por zero",
+      "input": {
+        "text": "1/0+"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "too-large-integer",
+      "description": "R$ 10.000.000,00 passa do máximo",
+      "input": {
+        "text": "10000000"
+      },
+      "expected": {
+        "error": "amount.too_large"
+      }
+    },
+    {
+      "id": "too-large-after-rounding",
+      "description": "9.999.999,995 arredonda para 10.000.000,00",
+      "input": {
+        "text": "9999999,995"
+      },
+      "expected": {
+        "error": "amount.too_large"
+      }
+    },
+    {
+      "id": "too-large-by-multiplication",
+      "description": "5.000.000 x 3",
+      "input": {
+        "text": "5.000.000*3"
+      },
+      "expected": {
+        "error": "amount.too_large"
+      }
+    },
+    {
+      "id": "too-large-many-digits",
+      "description": "Número gigante (estouro) é 'valor máximo', não erro de sintaxe",
+      "input": {
+        "text": "1000000000000000000000000000000"
+      },
+      "expected": {
+        "error": "amount.too_large"
+      }
+    },
+    {
+      "id": "empty",
+      "description": "Texto vazio",
+      "input": {
+        "text": ""
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "only-spaces",
+      "description": "Só espaços",
+      "input": {
+        "text": "   "
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "only-equals",
+      "description": "Só '='",
+      "input": {
+        "text": "="
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "double-equals",
+      "description": "'=' só vale uma vez no início",
+      "input": {
+        "text": "==1"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "letters",
+      "description": "Letras",
+      "input": {
+        "text": "abc"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "currency-symbol",
+      "description": "Símbolo de moeda não é aceito",
+      "input": {
+        "text": "R$ 10"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "two-commas",
+      "description": "1,2,3",
+      "input": {
+        "text": "1,2,3"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "dot-four-digits",
+      "description": "Ponto + 4 dígitos é inválido",
+      "input": {
+        "text": "1.2345"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "dot-without-digits",
+      "description": "Ponto sem dígitos depois",
+      "input": {
+        "text": "1."
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "dot-then-comma-decimal",
+      "description": "Decimal por ponto seguido de vírgula",
+      "input": {
+        "text": "1.23,5"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "comma-then-dot",
+      "description": "Vírgula seguida de ponto",
+      "input": {
+        "text": "1,234.5"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "two-decimal-dots",
+      "description": "1.2.3",
+      "input": {
+        "text": "1.2.3"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "trailing-comma",
+      "description": "Vírgula sem dígitos depois",
+      "input": {
+        "text": "1,"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "leading-comma",
+      "description": "Vírgula sem dígitos antes",
+      "input": {
+        "text": ",5"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "leading-dot",
+      "description": "Ponto sem dígitos antes",
+      "input": {
+        "text": ".5"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "unclosed-parenthesis",
+      "description": "(1+2",
+      "input": {
+        "text": "(1+2"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "unopened-parenthesis",
+      "description": "1+2)",
+      "input": {
+        "text": "1+2)"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "empty-parentheses",
+      "description": "()",
+      "input": {
+        "text": "()"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "unary-minus-after-operator",
+      "description": "2*-3: menos unário só no início ou após '('",
+      "input": {
+        "text": "2*-3"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "double-minus",
+      "description": "2--3",
+      "input": {
+        "text": "2--3"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "double-unary-minus",
+      "description": "--5",
+      "input": {
+        "text": "--5"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "unary-plus",
+      "description": "+5 não é aceito",
+      "input": {
+        "text": "+5"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "trailing-operator",
+      "description": "1+",
+      "input": {
+        "text": "1+"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "leading-operator",
+      "description": "*2",
+      "input": {
+        "text": "*2"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "adjacent-numbers",
+      "description": "Dois números sem operador",
+      "input": {
+        "text": "1 2"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    },
+    {
+      "id": "number-before-parenthesis",
+      "description": "Multiplicação implícita não existe",
+      "input": {
+        "text": "2(3)"
+      },
+      "expected": {
+        "error": "amount.invalid_expression"
+      }
+    }
+  ]
+}

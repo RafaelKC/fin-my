@@ -1,0 +1,136 @@
+{
+  "rule": "TextNormalizer",
+  "description": "Normalização de texto para unicidade e busca: trim, minúsculas, sem acentos; espaços internos preservados (002 FR-001, RT-05a).",
+  "cases": [
+    {
+      "id": "lowercase",
+      "description": "Maiúsculas viram minúsculas",
+      "input": {
+        "text": "Mercado Azul"
+      },
+      "expected": {
+        "text": "mercado azul"
+      }
+    },
+    {
+      "id": "accents-removed",
+      "description": "Acentos são removidos",
+      "input": {
+        "text": "Açaí do Léo"
+      },
+      "expected": {
+        "text": "acai do leo"
+      }
+    },
+    {
+      "id": "cedilla",
+      "description": "ç vira c",
+      "input": {
+        "text": "Poupança"
+      },
+      "expected": {
+        "text": "poupanca"
+      }
+    },
+    {
+      "id": "tilde-and-circumflex",
+      "description": "Til e circunflexo",
+      "input": {
+        "text": "Ação Órgão Pêra"
+      },
+      "expected": {
+        "text": "acao orgao pera"
+      }
+    },
+    {
+      "id": "trim-both-ends",
+      "description": "Espaços nas pontas são removidos",
+      "input": {
+        "text": "  Carla  "
+      },
+      "expected": {
+        "text": "carla"
+      }
+    },
+    {
+      "id": "trim-tabs-newlines",
+      "description": "Tabs e quebras nas pontas",
+      "input": {
+        "text": "\t Duda\n"
+      },
+      "expected": {
+        "text": "duda"
+      }
+    },
+    {
+      "id": "internal-spaces-preserved",
+      "description": "Espaços internos são preservados (não colapsa)",
+      "input": {
+        "text": "Conta   Verde"
+      },
+      "expected": {
+        "text": "conta   verde"
+      }
+    },
+    {
+      "id": "empty",
+      "description": "Texto vazio continua vazio",
+      "input": {
+        "text": ""
+      },
+      "expected": {
+        "text": ""
+      }
+    },
+    {
+      "id": "only-spaces",
+      "description": "Só espaços vira vazio",
+      "input": {
+        "text": "   "
+      },
+      "expected": {
+        "text": ""
+      }
+    },
+    {
+      "id": "already-normalized",
+      "description": "Texto já normalizado não muda",
+      "input": {
+        "text": "banco azul"
+      },
+      "expected": {
+        "text": "banco azul"
+      }
+    },
+    {
+      "id": "digits-and-symbols",
+      "description": "Dígitos e símbolos são mantidos",
+      "input": {
+        "text": "Vale-Refeição 2"
+      },
+      "expected": {
+        "text": "vale-refeicao 2"
+      }
+    },
+    {
+      "id": "uppercase-accented",
+      "description": "Maiúscula acentuada",
+      "input": {
+        "text": "ÉÀÇÃ"
+      },
+      "expected": {
+        "text": "eaca"
+      }
+    },
+    {
+      "id": "decomposed-input",
+      "description": "Entrada já decomposta (e + acento combinante)",
+      "input": {
+        "text": "Café"
+      },
+      "expected": {
+        "text": "cafe"
+      }
+    }
+  ]
+}
