@@ -97,6 +97,15 @@ public class TenantEntityIsolationTests(PostgresFixture postgres)
     private async Task<IReadOnlyList<Guid>> SeedAsync(Guid tenantId, IReadOnlyList<object> entities, Type type)
     {
         await using var db = postgres.CreateContext(tenantId);
+
+        // As tabelas da 002 têm FK para tenants; as sondas não.
+        await db.Database.ExecuteSqlAsync(
+            $"""
+            INSERT INTO tenants (id, name, onboarding_steps, created_at, created_by, created_via, updated_at, updated_by, updated_via)
+            VALUES ({tenantId}, 'Espaço de teste', jsonb_build_object(), now(), {tenantId}, 'system', now(), {tenantId}, 'system')
+            ON CONFLICT (id) DO NOTHING
+            """);
+
         db.AddRange(entities);
         await db.SaveChangesAsync();
 

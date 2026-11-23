@@ -22,6 +22,135 @@ namespace FinMy.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("FinMy.Domain.Entries.Entry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<long>("AmountCents")
+                        .HasColumnType("bigint")
+                        .HasColumnName("amount_cents");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("CreatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("created_via");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid?>("DeletionBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deletion_batch_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("DescriptionNormalized")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("description_normalized");
+
+                    b.Property<DateOnly>("EntryDate")
+                        .HasColumnType("date")
+                        .HasColumnName("entry_date");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("notes");
+
+                    b.Property<DateOnly>("ReferenceMonth")
+                        .HasColumnType("date")
+                        .HasColumnName("reference_month");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("UpdatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("updated_via");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("wallet_id");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_entries");
+
+                    b.HasAlternateKey("TenantId", "Id")
+                        .HasName("ak_entries_tenant_id_id");
+
+                    b.HasIndex("TenantId", "DescriptionNormalized")
+                        .HasDatabaseName("ix_entries_tenant_id_description_normalized");
+
+                    b.HasIndex("TenantId", "ReferenceMonth")
+                        .HasDatabaseName("ix_entries_tenant_id_reference_month");
+
+                    b.HasIndex("TenantId", "WalletId")
+                        .HasDatabaseName("ix_entries_tenant_id_wallet_id");
+
+                    b.HasIndex("TenantId", "Status", "ReferenceMonth")
+                        .HasDatabaseName("ix_entries_tenant_id_status_reference_month");
+
+                    b.ToTable("entries", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_entries_amount_cents", "amount_cents > 0 AND amount_cents <= 999999999");
+
+                            t.HasCheckConstraint("ck_entries_entry_date", "entry_date BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
+
+                            t.HasCheckConstraint("ck_entries_kind", "kind IN ('income', 'expense')");
+
+                            t.HasCheckConstraint("ck_entries_reference_month", "extract(day from reference_month) = 1 AND reference_month BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
+
+                            t.HasCheckConstraint("ck_entries_status", "status IN ('planned', 'settled')");
+                        });
+                });
+
             modelBuilder.Entity("FinMy.Domain.Idempotency.IdempotencyKey", b =>
                 {
                     b.Property<Guid>("TenantId")
@@ -333,6 +462,259 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("FinMy.Domain.Transfers.Transfer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<long>("AmountCents")
+                        .HasColumnType("bigint")
+                        .HasColumnName("amount_cents");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("CreatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("created_via");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid?>("DeletionBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deletion_batch_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("DescriptionNormalized")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("description_normalized");
+
+                    b.Property<Guid>("FromWalletId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("from_wallet_id");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("notes");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<Guid>("ToWalletId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("to_wallet_id");
+
+                    b.Property<DateOnly>("TransferDate")
+                        .HasColumnType("date")
+                        .HasColumnName("transfer_date");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("UpdatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("updated_via");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_transfers");
+
+                    b.HasAlternateKey("TenantId", "Id")
+                        .HasName("ak_transfers_tenant_id_id");
+
+                    b.HasIndex("TenantId", "FromWalletId")
+                        .HasDatabaseName("ix_transfers_tenant_id_from_wallet_id");
+
+                    b.HasIndex("TenantId", "ToWalletId")
+                        .HasDatabaseName("ix_transfers_tenant_id_to_wallet_id");
+
+                    b.HasIndex("TenantId", "TransferDate")
+                        .HasDatabaseName("ix_transfers_tenant_id_transfer_date");
+
+                    b.ToTable("transfers", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_transfers_amount_cents", "amount_cents > 0 AND amount_cents <= 999999999");
+
+                            t.HasCheckConstraint("ck_transfers_different_wallets", "from_wallet_id <> to_wallet_id");
+
+                            t.HasCheckConstraint("ck_transfers_transfer_date", "transfer_date BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
+                        });
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Wallets.Wallet", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("archived_at");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasColumnName("color");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("CreatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("created_via");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid?>("DeletionBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deletion_batch_id");
+
+                    b.Property<long>("InitialBalanceCents")
+                        .HasColumnType("bigint")
+                        .HasColumnName("initial_balance_cents");
+
+                    b.Property<DateOnly>("InitialBalanceDate")
+                        .HasColumnType("date")
+                        .HasColumnName("initial_balance_date");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_primary");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NameNormalized")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("name_normalized");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("type");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("UpdatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("updated_via");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_wallets");
+
+                    b.HasAlternateKey("TenantId", "Id")
+                        .HasName("ak_wallet_tenant_id_id");
+
+                    b.HasIndex("TenantId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_wallets_tenant_id_primary")
+                        .HasFilter("is_primary AND archived_at IS NULL AND deleted_at IS NULL");
+
+                    b.HasIndex("TenantId", "NameNormalized")
+                        .IsUnique()
+                        .HasDatabaseName("ix_wallets_tenant_id_name_normalized")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.ToTable("wallets", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_wallets_color", "color ~ '^#[0-9A-Fa-f]{6}$'");
+
+                            t.HasCheckConstraint("ck_wallets_initial_balance_cents", "abs(initial_balance_cents) <= 999999999");
+
+                            t.HasCheckConstraint("ck_wallets_initial_balance_date", "initial_balance_date BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
+
+                            t.HasCheckConstraint("ck_wallets_primary_not_archived", "NOT (is_primary AND archived_at IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_wallets_type", "type IN ('checking', 'digital', 'savings', 'cash', 'meal_voucher', 'other')");
+                        });
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Entries.Entry", b =>
+                {
+                    b.HasOne("FinMy.Domain.Identity.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_entries_tenant_tenant_id");
+
+                    b.HasOne("FinMy.Domain.Wallets.Wallet", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "WalletId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_entries_wallet_tenant_id_wallet_id");
+                });
+
             modelBuilder.Entity("FinMy.Domain.Identity.PasswordResetToken", b =>
                 {
                     b.HasOne("FinMy.Domain.Identity.User", null)
@@ -368,6 +750,42 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_tenant_members_user_user_id");
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Transfers.Transfer", b =>
+                {
+                    b.HasOne("FinMy.Domain.Identity.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_transfers_tenants_tenant_id");
+
+                    b.HasOne("FinMy.Domain.Wallets.Wallet", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "FromWalletId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_transfers_wallet_tenant_id_from_wallet_id");
+
+                    b.HasOne("FinMy.Domain.Wallets.Wallet", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "ToWalletId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_transfers_wallet_tenant_id_to_wallet_id");
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Wallets.Wallet", b =>
+                {
+                    b.HasOne("FinMy.Domain.Identity.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_wallets_tenants_tenant_id");
                 });
 #pragma warning restore 612, 618
         }
