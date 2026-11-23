@@ -16,7 +16,7 @@ decisões da 002 (`specs/002-carteiras-e-lancamentos/research.md`).
 
 - [x] T001 [P] Regras puras em `backend/src/FinMy.Domain/Cards/`: `InvoiceCycle`, `InvoiceStatusRule`, `InstallmentGenerator` (research R1) e os vetores `shared/test-vectors/invoice-cycle.json`, `invoice-status.json`, `installments.json` com todos os exemplos da spec (tabela "Regra de fatura", cartões Verde, X e Y, US3.1, US3.2, US4.1) e as fronteiras de research R1; testes que leem os vetores
 - [ ] T002 [P] Porta TS em `frontend/src/app/core/money/` de `InvoiceCycle` e `InstallmentGenerator` (pré-visualização) com specs lendo os mesmos vetores (se a T001 não estiver na `main`, criar os JSON com os casos da spec e a T001 completa sem divergir)
-- [ ] T003 Entidades, configurações EF e migração `CreditCards` conforme data-model.md (5 tabelas, FK tripla compra→fatura, `CHECK`s, índices), `InvoiceRepository.GetOrCreate` (research R2); testes de constraints no Postgres (compra não pode apontar para fatura de outro cartão; nome único; crédito parcelado recusado pelo `CHECK`). Depende de T001
+- [x] T003 Entidades, configurações EF e migração `CreditCards` conforme data-model.md (5 tabelas, FK tripla compra→fatura, `CHECK`s, índices), `InvoiceRepository.GetOrCreate` (research R2); testes de constraints no Postgres (compra não pode apontar para fatura de outro cartão; nome único; crédito parcelado recusado pelo `CHECK`). Depende de T001
 
 ## Phase 2: US1/US6 — Cartões
 
