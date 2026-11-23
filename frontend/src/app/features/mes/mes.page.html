@@ -159,7 +159,7 @@
       ];
       track grupo.id
     ) {
-      @if (grupo.itens.length > 0) {
+      @if (grupo.itens.length > 0 || (grupo.id === 'saidas' && faturas().length > 0)) {
         <section class="lista" [attr.aria-labelledby]="'titulo-' + grupo.id">
           <h2 [id]="'titulo-' + grupo.id">{{ grupo.titulo }}</h2>
 
@@ -224,6 +224,43 @@
                     </td>
                   </tr>
                 }
+                @if (grupo.id === 'saidas') {
+                  @for (f of faturas(); track f.creditCardId + f.dueMonth) {
+                    <tr data-testid="fatura-mes">
+                      <td>
+                        <span class="cor" [style.background]="corCartao(f.creditCardId)"></span>
+                        <button
+                          type="button"
+                          class="abrir"
+                          data-testid="fatura-abrir"
+                          (click)="abrirFatura(f)"
+                        >
+                          Fatura {{ f.creditCardName }}
+                        </button>
+                        <span class="meta" data-testid="fatura-valores">
+                          Total {{ f.totalCents | brl }} · Pago {{ f.paidCents | brl }} · Restante
+                          {{ f.remainingCents | brl }}
+                        </span>
+                      </td>
+                      <td>{{ data(f.dueDate) }}</td>
+                      <td class="num">{{ f.plannedCents | brl }}</td>
+                      <td>{{ carteiraDaFatura(f) }}</td>
+                      <td>
+                        <label class="caixinha">
+                          <input
+                            type="checkbox"
+                            data-testid="fatura-caixinha"
+                            [checked]="faturaPaga(f)"
+                            [disabled]="alterandoId() === idFatura(f) || faturaSemAcao(f)"
+                            [attr.aria-label]="'Fatura ' + f.creditCardName + ': paga'"
+                            (change)="alternarFatura(f)"
+                          />
+                          <span data-testid="fatura-situacao">{{ rotuloFatura(f) }}</span>
+                        </label>
+                      </td>
+                    </tr>
+                  }
+                }
               </tbody>
             </table>
           } @else {
@@ -255,6 +292,41 @@
                     </span>
                   </button>
                 </li>
+              }
+              @if (grupo.id === 'saidas') {
+                @for (f of faturas(); track f.creditCardId + f.dueMonth) {
+                  <li class="item" data-testid="fatura-mes">
+                    <label class="caixinha">
+                      <input
+                        type="checkbox"
+                        data-testid="fatura-caixinha"
+                        [checked]="faturaPaga(f)"
+                        [disabled]="alterandoId() === idFatura(f) || faturaSemAcao(f)"
+                        [attr.aria-label]="'Fatura ' + f.creditCardName + ': paga'"
+                        (change)="alternarFatura(f)"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      class="linha"
+                      data-testid="fatura-abrir"
+                      (click)="abrirFatura(f)"
+                    >
+                      <span class="descricao">
+                        <span class="cor" [style.background]="corCartao(f.creditCardId)"></span>
+                        Fatura {{ f.creditCardName }}
+                      </span>
+                      <span class="valor-item">{{ f.plannedCents | brl }}</span>
+                      <span class="meta">
+                        <span data-testid="fatura-situacao">{{ rotuloFatura(f) }}</span> · vence
+                        {{ data(f.dueDate) }} · Total
+                        <span data-testid="fatura-total">{{ f.totalCents | brl }}</span> · Pago
+                        <span data-testid="fatura-pago">{{ f.paidCents | brl }}</span> · Restante
+                        <span data-testid="fatura-restante">{{ f.remainingCents | brl }}</span>
+                      </span>
+                    </button>
+                  </li>
+                }
               }
             </ul>
           }

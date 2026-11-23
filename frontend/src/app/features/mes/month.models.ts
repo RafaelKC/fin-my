@@ -1,3 +1,4 @@
+import type { InvoiceSummary } from '../cartoes/card.models';
 import { Entry } from '../lancamento/entry.models';
 
 /** Coluna do resumo (`SummaryColumn` do contrato): Previsto ou Realizado. */
@@ -26,6 +27,16 @@ export interface Transfer {
   version: number;
 }
 
+/**
+ * `MonthInvoiceLine` do contrato (003 FR-021): fatura com vencimento no mês; Total, Pago e Restante
+ * são da fatura inteira, `plannedCents`/`actualCents` já vêm no recorte do filtro de carteiras.
+ */
+export interface MonthInvoiceLine extends InvoiceSummary {
+  creditCardName: string;
+  plannedCents: number;
+  actualCents: number;
+}
+
 /** `MonthView` do contrato: resposta de `GET /months/{month}`. */
 export interface MonthView {
   month: string;
@@ -36,5 +47,7 @@ export interface MonthView {
   actual: SummaryColumn;
   entries: Entry[];
   transfers: Transfer[];
+  /** Faturas com vencimento no mês (003 FR-021). */
+  invoices?: MonthInvoiceLine[];
   pending: { count: number; toReceiveCents: number; toPayCents: number };
 }

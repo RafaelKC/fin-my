@@ -35,12 +35,14 @@ import { WalletsService } from '../carteiras/wallets.service';
 import { ConfirmarData, ConfirmarDialog, ConfirmarResultado } from '../carteiras/confirmar.dialog';
 import { CreditCardOverview } from '../cartoes/card.models';
 import { CardsService } from '../cartoes/cards.service';
+import { EscopoData, EscopoDialog } from '../cartoes/fatura/escopo.dialog';
 import {
   AVISO_CREDITO,
   CODIGO_FATURA_PAGA,
   CardPurchase,
   CardPurchaseCreate,
   CardPurchaseUpdate,
+  EscopoCompra,
 } from './card-purchase.models';
 import { CardPurchasesService } from './card-purchases.service';
 import { PARCELAS_MAX, parseValorCartao, previaCompra } from './compra-cartao-logic';
@@ -488,7 +490,22 @@ export class LancamentoSheet {
     }
 
     if (this.compraAtual !== null) {
-      this.salvarEdicaoCompra(this.compraAtual, false);
+      const compra = this.compraAtual;
+      if (!this.compraEditadaValida()) return;
+      if (!this.ehParcela(compra)) {
+        this.salvarEdicaoCompra(compra, false, 'this');
+        return;
+      }
+      // US3.4: descrição e observação valem para esta parcela ou para todas.
+      this.perguntarEscopo<'this' | 'all'>({
+        titulo: 'Alterar só esta parcela ou todas?',
+        opcoes: [
+          { valor: 'this', rotulo: 'Só esta' },
+          { valor: 'all', rotulo: 'Todas' },
+        ],
+      }).subscribe((escopo) => {
+        if (escopo) this.salvarEdicaoCompra(compra, false, escopo);
+      });
       return;
     }
 
@@ -687,23 +704,86 @@ export class LancamentoSheet {
     });
   }
 
+  private ehParcela(compra: CardPurchase): boolean {
+    return compra.installmentPlanId != null && (compra.installmentTotal ?? 1) > 1;
+  }
+
+  private compraEditadaValida(): boolean {
+    return (
+      this.valor().ok &&
+      this.erroDescricao() === null &&
+      DATA.test(this.date()) &&
+      this.cartaoEscolhido() !== null &&
+      this.notes().trim().length <= OBSERVACAO_MAX
+    );
+  }
+
+  private perguntarEscopo<T extends string>(data: EscopoData<T>) {
+    return this.dialog
+      .open<EscopoDialog<T>, EscopoData<T>, T | null>(EscopoDialog, { data })
+      .afterClosed();
+  }
+
   /**
-   * Edição de compra (FR-015): PUT com todos os campos; valor negativo vira Crédito (R6). Em parcela
-   * vale só para esta (o escopo de descrição/observação é da T011).
+   * US3.5: exclui a compra (em parcela, "Só esta / Esta e as seguintes / Todas"), fecha o
+   * formulário e oferece "Desfazer" por 8 s (RT-09).
    */
-  private salvarEdicaoCompra(original: CardPurchase, confirmarFaturaPaga: boolean): void {
+  protected excluirCompra(): void {
+    const compra = this.compraAtual;
+    if (compra === null || this.ocupado()) return;
+    if (!this.ehParcela(compra)) {
+      this.excluirCompraComEscopo(compra, 'this');
+      return;
+    }
+    this.perguntarEscopo<EscopoCompra>({
+      titulo: 'Excluir parcela',
+      opcoes: [
+        { valor: 'this', rotulo: 'Só esta' },
+        { valor: 'this_and_following', rotulo: 'Esta e as seguintes' },
+        { valor: 'all', rotulo: 'Todas' },
+      ],
+    }).subscribe((escopo) => {
+      if (escopo) this.excluirCompraComEscopo(compra, escopo);
+    });
+  }
+
+  private excluirCompraComEscopo(compra: CardPurchase, escopo: EscopoCompra): void {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      this.avisarSemConexao();
+      return;
+    }
+    this.ocupado.set(true);
+    this.erro.set(null);
+    this.compras.delete(compra.id, escopo).subscribe({
+      next: (resultado) => {
+        this.ocupado.set(false);
+        this.ref.close(undefined);
+        this.exclusao.oferecerDesfazer(resultado.deletionBatchId);
+      },
+      error: (error: unknown) => {
+        this.ocupado.set(false);
+        if (this.semConexao(error)) {
+          this.avisarSemConexao();
+          return;
+        }
+        this.erro.set(problemMessage(error));
+      },
+    });
+  }
+
+  /**
+   * Edição de compra (FR-015): PUT com todos os campos; valor negativo vira Crédito (R6). Em parcela,
+   * `escopo` vale para descrição e observação (valor só esta; cartão e data todas — R7).
+   */
+  private salvarEdicaoCompra(
+    original: CardPurchase,
+    confirmarFaturaPaga: boolean,
+    escopo: 'this' | 'all',
+  ): void {
     const valor = this.valor();
     const descricao = this.description().trim();
     const notas = this.notes().trim();
-    if (
-      !valor.ok ||
-      this.erroDescricao() !== null ||
-      !DATA.test(this.date()) ||
-      this.cartaoEscolhido() === null ||
-      notas.length > OBSERVACAO_MAX
-    ) {
-      return;
-    }
+    if (!this.compraEditadaValida() || !valor.ok) return;
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       this.avisarSemConexao();
       return;
@@ -716,7 +796,7 @@ export class LancamentoSheet {
       date: this.date(),
       creditCardId: this.cardId(),
       notes: notas === '' ? null : notas,
-      scope: 'this',
+      scope: escopo,
       version: original.version,
     };
     if (confirmarFaturaPaga) corpo.confirmPaidInvoice = true;
@@ -740,7 +820,7 @@ export class LancamentoSheet {
         const problem = asProblem(error);
         if (problem?.code === CODIGO_FATURA_PAGA) {
           this.pedirConfirmacaoFaturaPaga(problem.detail, () =>
-            this.salvarEdicaoCompra(original, true),
+            this.salvarEdicaoCompra(original, true, escopo),
           );
           return;
         }
