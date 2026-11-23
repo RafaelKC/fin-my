@@ -31,7 +31,10 @@ public class SignUpTests(PostgresFixture postgres) : ApiTestBase(postgres)
     }
 
     private static async Task<JsonElement> ReadJsonAsync(HttpResponseMessage response)
-        => JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement.Clone();
+    {
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return document.RootElement.Clone();
+    }
 
     // --- Cenário 1.1: e-mail novo + senha válida → conta, Espaço "Finanças de <primeiro nome>", dona, já logada ---
 

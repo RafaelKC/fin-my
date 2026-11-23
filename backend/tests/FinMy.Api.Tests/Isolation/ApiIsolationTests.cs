@@ -215,7 +215,8 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
         string? code = null;
         try
         {
-            code = JsonDocument.Parse(text).RootElement.TryGetProperty("code", out var c) ? c.GetString() : null;
+            using var document = JsonDocument.Parse(text);
+            code = document.RootElement.TryGetProperty("code", out var c) ? c.GetString() : null;
         }
         catch (JsonException)
         {
