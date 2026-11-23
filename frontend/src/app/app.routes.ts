@@ -8,6 +8,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/entrar/entrar.page').then((m) => m.EntrarPage),
   },
   {
+    path: 'criar-conta',
+    canActivate: [publicGuard],
+    loadComponent: () =>
+      import('./features/auth/criar-conta/criar-conta.page').then((m) => m.CriarContaPage),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./shell/shell').then((m) => m.Shell),
