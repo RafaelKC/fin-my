@@ -1,4 +1,5 @@
 using FinMy.Application.Abstractions;
+using FinMy.Infrastructure.Auth;
 using FinMy.Infrastructure.Context;
 using FinMy.Infrastructure.Email;
 using FinMy.Infrastructure.Persistence;
@@ -6,6 +7,7 @@ using FinMy.Infrastructure.Persistence.Interceptors;
 using FinMy.Infrastructure.Time;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace FinMy.Infrastructure;
 
@@ -33,6 +35,12 @@ public static class InfrastructureServiceCollectionExtensions
             .AddFinMyInterceptors(sp.GetRequiredService<IClock>()));
 
         services.TryAddSingleton<IEmailSender, SmtpEmailSender>();
+
+        // Autenticação (001): a seção `Jwt` é ligada a JwtOptions por quem chama (a Api).
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>());
+        services.TryAddSingleton<ITokenService, JwtTokenService>();
+        services.TryAddSingleton<IPasswordHasher, PasswordHasherAdapter>();
+        services.AddScoped<IRefreshTokenStore, RefreshTokenStore>();
 
         return services;
     }
