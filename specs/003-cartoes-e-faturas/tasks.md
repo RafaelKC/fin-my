@@ -21,7 +21,7 @@ decisões da 002 (`specs/002-carteiras-e-lancamentos/research.md`).
 ## Phase 2: US1/US6 — Cartões
 
 - [x] T004 [US1] API `/credit-cards*` (criar, listar com `CreditCardOverview` — fatura atual, próxima, em aberto, limite disponível FR-026 —, obter, editar com redistribuição ao mudar dias (research R3), arquivar, desarquivar, excluir só sem compras/pagamentos, `invoice-for`); testes HTTP de US1.1–US1.3, US6.1, US6.3 e `CardScheduleChangeTests`. Depende de T003
-- [ ] T005 [P] [US1] Telas `/cartoes`, `/cartoes/novo`, `/cartoes/:id/editar` (contracts/ui-rotas.md) e ajuste da casca (Cartões na barra inferior, Carteiras em "Mais"); unidade + e2e `cartoes.spec.ts` (US1.1–US1.3, US6.1, US6.3). Depende de T004
+- [x] T005 [P] [US1] Telas `/cartoes`, `/cartoes/novo`, `/cartoes/:id/editar` (contracts/ui-rotas.md) e ajuste da casca (Cartões na barra inferior, Carteiras em "Mais"); unidade + e2e `cartoes.spec.ts` (US1.1–US1.3, US6.1, US6.3). Depende de T004
 
 ## Phase 3: US2–US4 — Compras
 
