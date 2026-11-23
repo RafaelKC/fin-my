@@ -10,6 +10,12 @@ namespace FinMy.Infrastructure.Auth;
 /// <summary>Grava as alterações de perfil: nome do usuário, senha e nome do Espaço.</summary>
 public sealed class ProfileStore(FinMyDbContext db) : IProfileStore
 {
+    public async Task<MeResult?> GetAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await db.Set<User>().AsNoTracking().SingleOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        return user is null ? null : await WithTenantAsync(user, cancellationToken);
+    }
+
     public async Task<MeResult?> RenameUserAsync(
         Guid userId, string name, DateTimeOffset now, CancellationToken cancellationToken)
     {
@@ -22,9 +28,14 @@ public sealed class ProfileStore(FinMyDbContext db) : IProfileStore
         user.Rename(name, now);
         await db.SaveChangesAsync(cancellationToken);
 
+        return await WithTenantAsync(user, cancellationToken);
+    }
+
+    private async Task<MeResult?> WithTenantAsync(User user, CancellationToken cancellationToken)
+    {
         var tenant = await db.Set<TenantMember>()
             .AsNoTracking()
-            .Where(m => m.UserId == userId)
+            .Where(m => m.UserId == user.Id)
             .Join(db.Set<Tenant>().AsNoTracking(), m => m.TenantId, t => t.Id, (m, t) => new TenantSummary(t.Id, t.Name, m.Role))
             .SingleOrDefaultAsync(cancellationToken);
 
