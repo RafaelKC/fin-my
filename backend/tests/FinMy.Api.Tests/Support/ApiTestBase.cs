@@ -1,0 +1,48 @@
+using FinMy.Api.Endpoints;
+using FinMy.Application.Tests.Infrastructure;
+
+namespace FinMy.Api.Tests.Support;
+
+/// <summary>Coleção que compartilha um único PostgreSQL entre as classes de teste da Api.</summary>
+[CollectionDefinition(Name)]
+public sealed class ApiTestGroup : ICollectionFixture<PostgresFixture>
+{
+    public const string Name = "api";
+}
+
+/// <summary>
+/// Base dos testes HTTP: cada classe ganha um banco novo e já migrado e uma API própria.
+/// Módulos extras de endpoints (<see cref="ExtraEndpoints"/>) e configurações (<see cref="Settings"/>)
+/// podem ser sobrescritos por quem herda.
+/// </summary>
+[Collection(ApiTestGroup.Name)]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001", Justification = "O descarte acontece em IAsyncLifetime.DisposeAsync (xUnit).")]
+public abstract class ApiTestBase(PostgresFixture postgres) : IAsyncLifetime
+{
+    private ApiFactory? _factory;
+
+    protected virtual IReadOnlyDictionary<string, string?>? Settings => null;
+
+    protected virtual IEndpointModule[] ExtraEndpoints => [];
+
+    protected ApiFactory Factory => _factory ?? throw new InvalidOperationException("Factory ainda não inicializada.");
+
+    protected HttpClient Client { get; private set; } = null!;
+
+    public async Task InitializeAsync()
+    {
+        var connection = await postgres.CreateEmptyDatabaseAsync();
+        _factory = new ApiFactory(connection, Settings, ExtraEndpoints);
+        await _factory.MigrateAsync();
+        Client = _factory.CreateClient();
+    }
+
+    public async Task DisposeAsync()
+    {
+        Client?.Dispose();
+        if (_factory is not null)
+        {
+            await _factory.DisposeAsync();
+        }
+    }
+}

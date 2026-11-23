@@ -22,6 +22,7 @@ public sealed class PostgresFixture : IAsyncLifetime
         .WithPortBinding(5432, true)
         .Build();
 
+    /// <summary>Conexão com o banco padrão do servidor (usada também pelos testes da Api, que criam bancos próprios).</summary>
     public string ConnectionString =>
         $"Host={_container.Hostname};Port={_container.GetMappedPublicPort(5432)};Username=postgres;Password={Password};Database=postgres";
 

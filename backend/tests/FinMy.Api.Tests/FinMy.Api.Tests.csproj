@@ -22,6 +22,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FinMy.Api\FinMy.Api.csproj" />
+    <!-- Reaproveita o fixture PostgreSQL (T009) e o FakeEmailSender (T016) em vez de duplicá-los. -->
+    <ProjectReference Include="..\FinMy.Application.Tests\FinMy.Application.Tests.csproj" />
   </ItemGroup>
 
 </Project>
