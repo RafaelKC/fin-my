@@ -50,15 +50,7 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
             .Select(r => new TransferTotal(YearMonth.Of(r.Year, r.Month), r.FromWalletId, r.ToWalletId, r.Cents))
             .ToList();
 
-        // Pagamentos de fatura das carteiras selecionadas, por mês de vencimento da fatura (RT-04, RT-07).
-        var invoicePayments = (await db.Set<InvoicePayment>().AsNoTracking()
-                .Where(p => selected.Contains(p.WalletId))
-                .Join(db.Set<Invoice>().AsNoTracking().Where(i => i.DueMonth <= first), p => p.InvoiceId, i => i.Id, (p, i) => new { i.DueMonth, p.AmountCents })
-                .GroupBy(r => r.DueMonth)
-                .Select(g => new { DueMonth = g.Key, Cents = g.Sum(r => r.AmountCents) })
-                .ToListAsync(cancellationToken))
-            .Select(r => new InvoiceAmount(YearMonth.From(r.DueMonth), r.Cents))
-            .ToList();
+        var invoices = await ReadInvoicesAsync(first, month, selected, filtered: walletIds is not null, today, cancellationToken);
 
         // RT-12: data crescente; empate pela ordem de criação (o id é UUIDv7, também cronológico).
         var entryItems = await entries
@@ -88,12 +80,78 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
             wallets,
             entryTotals,
             transferTotals,
-            invoicePayments,
+            invoices.Figures,
             entryItems,
             transferItems,
+            invoices.Lines,
             new PendingSummary(
                 pending.Sum(p => p.Count),
                 pending.Where(p => p.Kind == EntryKind.Income).Sum(p => p.Cents),
                 pending.Where(p => p.Kind == EntryKind.Expense).Sum(p => p.Cents)));
+    }
+
+    private sealed record InvoiceRead(IReadOnlyList<InvoiceFigure> Figures, IReadOnlyList<MonthInvoiceItem> Lines);
+
+    /// <summary>
+    /// Faturas com vencimento até o mês (research R8): total das compras e pagamentos por Carteira, agregados no banco;
+    /// só entram faturas com total ≠ 0 ou com pagamentos. Com filtro, a linha do mês só aparece se alguma Carteira selecionada a toca.
+    /// </summary>
+    private async Task<InvoiceRead> ReadInvoicesAsync(
+        DateOnly first, YearMonth month, List<Guid> selected, bool filtered, DateOnly today, CancellationToken cancellationToken)
+    {
+        var totals = await db.Set<CardPurchase>().AsNoTracking()
+            .Join(db.Set<Invoice>().AsNoTracking().Where(i => i.DueMonth <= first), p => p.InvoiceId, i => i.Id, (p, i) => p)
+            .GroupBy(p => p.InvoiceId)
+            .Select(g => new { InvoiceId = g.Key, Cents = g.Sum(p => p.Nature == PurchaseNature.Credit ? -p.AmountCents : p.AmountCents) })
+            .ToDictionaryAsync(r => r.InvoiceId, r => r.Cents, cancellationToken);
+
+        var paid = (await db.Set<InvoicePayment>().AsNoTracking()
+                .Join(db.Set<Invoice>().AsNoTracking().Where(i => i.DueMonth <= first), p => p.InvoiceId, i => i.Id, (p, i) => p)
+                .GroupBy(p => new { p.InvoiceId, p.WalletId })
+                .Select(g => new { g.Key.InvoiceId, g.Key.WalletId, Cents = g.Sum(p => p.AmountCents) })
+                .ToListAsync(cancellationToken))
+            .GroupBy(r => r.InvoiceId)
+            .ToDictionary(g => g.Key, g => (IReadOnlyDictionary<Guid, long>)g.ToDictionary(r => r.WalletId, r => r.Cents));
+
+        var ids = totals.Where(t => t.Value != 0).Select(t => t.Key).Concat(paid.Keys).Distinct().ToList();
+        var rows = await db.Set<Invoice>().AsNoTracking()
+            .Where(i => ids.Contains(i.Id))
+            .Join(db.Set<CreditCard>().AsNoTracking(), i => i.CreditCardId, c => c.Id, (i, c) => new { Invoice = i, c.Name, c.PaymentWalletId })
+            .ToListAsync(cancellationToken);
+
+        var set = selected.ToHashSet();
+        var none = new Dictionary<Guid, long>();
+        var figures = new List<InvoiceFigure>();
+        var lines = new List<MonthInvoiceItem>();
+        foreach (var row in rows.OrderBy(r => r.Invoice.DueDate).ThenBy(r => r.Name, StringComparer.CurrentCultureIgnoreCase).ThenBy(r => r.Invoice.Id))
+        {
+            var invoice = row.Invoice;
+            var figure = new InvoiceFigure(
+                invoice.DueYearMonth,
+                totals.GetValueOrDefault(invoice.Id),
+                row.PaymentWalletId,
+                paid.GetValueOrDefault(invoice.Id) ?? none);
+            figures.Add(figure);
+
+            var touchesSelection = !filtered || set.Contains(row.PaymentWalletId) || figure.Actual(set) != 0;
+            if (invoice.DueYearMonth == month && touchesSelection)
+            {
+                lines.Add(new MonthInvoiceItem(
+                    invoice.CreditCardId,
+                    row.Name,
+                    month,
+                    invoice.ClosingDate,
+                    invoice.DueDate,
+                    invoice.Id,
+                    InvoiceStatusRule.Evaluate(figure.TotalCents, figure.PaidCents, today, invoice.ClosingDate, invoice.DueDate),
+                    figure.TotalCents,
+                    figure.PaidCents,
+                    figure.RemainingCents,
+                    figure.Planned(set),
+                    figure.Actual(set)));
+            }
+        }
+
+        return new InvoiceRead(figures, lines);
     }
 }

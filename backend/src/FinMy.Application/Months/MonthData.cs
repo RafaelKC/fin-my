@@ -1,4 +1,6 @@
+using FinMy.Domain.Cards;
 using FinMy.Domain.Entries;
+using FinMy.Domain.Monetary;
 using FinMy.Domain.Months;
 
 namespace FinMy.Application.Months;
@@ -32,14 +34,33 @@ public sealed record MonthTransferItem(
 /// <summary>Aviso de pendências (FR-019): Prevista com Mês de referência anterior ao mês de hoje.</summary>
 public sealed record PendingSummary(int Count, long ToReceiveCents, long ToPayCents);
 
+/// <summary>
+/// Linha "Fatura &lt;Cartão&gt;" da lista do mês (contracts/openapi.yaml <c>MonthInvoiceLine</c>, 003 FR-021): total, pago e restante
+/// da fatura inteira; <see cref="PlannedCents"/> e <see cref="ActualCents"/> já no recorte do filtro de Carteiras (research R8).
+/// </summary>
+public sealed record MonthInvoiceItem(
+    Guid CreditCardId,
+    string CreditCardName,
+    YearMonth DueMonth,
+    DateOnly ClosingDate,
+    DateOnly DueDate,
+    Guid? Id,
+    InvoiceStatus Status,
+    long TotalCents,
+    long PaidCents,
+    long RemainingCents,
+    long PlannedCents,
+    long ActualCents);
+
 /// <summary>O que o banco devolve para montar a visão do mês; o resumo é calculado pelo <see cref="MonthSummaryCalculator"/>.</summary>
 public sealed record MonthData(
     IReadOnlyList<WalletOpening> Wallets,
     IReadOnlyList<EntryTotal> EntryTotals,
     IReadOnlyList<TransferTotal> TransferTotals,
-    IReadOnlyList<InvoiceAmount> InvoicePayments,
+    IReadOnlyList<InvoiceFigure> InvoiceFigures,
     IReadOnlyList<MonthEntryItem> Entries,
     IReadOnlyList<MonthTransferItem> Transfers,
+    IReadOnlyList<MonthInvoiceItem> Invoices,
     PendingSummary Pending);
 
 /// <summary>Resposta de <c>GET /months/{month}</c> (contracts/openapi.yaml <c>MonthView</c>).</summary>
@@ -50,4 +71,5 @@ public sealed record MonthViewResult(
     MonthSummary Summary,
     IReadOnlyList<MonthEntryItem> Entries,
     IReadOnlyList<MonthTransferItem> Transfers,
+    IReadOnlyList<MonthInvoiceItem> Invoices,
     PendingSummary Pending);

@@ -1,4 +1,5 @@
 using FinMy.Application.Months;
+using FinMy.Domain.Cards;
 using FinMy.Domain.Months;
 
 namespace FinMy.Api.Endpoints.Months;
@@ -38,6 +39,21 @@ public sealed record TransferDto(
     DateTimeOffset CreatedAt,
     long Version);
 
+/// <summary>Item de <c>MonthView.invoices</c> (<c>MonthInvoiceLine</c>).</summary>
+public sealed record MonthInvoiceDto(
+    Guid CreditCardId,
+    string DueMonth,
+    DateOnly ClosingDate,
+    DateOnly DueDate,
+    Guid? Id,
+    string Status,
+    long TotalCents,
+    long PaidCents,
+    long RemainingCents,
+    string CreditCardName,
+    long PlannedCents,
+    long ActualCents);
+
 public sealed record PendingDto(int Count, long ToReceiveCents, long ToPayCents);
 
 /// <summary>Resposta de <c>GET /months/{month}</c> (<c>MonthView</c>).</summary>
@@ -49,6 +65,7 @@ public sealed record MonthViewDto(
     SummaryColumnDto Actual,
     IReadOnlyList<EntryDto> Entries,
     IReadOnlyList<TransferDto> Transfers,
+    IReadOnlyList<MonthInvoiceDto> Invoices,
     PendingDto Pending)
 {
     public static MonthViewDto From(MonthViewResult r) => new(
@@ -59,6 +76,7 @@ public sealed record MonthViewDto(
         From(r.Summary.Actual),
         r.Entries.Select(From).ToList(),
         r.Transfers.Select(From).ToList(),
+        r.Invoices.Select(From).ToList(),
         new PendingDto(r.Pending.Count, r.Pending.ToReceiveCents, r.Pending.ToPayCents));
 
     private static SummaryColumnDto From(SummaryColumn c) => new(
@@ -86,6 +104,20 @@ public sealed record MonthViewDto(
 
     private static TransferDto From(MonthTransferItem t) => new(
         t.Id, t.FromWalletId, t.ToWalletId, t.AmountCents, t.Date, t.Description, t.Notes, t.CreatedAt, t.Version);
+
+    private static MonthInvoiceDto From(MonthInvoiceItem i) => new(
+        i.CreditCardId,
+        i.DueMonth.ToString(),
+        i.ClosingDate,
+        i.DueDate,
+        i.Id,
+        i.Status.ToCode(),
+        i.TotalCents,
+        i.PaidCents,
+        i.RemainingCents,
+        i.CreditCardName,
+        i.PlannedCents,
+        i.ActualCents);
 
     private static string SnakeCase(string name) => name.ToLowerInvariant();
 }

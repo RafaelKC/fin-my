@@ -13,10 +13,31 @@ public sealed record TransferTotal(YearMonth Month, Guid FromWalletId, Guid ToWa
 public sealed record WalletOpening(Guid WalletId, long Cents, DateOnly Date);
 
 /// <summary>
-/// Valor de Faturas num mês (ponto de extensão da 003, RT-07): previsões entram nas Saídas do Previsto,
-/// pagamentos nas Saídas do Realizado. Na 002 as listas chegam vazias.
+/// Uma Fatura vista pela visão do mês (003 FR-022/FR-023, research R8): total, pago por Carteira e Carteira de pagamento
+/// do cartão, por mês de vencimento. Os valores no recorte de Carteiras saem de <see cref="Planned"/> e <see cref="Actual"/>.
 /// </summary>
-public sealed record InvoiceAmount(YearMonth Month, long Cents);
+public sealed record InvoiceFigure(
+    YearMonth DueMonth,
+    long TotalCents,
+    Guid PaymentWalletId,
+    IReadOnlyDictionary<Guid, long> PaidByWallet)
+{
+    /// <summary>Total pago, com qualquer Carteira.</summary>
+    public long PaidCents => PaidByWallet.Values.Sum();
+
+    /// <summary>Restante: total menos pago (pode ser negativo).</summary>
+    public long RemainingCents => TotalCents - PaidCents;
+
+    /// <summary>Realizado: pagamentos feitos com as Carteiras selecionadas (FR-023).</summary>
+    public long Actual(IReadOnlySet<Guid> selected) => PaidByWallet.Where(p => selected.Contains(p.Key)).Sum(p => p.Value);
+
+    /// <summary>
+    /// Previsto: pagamentos com as Carteiras selecionadas, mais o maior entre Restante e 0 se a Carteira de pagamento do cartão
+    /// estiver entre elas (FR-023). Com todas as Carteiras vale <c>max(Total, Pago, 0)</c> (FR-022).
+    /// </summary>
+    public long Planned(IReadOnlySet<Guid> selected) =>
+        Actual(selected) + (selected.Contains(PaymentWalletId) ? Math.Max(RemainingCents, 0) : 0);
+}
 
 /// <summary>Uma coluna do resumo (Previsto ou Realizado), todos os valores em centavos.</summary>
 public sealed record SummaryColumn(
@@ -44,21 +65,18 @@ public static class MonthSummaryCalculator
     /// <param name="wallets">Saldos iniciais das Carteiras selecionadas (qualquer data).</param>
     /// <param name="entries">Totais de lançamentos das Carteiras selecionadas (meses até M; os posteriores são ignorados).</param>
     /// <param name="transfers">Totais de transferências que tocam alguma Carteira selecionada.</param>
-    /// <param name="invoiceForecasts">Extensão 003: valor das Faturas por mês de vencimento (RT-07); vazio na 002.</param>
-    /// <param name="invoicePayments">Extensão 003: pagamentos de Fatura por Mês de referência; vazio na 002.</param>
+    /// <param name="invoices">Faturas por mês de vencimento (003 RT-07): o valor no Previsto e os pagamentos no Realizado entram nas Saídas.</param>
     public static MonthSummary Calculate(
         YearMonth month,
         IReadOnlyCollection<WalletOpening> wallets,
         IReadOnlyCollection<EntryTotal> entries,
         IReadOnlyCollection<TransferTotal> transfers,
-        IReadOnlyCollection<InvoiceAmount> invoiceForecasts,
-        IReadOnlyCollection<InvoiceAmount> invoicePayments)
+        IReadOnlyCollection<InvoiceFigure> invoices)
     {
         ArgumentNullException.ThrowIfNull(wallets);
         ArgumentNullException.ThrowIfNull(entries);
         ArgumentNullException.ThrowIfNull(transfers);
-        ArgumentNullException.ThrowIfNull(invoiceForecasts);
-        ArgumentNullException.ThrowIfNull(invoicePayments);
+        ArgumentNullException.ThrowIfNull(invoices);
 
         var selected = wallets.Select(w => w.WalletId).ToHashSet();
         var upToMonth = wallets.Where(w => w.Date <= month.LastDay).ToList();
@@ -71,15 +89,19 @@ public static class MonthSummaryCalculator
         var transfersOut = TransfersTotal(transfersUpToMonth, month, t => selected.Contains(t.FromWalletId) && !selected.Contains(t.ToWalletId));
         var transfersNetUpToMonth = NetUpToMonth(transfersUpToMonth, selected);
 
-        SummaryColumn Column(bool settledOnly, IReadOnlyCollection<InvoiceAmount> invoices)
+        SummaryColumn Column(bool settledOnly)
         {
+            var invoiceValues = invoices
+                .Where(i => i.DueMonth <= month)
+                .Select(i => (i.DueMonth, Cents: settledOnly ? i.Actual(selected) : i.Planned(selected)))
+                .ToList();
             var scoped = entries.Where(e => e.Month <= month && (!settledOnly || e.Status == EntryStatus.Settled)).ToList();
             var incomeToDate = scoped.Where(e => e.Kind == EntryKind.Income).Sum(e => e.Cents);
-            var expenseToDate = scoped.Where(e => e.Kind == EntryKind.Expense).Sum(e => e.Cents) + invoices.Where(i => i.Month <= month).Sum(i => i.Cents);
+            var expenseToDate = scoped.Where(e => e.Kind == EntryKind.Expense).Sum(e => e.Cents) + invoiceValues.Sum(i => i.Cents);
 
             var incomeInMonth = scoped.Where(e => e.Month == month && e.Kind == EntryKind.Income).Sum(e => e.Cents);
             var expenseInMonth = scoped.Where(e => e.Month == month && e.Kind == EntryKind.Expense).Sum(e => e.Cents)
-                + invoices.Where(i => i.Month == month).Sum(i => i.Cents);
+                + invoiceValues.Where(i => i.DueMonth == month).Sum(i => i.Cents);
             var result = incomeInMonth - expenseInMonth;
 
             var final = initialUpToMonth + (incomeToDate - expenseToDate) + transfersNetUpToMonth;
@@ -96,7 +118,7 @@ public static class MonthSummaryCalculator
                 FinalBalanceCents: final);
         }
 
-        return new MonthSummary(Column(settledOnly: false, invoiceForecasts), Column(settledOnly: true, invoicePayments));
+        return new MonthSummary(Column(settledOnly: false), Column(settledOnly: true));
     }
 
     private static long TransfersTotal(List<TransferTotal> transfers, YearMonth month, Func<TransferTotal, bool> counts) =>

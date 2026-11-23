@@ -14,8 +14,6 @@ public class MonthSummaryCalculatorTests
     private static readonly Guid Azul = Guid.NewGuid();
     private static readonly Guid Poupanca = Guid.NewGuid();
 
-    private static readonly InvoiceAmount[] NoInvoices = [];
-
     // Exemplo da US3: carteira Azul com saldo inicial R$ 500,00 em 01/03/2026.
     private static readonly WalletOpening[] AzulComSaldoDeMarco = [new(Azul, 50000, new DateOnly(2026, 3, 1))];
 
@@ -32,7 +30,7 @@ public class MonthSummaryCalculatorTests
         IReadOnlyCollection<WalletOpening> wallets,
         IReadOnlyCollection<EntryTotal> entries,
         IReadOnlyCollection<TransferTotal>? transfers = null) =>
-        MonthSummaryCalculator.Calculate(month, wallets, entries, transfers ?? [], NoInvoices, NoInvoices);
+        MonthSummaryCalculator.Calculate(month, wallets, entries, transfers ?? [], []);
 
     [Fact]
     public void Marco_do_exemplo_da_US3_bate_todos_os_numeros_do_Previsto()
@@ -218,22 +216,5 @@ public class MonthSummaryCalculatorTests
 
         summary.Actual.TransfersInCents.ShouldBe(0);
         summary.Actual.TransfersOutCents.ShouldBe(0);
-    }
-
-    [Fact]
-    public void Pontos_de_extensao_de_faturas_somam_nas_saidas_do_Previsto_e_do_Realizado_respectivamente()
-    {
-        var summary = MonthSummaryCalculator.Calculate(
-            March,
-            AzulComSaldoDeMarco,
-            ExemploUs3,
-            [],
-            [new InvoiceAmount(March, 30000)],
-            [new InvoiceAmount(March, 10000)]);
-
-        summary.Planned.ExpenseCents.ShouldBe(81502 + 30000);
-        summary.Actual.ExpenseCents.ShouldBe(4499 + 10000);
-        summary.Planned.FinalBalanceCents.ShouldBe(120325 - 30000);
-        summary.Actual.FinalBalanceCents.ShouldBe(195501 - 10000);
     }
 }
