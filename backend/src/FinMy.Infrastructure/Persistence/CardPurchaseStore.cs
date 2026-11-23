@@ -3,6 +3,7 @@ using FinMy.Application.Cards;
 using FinMy.Domain.Cards;
 using FinMy.Domain.Common;
 using FinMy.Domain.Monetary;
+using FinMy.Domain.Tags;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -57,7 +58,32 @@ public sealed class CardPurchaseStore(FinMyDbContext db) : ICardPurchaseStore
             .OrderBy(r => r.Purchase.InstallmentNumber).ThenBy(r => r.Purchase.CreatedAt).ThenBy(r => r.Purchase.Id)
             .ToListAsync(cancellationToken);
 
-        return rows.ConvertAll(r => ToView(r.Purchase, YearMonth.From(r.DueMonth), r.Version));
+        var links = await TagLinks.ForPurchasesAsync(db, rows.Select(r => r.Purchase.Id).ToList(), cancellationToken);
+        return rows.ConvertAll(r => ToView(r.Purchase, YearMonth.From(r.DueMonth), r.Version, TagLinks.All(r.Purchase.SettlementTagId, links, r.Purchase.Id)));
+    }
+
+    public async Task<IReadOnlyList<Guid>> GetTagIdsAsync(CardPurchase purchase, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(purchase);
+        var links = await TagLinks.ForPurchasesAsync(db, [purchase.Id], cancellationToken);
+        return TagLinks.All(purchase.SettlementTagId, links, purchase.Id);
+    }
+
+    public void AddTags(CardPurchase purchase, IReadOnlyCollection<Guid> commonTagIds)
+    {
+        ArgumentNullException.ThrowIfNull(purchase);
+        ArgumentNullException.ThrowIfNull(commonTagIds);
+        db.AddRange(commonTagIds.Select(t => new CardPurchaseTag(purchase.Id, t)));
+    }
+
+    public async Task ReplaceTagsAsync(CardPurchase purchase, IReadOnlyCollection<Guid> commonTagIds, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(purchase);
+        ArgumentNullException.ThrowIfNull(commonTagIds);
+        var wanted = commonTagIds.ToHashSet();
+        var existing = await db.Set<CardPurchaseTag>().Where(l => l.CardPurchaseId == purchase.Id).ToListAsync(cancellationToken);
+        db.RemoveRange(existing.Where(l => !wanted.Contains(l.TagId)));
+        db.AddRange(wanted.Except(existing.Select(l => l.TagId)).Select(t => new CardPurchaseTag(purchase.Id, t)));
     }
 
     public long VersionOf(CardPurchase purchase) => db.Entry(purchase).Property<uint>(VersionColumn).CurrentValue;
@@ -88,7 +114,7 @@ public sealed class CardPurchaseStore(FinMyDbContext db) : ICardPurchaseStore
     public async Task<ICardTransaction> BeginTransactionAsync(CancellationToken cancellationToken) =>
         new CardTransaction(await db.Database.BeginTransactionAsync(cancellationToken));
 
-    internal static CardPurchaseView ToView(CardPurchase p, YearMonth dueMonth, uint version) => new(
+    internal static CardPurchaseView ToView(CardPurchase p, YearMonth dueMonth, uint version, IReadOnlyList<Guid> tagIds) => new(
         p.Id,
         p.CreditCardId,
         dueMonth,
@@ -105,7 +131,9 @@ public sealed class CardPurchaseStore(FinMyDbContext db) : ICardPurchaseStore
         p.InstallmentNumber,
         p.InstallmentTotal,
         p.CreatedAt,
-        version);
+        version,
+        tagIds,
+        p.SettlementTagId);
 
     private sealed class CardTransaction(IDbContextTransaction transaction) : ICardTransaction
     {

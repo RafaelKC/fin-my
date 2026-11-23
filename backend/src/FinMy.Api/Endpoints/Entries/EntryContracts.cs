@@ -1,3 +1,4 @@
+using FinMy.Api.Endpoints.Cards;
 using FinMy.Api.Endpoints.Transfers;
 using FinMy.Application.Abstractions;
 using FinMy.Application.Entries;
@@ -13,7 +14,8 @@ public sealed record EntryCreateRequest(
     Guid? WalletId,
     string? Status,
     string? ReferenceMonth,
-    string? Notes);
+    string? Notes,
+    IReadOnlyList<Guid>? TagIds = null);
 
 /// <summary>Corpo de <c>PUT /entries/{id}</c> (<c>EntryUpdate</c>).</summary>
 public sealed record EntryUpdateRequest(
@@ -25,7 +27,8 @@ public sealed record EntryUpdateRequest(
     string? Status,
     string? ReferenceMonth,
     string? Notes,
-    long? Version);
+    long? Version,
+    IReadOnlyList<Guid>? TagIds = null);
 
 /// <summary>Corpo de <c>PATCH /entries/{id}/status</c>.</summary>
 public sealed record EntryStatusRequest(string? Status);
@@ -48,7 +51,9 @@ public sealed record EntryResponse(
     Guid WalletId,
     string? Notes,
     DateTimeOffset CreatedAt,
-    long Version)
+    long Version,
+    IReadOnlyList<Guid> TagIds,
+    Guid? SettlementTagId)
 {
     public static EntryResponse From(EntryView e) => new(
         e.Id,
@@ -61,27 +66,31 @@ public sealed record EntryResponse(
         e.WalletId,
         e.Notes,
         e.CreatedAt,
-        e.Version);
+        e.Version,
+        e.TagIds,
+        e.SettlementTagId);
 }
 
 /// <summary>Item de <c>GET /entries/suggestions</c>.</summary>
-public sealed record EntrySuggestionResponse(string Description, int Uses, Guid? WalletId, Guid? CreditCardId);
+public sealed record EntrySuggestionResponse(string Description, int Uses, Guid? WalletId, Guid? CreditCardId, IReadOnlyList<Guid> TagIds);
 
 /// <summary>Corpo de <c>POST /entries/{id}/duplicate</c>: só a nova data.</summary>
 public sealed record EntryDuplicateRequest(DateOnly? Date);
 
-/// <summary>Item de <c>GET /entries/search</c> (<c>LedgerItem</c>): <c>type</c> diz qual dos dois objetos veio preenchido.</summary>
-public sealed record LedgerItemResponse(string Type, EntryResponse? Entry, TransferResponse? Transfer)
+/// <summary>Item de <c>GET /entries/search</c> (<c>LedgerItem</c>): <c>type</c> diz qual dos três objetos veio preenchido.</summary>
+public sealed record LedgerItemResponse(string Type, EntryResponse? Entry, TransferResponse? Transfer, CardPurchaseResponse? Purchase)
 {
     public static LedgerItemResponse From(LedgerItemView item) => new(
         item.Type switch
         {
             LedgerItemKind.Income => "income",
             LedgerItemKind.Expense => "expense",
+            LedgerItemKind.CardPurchase => "card_purchase",
             _ => "transfer",
         },
         item.Entry is null ? null : EntryResponse.From(item.Entry),
-        item.Transfer is null ? null : TransferResponse.From(item.Transfer));
+        item.Transfer is null ? null : TransferResponse.From(item.Transfer),
+        item.Purchase is null ? null : CardPurchaseResponse.From(item.Purchase));
 }
 
 /// <summary>Resposta de <c>GET /entries/search</c>; os totais valem para todos os resultados, não só a página.</summary>

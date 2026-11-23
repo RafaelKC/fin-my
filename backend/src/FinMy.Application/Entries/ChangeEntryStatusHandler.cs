@@ -9,7 +9,7 @@ public sealed class ChangeEntryStatusHandler(IEntryStore store)
     public async Task<EntryView> HandleAsync(Guid id, string? status, CancellationToken cancellationToken)
     {
         var parsed = EntryInput.ParseStatus(status);
-        return await store.UpdateAsync(id, null, entry => entry.ChangeStatus(parsed), cancellationToken)
+        return await store.UpdateAsync(id, null, entry => entry.ChangeStatus(parsed), null, cancellationToken)
             ?? throw new DomainException(EntryErrors.NotFound);
     }
 }

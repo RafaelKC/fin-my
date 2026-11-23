@@ -1,4 +1,5 @@
 using FinMy.Application.Abstractions;
+using FinMy.Application.Tags;
 using FinMy.Domain.Cards;
 using FinMy.Domain.Common;
 using FinMy.Domain.Monetary;
@@ -35,10 +36,11 @@ internal static class InvoiceInput
 /// <summary>Fatura de um cartão num mês de vencimento (US5, US6.2), exista a linha ou não (research R2). Cartão arquivado também.</summary>
 public sealed class GetInvoiceHandler(ICreditCardStore cards, IInvoiceStore invoices, IClock clock)
 {
-    public async Task<InvoiceDetailView> HandleAsync(Guid creditCardId, string? month, CancellationToken cancellationToken)
+    /// <param name="tagIds">Filtro por tags (004 FR-004): compras com qualquer uma delas; vazio/ausente = todas.</param>
+    public async Task<InvoiceDetailView> HandleAsync(Guid creditCardId, string? month, string? tagIds, CancellationToken cancellationToken)
     {
         var card = await cards.FindAsync(creditCardId, cancellationToken) ?? throw new DomainException(CreditCardErrors.NotFound);
-        return await invoices.GetDetailAsync(card, InvoiceInput.ParseMonth(month), clock.Today, cancellationToken);
+        return await invoices.GetDetailAsync(card, InvoiceInput.ParseMonth(month), clock.Today, TagSelector.ParseFilter(tagIds), cancellationToken);
     }
 }
 
@@ -82,7 +84,7 @@ public sealed class RegisterInvoicePaymentHandler(
         await invoices.SaveAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        return await invoices.GetDetailAsync(card, month, clock.Today, cancellationToken);
+        return await invoices.GetDetailAsync(card, month, clock.Today, [], cancellationToken);
     }
 }
 
@@ -217,7 +219,7 @@ public sealed class CarryOverInvoiceHandler(
         await purchases.SaveAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        return await invoices.GetDetailAsync(card, parsed, today, cancellationToken);
+        return await invoices.GetDetailAsync(card, parsed, today, [], cancellationToken);
     }
 
     private static string Label(YearMonth month) => $"{month.Month:00}/{month.Year}";

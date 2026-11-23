@@ -1,5 +1,8 @@
 using FinMy.Application.Abstractions;
+using FinMy.Application.Tags;
+using FinMy.Domain.Cards;
 using FinMy.Domain.Common;
+using FinMy.Domain.Entries;
 using FinMy.Domain.Monetary;
 using FinMy.Domain.Months;
 
@@ -11,7 +14,7 @@ public sealed class GetMonthHandler(IMonthReader reader, IClock clock)
     private static readonly YearMonth First = YearMonth.Of(2000, 1);
     private static readonly YearMonth Last = YearMonth.Of(2100, 12);
 
-    public async Task<MonthViewResult> HandleAsync(string? month, string? walletIds, CancellationToken cancellationToken)
+    public async Task<MonthViewResult> HandleAsync(string? month, string? walletIds, string? tagIds, CancellationToken cancellationToken)
     {
         if (!YearMonth.TryParse(month, out var parsed) || parsed < First || parsed > Last)
         {
@@ -19,15 +22,22 @@ public sealed class GetMonthHandler(IMonthReader reader, IClock clock)
         }
 
         var filter = ParseWalletIds(walletIds);
+        var tags = TagSelector.ParseFilter(tagIds);
         var today = clock.Today;
-        var data = await reader.ReadAsync(parsed, filter, today, cancellationToken);
+        var data = await reader.ReadAsync(parsed, filter, tags, today, cancellationToken);
 
         // Extensão da 003 (RT-07, research R8): faturas entram nas Saídas, no mês de vencimento (Previsto: valor da fatura; Realizado: pagamentos).
         var summary = MonthSummaryCalculator.Calculate(parsed, data.Wallets, data.EntryTotals, data.TransferTotals, data.InvoiceFigures);
 
         IReadOnlyList<Guid>? applied = filter is null ? null : data.Wallets.Select(w => w.WalletId).ToList();
-        return new MonthViewResult(parsed.ToString(), today, applied, summary, data.Entries, data.Transfers, data.Invoices, data.Pending);
+        var totals = tags.Count == 0 ? null : FilterTotals(data);
+        return new MonthViewResult(parsed.ToString(), today, applied, summary, data.Entries, data.Transfers, data.Invoices, data.Pending, data.Purchases, totals);
     }
+
+    private static MonthFilterTotals FilterTotals(MonthData data) => new(
+        data.Entries.Where(e => e.Kind == EntryKind.Income).Sum(e => e.AmountCents),
+        data.Entries.Where(e => e.Kind == EntryKind.Expense).Sum(e => e.AmountCents),
+        data.Purchases.Sum(p => p.Nature == PurchaseNature.Credit ? -p.AmountCents : p.AmountCents));
 
     private static List<Guid>? ParseWalletIds(string? walletIds)
     {

@@ -59,6 +59,12 @@ public sealed class UpdateInstallmentPlanHandler(ICreditCardStore cards, ICardPu
         var generated = InstallmentGenerator.Generate(plan.Mode, plan.InstallmentTotal, plan.FirstNumber, amountCents, first);
         var notes = old.Select(p => p.Notes).FirstOrDefault(n => n is not null);
 
+        // As parcelas recriadas mantêm as tags da primeira parcela antiga (a pessoa não perde a tag ao mudar N ou o valor).
+        var settlementTagId = old.Count > 0 ? old[0].SettlementTagId : null;
+        var commonTagIds = old.Count > 0
+            ? (await purchases.GetTagIdsAsync(old[0], cancellationToken)).Where(id => id != settlementTagId).ToList()
+            : [];
+
         context.BeginDeletionBatch();
         await using var transaction = await purchases.BeginTransactionAsync(cancellationToken);
         foreach (var parcel in old)
@@ -71,7 +77,9 @@ public sealed class UpdateInstallmentPlanHandler(ICreditCardStore cards, ICardPu
         {
             var invoice = await invoices.GetOrCreateAsync(card.Id, item.DueMonth, cancellationToken);
             var parcel = CardPurchase.CreateInstallment(card.Id, invoice.Id, plan, item.Number, Money.FromCents(item.AmountCents), notes);
+            parcel.ChangeSettlementTag(settlementTagId);
             purchases.Add(parcel);
+            purchases.AddTags(parcel, commonTagIds);
             created.Add(parcel);
         }
 

@@ -1,4 +1,5 @@
 using FinMy.Application.Abstractions;
+using FinMy.Application.Tags;
 using FinMy.Domain.Common;
 using FinMy.Domain.Entries;
 
@@ -8,6 +9,7 @@ namespace FinMy.Application.Entries;
 /// <param name="Amount">Expressão de valor (RT-05), ex.: <c>29+73,2</c>.</param>
 /// <param name="Status">Ausente → situação padrão (FR-012).</param>
 /// <param name="ReferenceMonth"><c>AAAA-MM</c>; ausente → mês da data (RT-04).</param>
+/// <param name="TagIds">Tags do lançamento (004 R1); ausente = nenhuma.</param>
 public sealed record CreateEntryCommand(
     string? Kind,
     string? Description,
@@ -16,10 +18,11 @@ public sealed record CreateEntryCommand(
     Guid? WalletId,
     string? Status,
     string? ReferenceMonth,
-    string? Notes);
+    string? Notes,
+    IReadOnlyList<Guid>? TagIds = null);
 
 /// <summary>Cria Entrada ou Saída (US2): valor pelo parser do servidor, situação por <c>IClock.Today</c>, carteira ativa.</summary>
-public sealed class CreateEntryHandler(IEntryStore store, IClock clock)
+public sealed class CreateEntryHandler(IEntryStore store, ITagStore tags, IClock clock)
 {
     public async Task<EntryView> HandleAsync(CreateEntryCommand command, CancellationToken cancellationToken)
     {
@@ -42,6 +45,8 @@ public sealed class CreateEntryHandler(IEntryStore store, IClock clock)
             throw new DomainException(EntryErrors.WalletArchived);
         }
 
-        return await store.AddAsync(entry, cancellationToken);
+        var selection = await TagSelector.ResolveAsync(tags, command.TagIds, [], cancellationToken);
+        entry.ChangeSettlementTag(selection.SettlementTagId);
+        return await store.AddAsync(entry, selection.CommonTagIds, cancellationToken);
     }
 }

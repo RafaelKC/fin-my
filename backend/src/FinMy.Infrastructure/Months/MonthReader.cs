@@ -4,6 +4,7 @@ using FinMy.Domain.Cards;
 using FinMy.Domain.Entries;
 using FinMy.Domain.Monetary;
 using FinMy.Domain.Months;
+using FinMy.Domain.Tags;
 using FinMy.Domain.Transfers;
 using FinMy.Domain.Wallets;
 using FinMy.Infrastructure.Persistence;
@@ -18,7 +19,7 @@ namespace FinMy.Infrastructure.Months;
 public sealed class MonthReader(FinMyDbContext db) : IMonthReader
 {
     public async Task<MonthData> ReadAsync(
-        YearMonth month, IReadOnlyCollection<Guid>? walletIds, DateOnly today, CancellationToken cancellationToken)
+        YearMonth month, IReadOnlyCollection<Guid>? walletIds, IReadOnlyCollection<Guid> tagIds, DateOnly today, CancellationToken cancellationToken)
     {
         var wallets = await db.Set<Wallet>().AsNoTracking()
             .Where(w => walletIds == null || walletIds.Contains(w.Id))
@@ -53,21 +54,38 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
         var invoices = await ReadInvoicesAsync(first, month, selected, filtered: walletIds is not null, today, cancellationToken);
 
         // RT-12: data crescente; empate pela ordem de criação (o id é UUIDv7, também cronológico).
-        var entryItems = await entries
-            .Where(e => e.ReferenceMonth == first)
-            .OrderBy(e => e.EntryDate).ThenBy(e => e.CreatedAt).ThenBy(e => e.Id)
-            .Select(e => new MonthEntryItem(
-                e.Id, e.Kind, e.Description, e.AmountCents, e.EntryDate, e.ReferenceMonth, e.Status, e.WalletId, e.Notes,
-                e.CreatedAt, EF.Property<uint>(e, "xmin")))
-            .ToListAsync(cancellationToken);
+        var listed = entries.Where(e => e.ReferenceMonth == first);
+        if (tagIds.Count > 0)
+        {
+            listed = listed.Where(e =>
+                (e.SettlementTagId != null && tagIds.Contains(e.SettlementTagId.Value))
+                || db.Set<EntryTag>().Any(l => l.EntryId == e.Id && tagIds.Contains(l.TagId)));
+        }
 
-        var transferItems = await transfers
-            .Where(t => t.TransferDate >= first && t.TransferDate <= last)
-            .OrderBy(t => t.TransferDate).ThenBy(t => t.CreatedAt).ThenBy(t => t.Id)
-            .Select(t => new MonthTransferItem(
-                t.Id, t.FromWalletId, t.ToWalletId, t.AmountCents, t.TransferDate, t.Description, t.Notes,
-                t.CreatedAt, EF.Property<uint>(t, "xmin")))
+        var entryRows = await listed
+            .OrderBy(e => e.EntryDate).ThenBy(e => e.CreatedAt).ThenBy(e => e.Id)
+            .Select(e => new { Entry = e, Version = EF.Property<uint>(e, "xmin") })
             .ToListAsync(cancellationToken);
+        var entryLinks = await TagLinks.ForEntriesAsync(db, entryRows.Select(r => r.Entry.Id).ToList(), cancellationToken);
+        var entryItems = entryRows
+            .Select(r => new MonthEntryItem(
+                r.Entry.Id, r.Entry.Kind, r.Entry.Description, r.Entry.AmountCents, r.Entry.EntryDate, r.Entry.ReferenceMonth, r.Entry.Status,
+                r.Entry.WalletId, r.Entry.Notes, r.Entry.CreatedAt, r.Version,
+                TagLinks.All(r.Entry.SettlementTagId, entryLinks, r.Entry.Id), r.Entry.SettlementTagId))
+            .ToList();
+
+        // Com filtro de tags, a visão mostra só itens com tag: sem transferências, e com as compras das faturas do mês.
+        var transferItems = tagIds.Count > 0
+            ? []
+            : await transfers
+                .Where(t => t.TransferDate >= first && t.TransferDate <= last)
+                .OrderBy(t => t.TransferDate).ThenBy(t => t.CreatedAt).ThenBy(t => t.Id)
+                .Select(t => new MonthTransferItem(
+                    t.Id, t.FromWalletId, t.ToWalletId, t.AmountCents, t.TransferDate, t.Description, t.Notes,
+                    t.CreatedAt, EF.Property<uint>(t, "xmin")))
+                .ToListAsync(cancellationToken);
+
+        var purchaseItems = tagIds.Count > 0 ? await ReadPurchasesAsync(month, tagIds, cancellationToken) : [];
 
         // Pendências (research R9) ignoram o filtro de carteiras: valem para o Espaço todo.
         var pending = await db.Set<Entry>().AsNoTracking()
@@ -83,11 +101,29 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
             invoices.Figures,
             entryItems,
             transferItems,
-            invoices.Lines,
+            tagIds.Count > 0 ? [] : invoices.Lines,
             new PendingSummary(
                 pending.Sum(p => p.Count),
                 pending.Where(p => p.Kind == EntryKind.Income).Sum(p => p.Cents),
-                pending.Where(p => p.Kind == EntryKind.Expense).Sum(p => p.Cents)));
+                pending.Where(p => p.Kind == EntryKind.Expense).Sum(p => p.Cents)),
+            purchaseItems);
+    }
+
+    /// <summary>Compras das faturas que vencem em <paramref name="month"/> com qualquer das tags, na ordem RT-12.</summary>
+    private async Task<IReadOnlyList<CardPurchaseView>> ReadPurchasesAsync(YearMonth month, IReadOnlyCollection<Guid> tagIds, CancellationToken cancellationToken)
+    {
+        var rows = await db.Set<CardPurchase>().AsNoTracking()
+            .Where(p => db.Set<Invoice>().Any(i => i.Id == p.InvoiceId && i.DueMonth == month.FirstDay))
+            .Where(p =>
+                (p.SettlementTagId != null && tagIds.Contains(p.SettlementTagId.Value))
+                || db.Set<CardPurchaseTag>().Any(l => l.CardPurchaseId == p.Id && tagIds.Contains(l.TagId)))
+            .OrderBy(p => p.PurchaseDate).ThenBy(p => p.CreatedAt).ThenBy(p => p.Id)
+            .Select(p => new { Purchase = p, Version = EF.Property<uint>(p, "xmin") })
+            .ToListAsync(cancellationToken);
+        var links = await TagLinks.ForPurchasesAsync(db, rows.Select(r => r.Purchase.Id).ToList(), cancellationToken);
+        return rows
+            .Select(r => CardPurchaseStore.ToView(r.Purchase, month, r.Version, TagLinks.All(r.Purchase.SettlementTagId, links, r.Purchase.Id)))
+            .ToList();
     }
 
     private sealed record InvoiceRead(IReadOnlyList<InvoiceFigure> Figures, IReadOnlyList<MonthInvoiceItem> Lines);

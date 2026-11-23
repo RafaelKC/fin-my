@@ -20,7 +20,7 @@ public sealed class EntryEndpoints : IEndpointModule
         group.MapPost("/", async (EntryCreateRequest body, CreateEntryHandler handler, CancellationToken cancellationToken) =>
         {
             var entry = await handler.HandleAsync(
-                new CreateEntryCommand(body.Kind, body.Description, body.Amount, body.Date, body.WalletId, body.Status, body.ReferenceMonth, body.Notes),
+                new CreateEntryCommand(body.Kind, body.Description, body.Amount, body.Date, body.WalletId, body.Status, body.ReferenceMonth, body.Notes, body.TagIds),
                 cancellationToken);
             return Results.Created($"/api/v1/entries/{entry.Id}", EntryResponse.From(entry));
         }).WithIdempotency();
@@ -29,7 +29,7 @@ public sealed class EntryEndpoints : IEndpointModule
         group.MapGet("/suggestions", async (string? q, string? kind, SuggestEntriesHandler handler, CancellationToken cancellationToken) =>
         {
             var suggestions = await handler.HandleAsync(q, kind, cancellationToken);
-            return Results.Ok(suggestions.Select(s => new EntrySuggestionResponse(s.Description, s.Uses, s.WalletId, s.CreditCardId)));
+            return Results.Ok(suggestions.Select(s => new EntrySuggestionResponse(s.Description, s.Uses, s.WalletId, s.CreditCardId, s.TagIds ?? [])));
         });
 
         group.MapGet("/pending", async (ListPendingEntriesHandler handler, CancellationToken cancellationToken) =>
@@ -42,10 +42,10 @@ public sealed class EntryEndpoints : IEndpointModule
         });
 
         group.MapGet("/search", async (
-            string? q, string? kinds, string? walletIds, string? status, DateOnly? from, DateOnly? to, string? cursor, int? limit,
+            string? q, string? kinds, string? walletIds, string? tagIds, string? status, DateOnly? from, DateOnly? to, string? cursor, int? limit,
             SearchLedgerHandler handler, CancellationToken cancellationToken) =>
         {
-            var result = await handler.HandleAsync(new SearchLedgerCommand(q, kinds, walletIds, status, from, to, cursor, limit), cancellationToken);
+            var result = await handler.HandleAsync(new SearchLedgerCommand(q, kinds, walletIds, status, from, to, cursor, limit, tagIds), cancellationToken);
             return Results.Ok(new LedgerSearchResponse(
                 result.Items.Select(LedgerItemResponse.From).ToList(), result.TotalCents, result.TotalCount, result.NextCursor));
         });
@@ -56,7 +56,7 @@ public sealed class EntryEndpoints : IEndpointModule
         group.MapPut("/{id:guid}", async (Guid id, EntryUpdateRequest body, UpdateEntryHandler handler, CancellationToken cancellationToken) =>
         {
             var entry = await handler.HandleAsync(
-                new UpdateEntryCommand(id, body.Kind, body.Description, body.Amount, body.Date, body.WalletId, body.Status, body.ReferenceMonth, body.Notes, body.Version),
+                new UpdateEntryCommand(id, body.Kind, body.Description, body.Amount, body.Date, body.WalletId, body.Status, body.ReferenceMonth, body.Notes, body.Version, body.TagIds),
                 cancellationToken);
             return Results.Ok(EntryResponse.From(entry));
         });

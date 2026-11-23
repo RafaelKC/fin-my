@@ -23,6 +23,9 @@ public sealed record InvoicePaymentResponse(
         new(p.Id, p.CreditCardId, p.DueMonth.ToString(), p.WalletId, p.AmountCents, p.Date, p.Version);
 }
 
+/// <summary>Subtotal por Tag de acerto da fatura (004 FR-011); <c>tagId</c> nulo = "Sem tag de acerto".</summary>
+public sealed record SettlementSubtotalResponse(Guid? TagId, long Cents);
+
 /// <summary>Resposta <c>Invoice</c> do contrato (<c>InvoiceSummary</c> mais conferido, compras, pagamentos e meses vizinhos).</summary>
 public sealed record InvoiceResponse(
     Guid CreditCardId,
@@ -39,7 +42,9 @@ public sealed record InvoiceResponse(
     IReadOnlyList<CardPurchaseResponse> Purchases,
     IReadOnlyList<InvoicePaymentResponse> Payments,
     string PreviousMonth,
-    string NextMonth)
+    string NextMonth,
+    long? FilteredTotalCents,
+    IReadOnlyList<SettlementSubtotalResponse> SettlementSubtotals)
 {
     public static InvoiceResponse From(InvoiceDetailView v)
     {
@@ -51,6 +56,8 @@ public sealed record InvoiceResponse(
             v.Purchases.Select(CardPurchaseResponse.From).ToList(),
             v.Payments.Select(InvoicePaymentResponse.From).ToList(),
             v.PreviousMonth.ToString(),
-            v.NextMonth.ToString());
+            v.NextMonth.ToString(),
+            v.FilteredTotalCents,
+            v.SettlementSubtotals.Select(t => new SettlementSubtotalResponse(t.TagId, t.Cents)).ToList());
     }
 }

@@ -22,7 +22,9 @@ public sealed record CardPurchaseView(
     int? InstallmentNumber,
     int? InstallmentTotal,
     DateTimeOffset CreatedAt,
-    long Version);
+    long Version,
+    IReadOnlyList<Guid> TagIds,
+    Guid? SettlementTagId);
 
 /// <summary>Total (débitos − créditos) e pago de uma fatura (003 FR-005).</summary>
 public readonly record struct InvoiceTotals(long TotalCents, long PaidCents);
@@ -48,6 +50,15 @@ public interface ICardPurchaseStore
 
     /// <summary>Leitura atual (com versão e mês da fatura) das compras, por número de parcela e criação.</summary>
     Task<IReadOnlyList<CardPurchaseView>> GetViewsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken);
+
+    /// <summary>Todas as tags da compra (a de acerto primeiro), lidas do banco.</summary>
+    Task<IReadOnlyList<Guid>> GetTagIdsAsync(CardPurchase purchase, CancellationToken cancellationToken);
+
+    /// <summary>Liga uma compra nova às <paramref name="commonTagIds"/> (grava em <see cref="SaveAsync"/>).</summary>
+    void AddTags(CardPurchase purchase, IReadOnlyCollection<Guid> commonTagIds);
+
+    /// <summary>Faz as ligações da compra serem exatamente as <paramref name="commonTagIds"/> (grava em <see cref="SaveAsync"/>).</summary>
+    Task ReplaceTagsAsync(CardPurchase purchase, IReadOnlyCollection<Guid> commonTagIds, CancellationToken cancellationToken);
 
     long VersionOf(CardPurchase purchase);
 

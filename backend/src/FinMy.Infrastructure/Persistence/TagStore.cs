@@ -25,6 +25,9 @@ public sealed class TagStore(FinMyDbContext db) : ITagStore
     public Task<Tag?> FindAsync(Guid id, CancellationToken cancellationToken) =>
         db.Set<Tag>().SingleOrDefaultAsync(t => t.Id == id, cancellationToken);
 
+    public async Task<IReadOnlyList<Tag>> FindManyAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
+        await db.Set<Tag>().AsNoTracking().Where(t => ids.Contains(t.Id)).ToListAsync(cancellationToken);
+
     public async Task<Guid?> FindIdByNormalizedNameAsync(string normalizedName, Guid? exceptId, CancellationToken cancellationToken) =>
         await db.Set<Tag>().AsNoTracking()
             .Where(t => t.NameNormalized == normalizedName && (exceptId == null || t.Id != exceptId))

@@ -3,6 +3,7 @@ using FinMy.Application.Cards;
 using FinMy.Domain.Cards;
 using FinMy.Domain.Common;
 using FinMy.Domain.Monetary;
+using FinMy.Domain.Tags;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinMy.Infrastructure.Persistence;
@@ -15,7 +16,8 @@ public sealed class InvoiceStore(FinMyDbContext db) : IInvoiceStore
 {
     private const string VersionColumn = "xmin";
 
-    public async Task<InvoiceDetailView> GetDetailAsync(CreditCard card, YearMonth dueMonth, DateOnly today, CancellationToken cancellationToken)
+    public async Task<InvoiceDetailView> GetDetailAsync(
+        CreditCard card, YearMonth dueMonth, DateOnly today, IReadOnlyCollection<Guid> tagIds, CancellationToken cancellationToken)
     {
         var month = dueMonth.FirstDay;
         var row = await db.Set<Invoice>().AsNoTracking()
@@ -27,7 +29,7 @@ public sealed class InvoiceStore(FinMyDbContext db) : IInvoiceStore
             var summary = new InvoiceSummaryView(
                 card.Id, dueMonth, InvoiceCycle.ClosingDate(dueMonth, card.ClosingDay, card.DueDay), InvoiceCycle.DueDate(dueMonth, card.DueDay),
                 null, InvoiceStatus.NoAmountDue, 0, 0, 0);
-            return new InvoiceDetailView(summary, 0, false, [], [], dueMonth.Previous(), dueMonth.Next());
+            return new InvoiceDetailView(summary, 0, false, [], [], dueMonth.Previous(), dueMonth.Next(), tagIds.Count > 0 ? 0 : null, []);
         }
 
         var purchases = await db.Set<CardPurchase>().AsNoTracking()
@@ -41,6 +43,11 @@ public sealed class InvoiceStore(FinMyDbContext db) : IInvoiceStore
             .Select(p => new { Payment = p, Version = EF.Property<uint>(p, VersionColumn) })
             .ToListAsync(cancellationToken);
 
+        var links = await TagLinks.ForPurchasesAsync(db, purchases.Select(p => p.Purchase.Id).ToList(), cancellationToken);
+        var shown = tagIds.Count == 0
+            ? purchases
+            : purchases.Where(p => TagLinks.All(p.Purchase.SettlementTagId, links, p.Purchase.Id).Any(id => tagIds.Contains(id))).ToList();
+
         static long Signed(CardPurchase p) => p.Nature == PurchaseNature.Credit ? -p.AmountCents : p.AmountCents;
 
         var total = purchases.Sum(p => Signed(p.Purchase));
@@ -53,10 +60,27 @@ public sealed class InvoiceStore(FinMyDbContext db) : IInvoiceStore
             new InvoiceSummaryView(card.Id, dueMonth, row.ClosingDate, row.DueDate, row.Id, status, total, paid, remaining),
             reconciled,
             today >= row.ClosingDate && remaining != 0, // FR-020
-            purchases.ConvertAll(p => CardPurchaseStore.ToView(p.Purchase, dueMonth, p.Version)),
+            shown.ConvertAll(p => CardPurchaseStore.ToView(p.Purchase, dueMonth, p.Version, TagLinks.All(p.Purchase.SettlementTagId, links, p.Purchase.Id))),
             payments.ConvertAll(p => ToView(p.Payment, dueMonth, card.Id, p.Version)),
             dueMonth.Previous(),
-            dueMonth.Next());
+            dueMonth.Next(),
+            tagIds.Count > 0 ? shown.Sum(p => Signed(p.Purchase)) : null,
+            await SubtotalsAsync(purchases.Select(p => p.Purchase).ToList(), Signed, cancellationToken));
+    }
+
+    /// <summary>Débitos − Créditos por Tag de acerto, por nome da tag; "Sem tag de acerto" (<c>null</c>) por último (FR-011).</summary>
+    private async Task<IReadOnlyList<SettlementSubtotalView>> SubtotalsAsync(
+        List<CardPurchase> purchases, Func<CardPurchase, long> signed, CancellationToken cancellationToken)
+    {
+        var groups = purchases.GroupBy(p => p.SettlementTagId).Select(g => (TagId: g.Key, Cents: g.Sum(signed))).ToList();
+        var ids = groups.Select(g => g.TagId).OfType<Guid>().ToList();
+        var names = await db.Set<Tag>().AsNoTracking().Where(t => ids.Contains(t.Id)).ToDictionaryAsync(t => t.Id, t => t.NameNormalized, cancellationToken);
+
+        return groups
+            .OrderBy(g => g.TagId is null)
+            .ThenBy(g => g.TagId is { } id ? names.GetValueOrDefault(id, string.Empty) : string.Empty, StringComparer.Ordinal)
+            .Select(g => new SettlementSubtotalView(g.TagId, g.Cents))
+            .ToList();
     }
 
     public async Task LockAsync(Guid invoiceId, CancellationToken cancellationToken)

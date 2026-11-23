@@ -15,7 +15,9 @@ public sealed record EntryView(
     Guid WalletId,
     string? Notes,
     DateTimeOffset CreatedAt,
-    long Version);
+    long Version,
+    IReadOnlyList<Guid> TagIds,
+    Guid? SettlementTagId);
 
 /// <summary>Carteira do Espaço do contexto, só com o que os lançamentos precisam saber.</summary>
 public sealed record WalletRef(Guid Id, bool IsArchived);
@@ -24,7 +26,8 @@ public sealed record WalletRef(Guid Id, bool IsArchived);
 /// Sugestão de descrição (FR-011, research R8). <paramref name="CreditCardId"/> só vem na busca de compras no cartão
 /// (003 research R9): o cartão da compra mais recente com a descrição, ou <c>null</c> se ele foi arquivado.
 /// </summary>
-public sealed record EntrySuggestion(string Description, int Uses, Guid? WalletId, Guid? CreditCardId = null);
+/// <param name="TagIds">Tags do lançamento mais recente com a mesma descrição e o mesmo tipo (004 research R1); arquivadas ficam de fora.</param>
+public sealed record EntrySuggestion(string Description, int Uses, Guid? WalletId, Guid? CreditCardId = null, IReadOnlyList<Guid>? TagIds = null);
 
 /// <summary>Persistência de Entradas e Saídas do Espaço do contexto (o filtro de Espaço é automático).</summary>
 public interface IEntryStore
@@ -34,14 +37,17 @@ public interface IEntryStore
 
     Task<EntryView?> GetAsync(Guid id, CancellationToken cancellationToken);
 
-    Task<EntryView> AddAsync(Entry entry, CancellationToken cancellationToken);
+    /// <summary>Grava o lançamento (com a Tag de acerto já definida nele) e as ligações com as <paramref name="commonTagIds"/>.</summary>
+    Task<EntryView> AddAsync(Entry entry, IReadOnlyCollection<Guid> commonTagIds, CancellationToken cancellationToken);
 
     /// <summary>
     /// Aplica <paramref name="change"/> ao lançamento e grava. <paramref name="expectedVersion"/> divergente da atual
     /// lança <see cref="Domain.Common.DomainException"/> de conflito de concorrência; <c>null</c> = última escrita vence.
-    /// Devolve <c>null</c> se o lançamento não existir.
+    /// Devolve <c>null</c> se o lançamento não existir. Com <paramref name="commonTagIds"/> não nulo, as ligações do
+    /// lançamento passam a ser exatamente essas; <c>null</c> deixa as tags como estão.
     /// </summary>
-    Task<EntryView?> UpdateAsync(Guid id, long? expectedVersion, Action<Entry> change, CancellationToken cancellationToken);
+    Task<EntryView?> UpdateAsync(
+        Guid id, long? expectedVersion, Action<Entry> change, IReadOnlyCollection<Guid>? commonTagIds, CancellationToken cancellationToken);
 
     /// <summary>Exclusão lógica no lote corrente do contexto; <c>false</c> se o lançamento não existe.</summary>
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken);
