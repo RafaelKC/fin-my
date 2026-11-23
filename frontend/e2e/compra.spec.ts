@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { cartoes, simularCompras } from './compras-api';
+import { simularCompras } from './compras-api';
 
 // 003 T007 — aba "Cartão" do formulário rápido: compra à vista (US2) e confirmação de fatura paga
 // (US5.7). Parcelas ficam em `parcelas.spec.ts`.
