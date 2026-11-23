@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { comecarEmSaida } from './navegacao';
 
 // US6.1–US6.5 contra a stack real: editar (RT-04), excluir com Desfazer (RT-09), duplicar (FR-024)
 // e buscar (FR-025). Rodam nos dois viewports. Precisam do compose no ar e de `E2E_BASE_URL`.
@@ -19,6 +20,7 @@ const hoje = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/S
 
 async function criarConta(page: Page): Promise<string> {
   const email = `lia+${Date.now()}-${Math.floor(Math.random() * 1e6)}@exemplo.com`;
+  await comecarEmSaida(page);
   await page.goto('/criar-conta');
   await page.getByLabel('Nome').fill('Lia');
   await page.getByLabel('E-mail').fill(email);

@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { comecarEmSaida } from './navegacao';
 
 const sessao = {
   accessToken: 'token',
@@ -63,6 +64,7 @@ async function simularApi(page: Page, opcoes: Opcoes = {}) {
   const carteiras = [...(opcoes.carteiras ?? [azul, verde])];
   let falhas = opcoes.falhasDeRede ?? 0;
 
+  await comecarEmSaida(page);
   await page.clock.setFixedTime(HOJE);
   await page.route('**/api/v1/auth/refresh', (route) => route.fulfill({ json: sessao }));
   await page.route('**/api/v1/wallets**', async (route: Route) => {
@@ -480,6 +482,7 @@ test.describe('formulário rápido de lançamento (US2) — stack real', () => {
 
   async function criarConta(page: Page) {
     const email = `lia+${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
+    await comecarEmSaida(page);
     await page.goto('/criar-conta');
     await page.getByLabel('Nome', { exact: true }).fill('Lia Souza');
     await page.getByLabel('E-mail').fill(email);

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { comecarEmSaida } from './navegacao';
 
 const sessao = {
   accessToken: 'token',
@@ -60,6 +61,7 @@ async function simular(page: Page) {
     transferencias.filter((t) => t.toWalletId === w.id).reduce((a, t) => a + t.amountCents, 0) -
     transferencias.filter((t) => t.fromWalletId === w.id).reduce((a, t) => a + t.amountCents, 0);
 
+  await comecarEmSaida(page);
   await page.clock.setFixedTime(HOJE);
   await page.route('**/api/v1/auth/refresh', (r) => r.fulfill({ json: sessao }));
   await page.route('**/api/v1/wallets**', (r) =>
