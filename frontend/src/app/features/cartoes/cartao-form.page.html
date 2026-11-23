@@ -1,0 +1,159 @@
+<main class="pagina">
+  <h1>{{ edicao ? 'Editar cartão' : 'Novo cartão' }}</h1>
+
+  @if (erro(); as mensagem) {
+    <div class="aviso" role="alert" data-testid="erro-cartao">{{ mensagem }}</div>
+  }
+
+  @if (carregando()) {
+    <p role="status">Carregando…</p>
+  } @else if (carteiras().length === 0) {
+    <p class="vazio" data-testid="sem-carteiras">
+      Cadastre uma carteira antes de criar um cartão: é dela que a fatura costuma ser paga.
+      <a routerLink="/carteiras/nova">Nova carteira</a>
+    </p>
+  } @else if (!edicao || cartao()) {
+    @if (cartao(); as c) {
+      @if (c.archived) {
+        <p class="situacao">
+          <span class="selo cinza" data-testid="arquivado">Arquivado</span>
+        </p>
+      }
+    }
+
+    <form class="form" [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+      <div class="campo">
+        <label for="nome">Nome</label>
+        <input
+          id="nome"
+          type="text"
+          formControlName="name"
+          [attr.maxlength]="nomeMax"
+          [attr.aria-invalid]="erroDoNome() ? 'true' : null"
+          [attr.aria-describedby]="erroDoNome() ? 'nome-erro' : null"
+        />
+        @if (erroDoNome(); as mensagem) {
+          <span class="erro" id="nome-erro">{{ mensagem }}</span>
+        }
+      </div>
+
+      <div class="dias">
+        <div class="campo">
+          <label for="fechamento">Dia de fechamento</label>
+          <input
+            id="fechamento"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="31"
+            formControlName="closingDay"
+            [attr.aria-invalid]="erroDoDia('closingDay') ? 'true' : null"
+            [attr.aria-describedby]="erroDoDia('closingDay') ? 'fechamento-erro' : null"
+          />
+          @if (erroDoDia('closingDay'); as mensagem) {
+            <span class="erro" id="fechamento-erro">{{ mensagem }}</span>
+          }
+        </div>
+        <div class="campo">
+          <label for="vencimento">Dia de vencimento</label>
+          <input
+            id="vencimento"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="31"
+            formControlName="dueDay"
+            [attr.aria-invalid]="erroDoDia('dueDay') ? 'true' : null"
+            [attr.aria-describedby]="erroDoDia('dueDay') ? 'vencimento-erro' : null"
+          />
+          @if (erroDoDia('dueDay'); as mensagem) {
+            <span class="erro" id="vencimento-erro">{{ mensagem }}</span>
+          }
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="carteira">Carteira de pagamento</label>
+        <select
+          id="carteira"
+          formControlName="paymentWalletId"
+          [attr.aria-invalid]="erroDaCarteira() ? 'true' : null"
+          [attr.aria-describedby]="erroDaCarteira() ? 'carteira-erro' : null"
+        >
+          @for (w of carteiras(); track w.id) {
+            <option [value]="w.id">{{ w.name }}{{ w.archived ? ' (arquivada)' : '' }}</option>
+          }
+        </select>
+        @if (erroDaCarteira(); as mensagem) {
+          <span class="erro" id="carteira-erro">{{ mensagem }}</span>
+        }
+      </div>
+
+      <fieldset class="campo cores">
+        <legend>Cor</legend>
+        <div class="paleta" role="radiogroup" aria-label="Cor">
+          @for (cor of cores; track cor.value) {
+            <button
+              type="button"
+              role="radio"
+              class="amostra"
+              [style.background]="cor.value"
+              [attr.aria-checked]="form.controls.color.value === cor.value"
+              [attr.aria-label]="cor.label"
+              [class.escolhida]="form.controls.color.value === cor.value"
+              (click)="escolherCor(cor.value)"
+            ></button>
+          }
+        </div>
+      </fieldset>
+
+      <div class="campo">
+        <label for="limite">Limite (opcional)</label>
+        <input
+          id="limite"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          formControlName="limit"
+          [attr.aria-invalid]="previaLimite().ok ? null : 'true'"
+          aria-describedby="limite-previa"
+        />
+        <span
+          id="limite-previa"
+          [class.erro]="!previaLimite().ok"
+          [class.ajuda]="previaLimite().ok"
+          data-testid="limite-previa"
+          >{{ previaLimite().texto }}</span
+        >
+      </div>
+
+      <button type="submit" class="enviar" [disabled]="ocupado()">
+        {{ ocupado() ? 'Salvando…' : 'Salvar' }}
+      </button>
+      <a class="voltar" routerLink="/cartoes">Voltar</a>
+    </form>
+
+    @if (cartao(); as c) {
+      <section class="acoes" aria-label="Ações do cartão">
+        @if (c.archived) {
+          <button type="button" class="acao" [disabled]="ocupado()" (click)="desarquivar()">
+            Desarquivar
+          </button>
+        } @else {
+          <button type="button" class="acao" [disabled]="ocupado()" (click)="arquivar()">
+            Arquivar
+          </button>
+        }
+        @if (c.hasPurchases) {
+          <p class="ajuda" data-testid="so-arquivar">
+            Este cartão tem compras ou pagamentos: não pode ser excluído, apenas arquivado.
+          </p>
+        } @else {
+          <button type="button" class="acao perigo" [disabled]="ocupado()" (click)="excluir()">
+            Excluir
+          </button>
+        }
+      </section>
+    }
+  }
+</main>
