@@ -6,7 +6,8 @@ interface (valor calculado, divisão de centavos, fatura de uma compra) bate com
 (`docs/arquitetura.md` §5; constituição, princípio T2).
 
 > Esta pasta nasce **só com este README** (feature 001). Os arquivos `*.json` entram a partir da
-> feature 002, junto com a regra que cada um cobre.
+> feature 002, junto com a regra que cada um cobre. Já existem: `value-expression.json`,
+> `money-split.json` e `text-normalize.json`.
 
 ## Regras gerais
 
@@ -83,10 +84,22 @@ Os nomes abaixo são o ponto de partida (`docs/arquitetura.md` §5); o formato e
 
 | Arquivo | Regra | Origem | Feature |
 |---|---|---|---|
-| `value-expressions.json` | `ValueExpressionParser`: texto digitado (`29+73,2`, `=1100-500`) → centavos, arredondamento meio-para-cima | RT-05, RT-02 | 002 |
+| `value-expression.json` | `ValueExpressionParser`: texto digitado (`29+73,2`, `=1100-500`) → centavos, arredondamento meio-para-cima | RT-05, RT-02 | 002 |
 | `money-split.json` | `MoneySplitter`: divisão em partes/parcelas, sobra para a 1ª | RT-02 | 002 |
+| `text-normalize.json` | `TextNormalizer`: trim, minúsculas, sem acentos; espaços internos preservados | 002 FR-001, RT-05a | 002 |
 | `invoice-cycle.json` | `InvoiceCycle`: datas de fechamento/vencimento e fatura de uma compra | 003 FR-003/004/008 | 003 |
 | `invoice-status.json` | `InvoiceStatusRule`: situação da fatura (Total, Restante, hoje, fechamento, vencimento) | 003 FR-006 | 003 |
+
+Formato de `input`/`expected` dos arquivos da feature 002:
+
+| Arquivo | `input` | `expected` |
+|---|---|---|
+| `value-expression.json` | `{ "text": "29+73,2" }` | `{ "amountCents": 10220 }` ou `{ "error": "amount.invalid_expression" }` (também `amount.division_by_zero`, `amount.must_be_positive`, `amount.too_large`) |
+| `money-split.json` | `{ "totalCents": 10000, "parts": 3 }` | `{ "partsCents": [3334, 3333, 3333] }` |
+| `text-normalize.json` | `{ "text": "  Açaí  " }` | `{ "text": "acai" }` |
+
+O vetor de valor usa o modo padrão do parser (resultado > 0). O modo que aceita zero e negativo (saldo
+inicial de carteira) não está nos vetores.
 
 Exemplos de valores esperados, tirados das specs (ilustram o formato; os arquivos reais são a
 referência):

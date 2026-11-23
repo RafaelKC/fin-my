@@ -1,0 +1,113 @@
+{
+  "rule": "MoneySplitter",
+  "description": "Divisão de um valor em partes: piso para cada uma e a sobra de centavos na primeira (RT-02).",
+  "cases": [
+    {
+      "id": "split-100-in-3",
+      "description": "R$ 100,00 em 3 (RT-02): sobra de 1 centavo na primeira",
+      "input": {
+        "totalCents": 10000,
+        "parts": 3
+      },
+      "expected": {
+        "partsCents": [
+          3334,
+          3333,
+          3333
+        ]
+      }
+    },
+    {
+      "id": "split-239-80-in-2",
+      "description": "R$ 239,80 em 2 (RT-02): sem sobra",
+      "input": {
+        "totalCents": 23980,
+        "parts": 2
+      },
+      "expected": {
+        "partsCents": [
+          11990,
+          11990
+        ]
+      }
+    },
+    {
+      "id": "split-0-01-in-3",
+      "description": "R$ 0,01 em 3: o único centavo fica na primeira",
+      "input": {
+        "totalCents": 1,
+        "parts": 3
+      },
+      "expected": {
+        "partsCents": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "split-1-00-in-1",
+      "description": "R$ 1,00 em 1 parte",
+      "input": {
+        "totalCents": 100,
+        "parts": 1
+      },
+      "expected": {
+        "partsCents": [
+          100
+        ]
+      }
+    },
+    {
+      "id": "split-110-94-in-4",
+      "description": "R$ 110,94 em 4 (004): sobra de 2 centavos na primeira",
+      "input": {
+        "totalCents": 11094,
+        "parts": 4
+      },
+      "expected": {
+        "partsCents": [
+          2775,
+          2773,
+          2773,
+          2773
+        ]
+      }
+    },
+    {
+      "id": "split-10-in-3",
+      "description": "R$ 0,10 em 3: sobra de 1 centavo",
+      "input": {
+        "totalCents": 10,
+        "parts": 3
+      },
+      "expected": {
+        "partsCents": [
+          4,
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "id": "split-max-in-7",
+      "description": "Valor máximo em 7 partes",
+      "input": {
+        "totalCents": 999999999,
+        "parts": 7
+      },
+      "expected": {
+        "partsCents": [
+          142857147,
+          142857142,
+          142857142,
+          142857142,
+          142857142,
+          142857142,
+          142857142
+        ]
+      }
+    }
+  ]
+}
