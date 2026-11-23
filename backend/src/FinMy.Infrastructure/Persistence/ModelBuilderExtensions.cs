@@ -31,9 +31,13 @@ public static class ModelBuilderExtensions
             var clrType = entityType.ClrType;
             var entity = modelBuilder.Entity(clrType);
 
-            if (typeof(ITenantEntity).IsAssignableFrom(clrType))
+            if (typeof(ITenantScoped).IsAssignableFrom(clrType) || typeof(ITenantEntity).IsAssignableFrom(clrType))
             {
                 entity.HasQueryFilter(TenantFilter, BuildTenantFilter(clrType, context));
+            }
+
+            if (typeof(ITenantEntity).IsAssignableFrom(clrType))
+            {
                 entity.HasAlternateKey(nameof(ITenantEntity.TenantId), nameof(IEntity.Id));
                 entity.Property(nameof(IEntity.Id)).ValueGeneratedNever();
                 entity.Property<uint>("xmin").IsRowVersion();
@@ -59,7 +63,7 @@ public static class ModelBuilderExtensions
     {
         var e = Expression.Parameter(clrType, "e");
         var body = Expression.Equal(
-            Expression.Property(e, nameof(ITenantEntity.TenantId)),
+            Expression.Property(e, nameof(ITenantScoped.TenantId)),
             Expression.Property(Expression.Constant(context), nameof(FinMyDbContext.TenantIdOrEmpty)));
 
         return Expression.Lambda(body, e);

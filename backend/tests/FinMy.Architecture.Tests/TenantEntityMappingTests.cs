@@ -9,7 +9,7 @@ namespace FinMy.Architecture.Tests;
 /// <summary>docs/arquitetura.md §3.2: toda entidade mapeada é <see cref="ITenantEntity"/> ou está na lista global.</summary>
 public class TenantEntityMappingTests
 {
-    /// <summary>Entidades globais (não pertencem a Espaço): users, tenants, tenant_members, refresh_tokens, password_reset_tokens, login_throttles.</summary>
+    /// <summary>Entidades globais (não pertencem a Espaço): users, tenants, tenant_members, refresh_tokens, password_reset_tokens, login_throttles, idempotency_keys (esta tem filtro de Espaço próprio, via ITenantScoped).</summary>
     public static readonly IReadOnlySet<string> GlobalEntities = new HashSet<string>
     {
         "User",
@@ -18,6 +18,7 @@ public class TenantEntityMappingTests
         "RefreshToken",
         "PasswordResetToken",
         "LoginThrottle",
+        "IdempotencyKey",
     };
 
     [Fact]
