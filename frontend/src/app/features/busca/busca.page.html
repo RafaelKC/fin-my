@@ -1,0 +1,165 @@
+<div class="busca">
+  <h1>Busca</h1>
+
+  <form class="filtros" role="search" (submit)="$event.preventDefault()">
+    <div class="campo">
+      <label for="busca-q">Descrição</label>
+      <input
+        id="busca-q"
+        type="search"
+        autocomplete="off"
+        maxlength="80"
+        placeholder="Ex.: uber"
+        [value]="q()"
+        (input)="aoDigitar($any($event.target).value)"
+      />
+    </div>
+
+    <div class="campo">
+      <span class="rotulo" id="busca-tipos">Tipo</span>
+      <div class="chips" role="group" aria-labelledby="busca-tipos">
+        @for (t of tipos; track t.value) {
+          <button
+            type="button"
+            class="chip"
+            [attr.aria-pressed]="kinds().includes(t.value)"
+            [attr.data-testid]="'tipo-' + t.value"
+            (click)="alternarTipo(t.value)"
+          >
+            {{ t.rotulo }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (carteiras().length > 0) {
+      <div class="campo">
+        <span class="rotulo" id="busca-carteiras">Carteira</span>
+        <div class="chips" role="group" aria-labelledby="busca-carteiras">
+          @for (w of carteiras(); track w.id) {
+            <button
+              type="button"
+              class="chip"
+              [attr.aria-pressed]="walletIds().includes(w.id)"
+              data-testid="filtro-carteira"
+              (click)="alternarCarteira(w.id)"
+            >
+              <span class="cor" [style.background]="w.color"></span>
+              {{ w.name }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="linha-campos">
+      <div class="campo">
+        <label for="busca-situacao">Situação</label>
+        <select
+          id="busca-situacao"
+          [value]="status()"
+          (change)="escolherSituacao($any($event.target).value)"
+        >
+          <option value="">Todas</option>
+          <option value="planned">Previstas</option>
+          <option value="settled">Realizadas</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label for="busca-de">De</label>
+        <input
+          id="busca-de"
+          type="date"
+          [value]="from()"
+          (input)="escolherPeriodo('from', $any($event.target).value)"
+        />
+      </div>
+      <div class="campo">
+        <label for="busca-ate">Até</label>
+        <input
+          id="busca-ate"
+          type="date"
+          [value]="to()"
+          (input)="escolherPeriodo('to', $any($event.target).value)"
+        />
+      </div>
+    </div>
+
+    @if (comFiltro) {
+      <button type="button" class="botao" data-testid="limpar" (click)="limparFiltros()">
+        Limpar filtros
+      </button>
+    }
+  </form>
+
+  @if (erro(); as mensagem) {
+    <p class="erro" role="alert" data-testid="erro-busca">{{ mensagem }}</p>
+  }
+  @if (erroAcao(); as mensagem) {
+    <p class="erro" role="alert" data-testid="erro-acao">{{ mensagem }}</p>
+  }
+
+  @if (carregando() && itens().length === 0) {
+    <p role="status" data-testid="carregando">Buscando…</p>
+  } @else if (erro() === null) {
+    <p class="total" role="status" data-testid="total">
+      {{ totalCount() }} {{ totalCount() === 1 ? 'resultado' : 'resultados' }} · Total
+      <strong [class.negativo]="totalCents() < 0" data-testid="total-valor">{{
+        totalCents() | brl
+      }}</strong>
+    </p>
+
+    @if (itens().length === 0) {
+      <p class="vazio" data-testid="busca-vazia">Nenhum lançamento encontrado.</p>
+    }
+  }
+
+  <ul class="itens" data-testid="resultados">
+    @for (item of itens(); track item.entry?.id ?? item.transfer?.id) {
+      @if (item.entry; as e) {
+        <li class="item" data-testid="resultado">
+          <button type="button" class="linha" (click)="abrir(e)">
+            <span class="descricao">{{ e.description }}</span>
+            <span class="valor-item" [class.negativo]="e.kind === 'expense'">{{
+              valorComSinal(e) | brl
+            }}</span>
+            <span class="meta">
+              <span class="cor" [style.background]="corCarteira(e.walletId)"></span>
+              {{ nomeCarteira(e.walletId) }} · {{ data(e.date) }} · {{ rotuloSituacao(e) }}
+            </span>
+          </button>
+        </li>
+      } @else if (item.transfer; as t) {
+        <li class="item" data-testid="resultado-transferencia">
+          <div class="linha estatica">
+            <span class="descricao">{{ t.description }}</span>
+            <span class="valor-item">{{ t.amountCents | brl }}</span>
+            <span class="meta">
+              {{ nomeCarteira(t.fromWalletId) }} → {{ nomeCarteira(t.toWalletId) }} ·
+              {{ data(t.date) }} · Transferência
+            </span>
+          </div>
+          <button
+            type="button"
+            class="excluir"
+            data-testid="excluir-transferencia"
+            [attr.aria-label]="'Excluir ' + t.description"
+            [disabled]="alterandoId() === t.id"
+            (click)="excluirTransferencia(t)"
+          >
+            Excluir
+          </button>
+        </li>
+      }
+    }
+  </ul>
+
+  <div #fim class="fim" aria-hidden="true"></div>
+  @if (carregandoMais()) {
+    <p role="status" data-testid="carregando-mais">Carregando mais…</p>
+  } @else if (proximo() !== null) {
+    <button type="button" class="botao" data-testid="carregar-mais" (click)="carregarMais()">
+      Carregar mais
+    </button>
+  }
+</div>
