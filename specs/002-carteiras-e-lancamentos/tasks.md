@@ -69,7 +69,7 @@ description: "Tarefas da feature 002 — Carteiras, Entradas, Saídas e visão d
 
 ## Phase 7: US6 — Editar, excluir, duplicar, buscar (P2)
 
-- [ ] T017 [US6] `DELETE /entries/{id}` (lote), `POST /entries/{id}/duplicate` (idempotência; mês e situação recalculados) e `GET /entries/search` (research R10: entries + transfers, filtros, cursor, `totalCents` e `totalCount` de todos os resultados, LIKE com curingas escapados) ; testes HTTP de US6.3, US6.4, US6.5 (acentos e maiúsculas, vários meses, paginação estável, total). Depende de T005, T008, T015
+- [x] T017 [US6] `DELETE /entries/{id}` (lote), `POST /entries/{id}/duplicate` (idempotência; mês e situação recalculados) e `GET /entries/search` (research R10: entries + transfers, filtros, cursor, `totalCents` e `totalCount` de todos os resultados, LIKE com curingas escapados) ; testes HTTP de US6.3, US6.4, US6.5 (acentos e maiúsculas, vários meses, paginação estável, total). Depende de T005, T008, T015
 - [ ] T018 [US6] Front: modo edição completo do formulário rápido (todos os campos, `version`, 409 → mensagem "alterado em outro aparelho" e recarregar), Excluir com snackbar "Excluído — Desfazer" 8 s (RT-09) para entradas, saídas e transferências, Duplicar pedindo só a nova data, e a tela `/busca` (`frontend/src/app/features/busca/`) com filtros, rolagem infinita pelo cursor e total; item "Busca" na casca; e2e `editar-excluir-buscar.spec.ts` (US6.1–US6.5). Depende de T012, T017
 
 ---
