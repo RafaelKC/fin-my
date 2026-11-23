@@ -1,0 +1,87 @@
+<section class="aviso" data-testid="pendencias" aria-label="Pendências">
+  <p class="texto" data-testid="pendencias-aviso">
+    <strong>{{ titulo() }}:</strong>
+    a receber <span data-testid="pendencias-receber">{{ resumo().toReceiveCents | brl }}</span> · a
+    pagar <span data-testid="pendencias-pagar">{{ resumo().toPayCents | brl }}</span>
+  </p>
+  <button
+    type="button"
+    class="botao"
+    data-testid="pendencias-alternar"
+    [attr.aria-expanded]="aberta()"
+    aria-controls="lista-pendencias"
+    (click)="alternar()"
+  >
+    {{ aberta() ? 'Ocultar' : 'Ver pendências' }}
+  </button>
+
+  @if (aberta()) {
+    <div id="lista-pendencias" class="lista" data-testid="pendencias-lista">
+      @if (erro(); as mensagem) {
+        <p class="erro" role="alert" data-testid="pendencias-erro">{{ mensagem }}</p>
+      }
+      @if (carregando() && itens().length === 0) {
+        <p role="status">Carregando…</p>
+      } @else {
+        <label class="todas">
+          <input
+            type="checkbox"
+            data-testid="pendencias-todas"
+            [checked]="todasSelecionadas()"
+            (change)="alternarTodas()"
+          />
+          Selecionar todas
+        </label>
+        <ul class="itens">
+          @for (e of itens(); track e.id) {
+            <li class="item" data-testid="pendencia">
+              <label class="linha">
+                <input
+                  type="checkbox"
+                  data-testid="pendencia-selecionar"
+                  [checked]="selecionados().has(e.id)"
+                  [attr.aria-label]="'Selecionar ' + e.description"
+                  (change)="alternarItem(e.id)"
+                />
+                <span class="descricao">{{ e.description }}</span>
+                <span class="valor">{{ e.amountCents | brl }}</span>
+                <span class="meta">
+                  {{ rotuloTipo(e) }} · {{ nomeCarteira(e.walletId) }} · {{ data(e.date) }}
+                </span>
+              </label>
+            </li>
+          }
+        </ul>
+        <div class="acoes" role="group" aria-label="Ações nas pendências selecionadas">
+          <button
+            type="button"
+            class="botao"
+            data-testid="pendencias-realizar"
+            [disabled]="selecionadas().length === 0 || ocupado()"
+            (click)="realizar()"
+          >
+            {{ rotuloRealizar() }}
+          </button>
+          <button
+            type="button"
+            class="botao"
+            data-testid="pendencias-trazer"
+            [disabled]="selecionadas().length === 0 || ocupado()"
+            (click)="trazer()"
+          >
+            Trazer para este mês
+          </button>
+          <button
+            type="button"
+            class="botao perigo"
+            data-testid="pendencias-excluir"
+            [disabled]="selecionadas().length === 0 || ocupado()"
+            (click)="excluir()"
+          >
+            Excluir
+          </button>
+        </div>
+      }
+    </div>
+  }
+</section>
