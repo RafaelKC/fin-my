@@ -1,5 +1,6 @@
 using System.Text.Json;
 using FinMy.Domain.Common;
+using FinMy.Domain.Idempotency;
 using FinMy.Domain.Identity;
 using FinMy.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,7 @@ public static class AccountSnapshot
         [typeof(TenantMember)] = (nameof(TenantMember.TenantId), true),
         [typeof(RefreshToken)] = (nameof(RefreshToken.UserId), false),
         [typeof(PasswordResetToken)] = (nameof(PasswordResetToken.UserId), false),
+        [typeof(IdempotencyKey)] = (nameof(IdempotencyKey.TenantId), true),
     };
 
     /// <summary>Contadores por e-mail/IP: não pertencem a uma conta, e B só os altera com o próprio e-mail.</summary>

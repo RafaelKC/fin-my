@@ -1,4 +1,5 @@
 using FinMy.Api.Endpoints;
+using FinMy.Api.Idempotency;
 using FinMy.Infrastructure.Context;
 using Serilog;
 
@@ -6,7 +7,7 @@ namespace FinMy.Api.Composition;
 
 public static class WebApplicationExtensions
 {
-    /// <summary>Pipeline HTTP na ordem: proxy → log → erros → rate limiting → autenticação → sessão → contexto → autorização → endpoints.</summary>
+    /// <summary>Pipeline HTTP na ordem: proxy → log → erros → rate limiting → autenticação → sessão → contexto → autorização → buffer do corpo (idempotência) → endpoints.</summary>
     public static WebApplication UseFinMyPipeline(this WebApplication app)
     {
         app.UseForwardedHeaders();
@@ -19,6 +20,7 @@ public static class WebApplicationExtensions
         app.UseSessionValidation();
         app.UseCurrentContext();
         app.UseAuthorization();
+        app.UseIdempotencyBuffering();
 
         // O contrato gerado (/openapi/v1.json) alimenta a suíte de isolamento; não é publicado em produção.
         if (!app.Environment.IsProduction())
