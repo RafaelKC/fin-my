@@ -68,6 +68,12 @@ public sealed class CardPurchase : TenantEntity
     /// <summary>Mesmo valor nas duas compras do par de "saldo levado" (003 FR-020).</summary>
     public Guid? CarryOverPairId { get; private set; }
 
+    /// <summary>Tag de acerto da compra (no máximo uma, 004 FR-002); a aplicação garante que a tag tem <c>is_settlement</c>.</summary>
+    public Guid? SettlementTagId { get; private set; }
+
+    /// <summary>Mesmo valor nas partes de uma divisão (004 FR-014).</summary>
+    public Guid? SplitGroupId { get; private set; }
+
     public Money Amount => new(AmountCents);
 
     /// <summary>Descrição exibida: base + " k/N" quando é parcela.</summary>
@@ -155,6 +161,10 @@ public sealed class CardPurchase : TenantEntity
 
     public void ChangeNotes(string? notes) =>
         Notes = Rules.OptionalText(notes, Rules.NotesMaxLength, "notes", "notes", "a observação");
+
+    public void ChangeSettlementTag(Guid? tagId) => SettlementTagId = tagId;
+
+    public void ChangeSplitGroup(Guid? splitGroupId) => SplitGroupId = splitGroupId;
 
     public void ChangeReconciled(bool reconciled) => Reconciled = reconciled;
 

@@ -1,5 +1,6 @@
 using FinMy.Domain.Entries;
 using FinMy.Domain.Identity;
+using FinMy.Domain.Tags;
 using FinMy.Domain.Wallets;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -45,6 +46,14 @@ internal sealed class EntryConfiguration : IEntityTypeConfiguration<Entry>
 
         builder.HasOne<Wallet>().WithMany().HasTenantForeignKey(e => e.WalletId);
 
+        // FK composta opcional (Tag de acerto); HasTenantForeignKey só aceita chave não nula.
+        builder.HasOne<Tag>().WithMany()
+            .HasForeignKey(nameof(Entry.TenantId), nameof(Entry.SettlementTagId))
+            .HasPrincipalKey(nameof(Tag.TenantId), nameof(Tag.Id))
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(e => new { e.TenantId, e.SettlementTagId });
+        builder.HasIndex(e => new { e.TenantId, e.SplitGroupId }).HasFilter("split_group_id IS NOT NULL");
         builder.HasIndex(e => new { e.TenantId, e.DescriptionNormalized });
         builder.HasIndex(e => new { e.TenantId, e.ReferenceMonth });
         builder.HasIndex(e => new { e.TenantId, e.Status, e.ReferenceMonth });

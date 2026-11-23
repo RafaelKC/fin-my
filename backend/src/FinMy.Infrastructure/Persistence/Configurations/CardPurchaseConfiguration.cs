@@ -1,5 +1,6 @@
 using FinMy.Domain.Cards;
 using FinMy.Domain.Identity;
+using FinMy.Domain.Tags;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -80,6 +81,14 @@ internal sealed class CardPurchaseConfiguration : IEntityTypeConfiguration<CardP
             .HasPrincipalKey(nameof(Invoice.TenantId), nameof(Invoice.Id), nameof(Invoice.CreditCardId))
             .OnDelete(DeleteBehavior.Restrict);
 
+        // FK composta opcional (Tag de acerto).
+        builder.HasOne<Tag>().WithMany()
+            .HasForeignKey(nameof(CardPurchase.TenantId), nameof(CardPurchase.SettlementTagId))
+            .HasPrincipalKey(nameof(Tag.TenantId), nameof(Tag.Id))
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(p => new { p.TenantId, p.SettlementTagId });
+        builder.HasIndex(p => new { p.TenantId, p.SplitGroupId }).HasFilter("split_group_id IS NOT NULL");
         builder.HasIndex(p => new { p.TenantId, p.InvoiceId });
         builder.HasIndex(p => new { p.TenantId, p.InstallmentPlanId });
         builder.HasIndex(p => new { p.TenantId, p.DescriptionNormalized });

@@ -9,7 +9,7 @@ namespace FinMy.Api.Tests.Isolation;
 
 /// <summary>
 /// Retrato de tudo o que pertence à conta/Espaço de A no banco ("nada gravado"): linhas de todo tipo
-/// <see cref="ITenantEntity"/> do Espaço e as linhas globais ligadas a A. Tipo mapeado sem regra de dono falha
+/// <see cref="ITenantEntity"/> e tabela de ligação (<see cref="ITenantLink"/>) do Espaço e as linhas globais ligadas a A. Tipo mapeado sem regra de dono falha
 /// o teste — assim a suíte cresce sozinha com as próximas features.
 /// </summary>
 public static class AccountSnapshot
@@ -41,9 +41,10 @@ public static class AccountSnapshot
             }
 
             Func<object, bool> isA;
-            if (typeof(ITenantEntity).IsAssignableFrom(type))
+            if (typeof(ITenantEntity).IsAssignableFrom(type) || typeof(ITenantLink).IsAssignableFrom(type))
             {
-                isA = row => ((ITenantEntity)row).TenantId == tenantId;
+                var tenantProperty = type.GetProperty(nameof(ITenantScoped.TenantId))!;
+                isA = row => (Guid)tenantProperty.GetValue(row)! == tenantId;
             }
             else if (GlobalOwners.TryGetValue(type, out var owner))
             {

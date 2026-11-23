@@ -9,14 +9,14 @@ public static class TenantRelationshipExtensions
 {
     /// <summary>
     /// Torna a chave estrangeira composta: <c>(tenant_id, x_id)</c> → <c>x (tenant_id, id)</c>
-    /// (docs/arquitetura.md §3.5). O banco recusa referência entre Espaços.
+    /// (docs/arquitetura.md §3.5); o lado dependente pode ser uma tabela de ligação (<see cref="ITenantLink"/>). O banco recusa referência entre Espaços.
     /// Exclusão em cascata não é usada (exclusão é sempre lógica).
     /// </summary>
     public static ReferenceCollectionBuilder<TPrincipal, TDependent> HasTenantForeignKey<TPrincipal, TDependent>(
         this ReferenceCollectionBuilder<TPrincipal, TDependent> relationship,
         Expression<Func<TDependent, Guid>> foreignKey)
         where TPrincipal : class, ITenantEntity
-        where TDependent : class, ITenantEntity
+        where TDependent : class
     {
         if (foreignKey.Body is not MemberExpression member)
         {
