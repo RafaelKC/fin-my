@@ -167,7 +167,7 @@ describe('FaturaPage (US5.2–US5.5, US6.2, US7)', () => {
       }),
     );
     await clicar('mover-seguinte', 0);
-    let req = http.expectOne('/api/v1/card-purchases/a/move');
+    const req = http.expectOne('/api/v1/card-purchases/a/move');
     expect(req.request.body).toEqual({ direction: 'next', scope: 'this' });
     req.flush([]);
     http.expectOne(BASE).flush(faturaDetalhada());
