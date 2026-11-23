@@ -19,11 +19,16 @@ import {
   previousMonth,
   today,
 } from '../../core/money';
+import { CreditCardOverview, InvoiceStatus } from '../cartoes/card.models';
+import { CardsService } from '../cartoes/cards.service';
+import { InvoicesService } from '../cartoes/fatura/invoices.service';
 import { Wallet } from '../carteiras/wallet.models';
 import { WalletsService } from '../carteiras/wallets.service';
+import { CardPurchasesService } from '../lancamento/card-purchases.service';
 import { EntriesService } from '../lancamento/entries.service';
 import { Entry } from '../lancamento/entry.models';
 import { ExclusaoService } from '../lancamento/exclusao.service';
+import { novaChaveIdempotencia } from '../lancamento/lancamento-logic';
 import { LancamentoLauncher } from '../lancamento/lancamento.launcher';
 import { TransfersService } from '../lancamento/transfers.service';
 import {
@@ -42,12 +47,20 @@ import {
   montarQuery,
   ordenar,
 } from './mes-logic';
-import { MonthView, SummaryColumn, Transfer } from './month.models';
+import { MonthInvoiceLine, MonthView, SummaryColumn, Transfer } from './month.models';
 import { MonthsService } from './months.service';
 import { PendenciasComponent } from './pendencias/pendencias.component';
 import { PendenciasService } from './pendencias/pendencias.service';
 
 const DESKTOP = '(min-width: 1024px)';
+
+const ROTULO_SITUACAO_FATURA: Record<InvoiceStatus, string> = {
+  no_amount_due: 'Sem valor a pagar',
+  paid: 'Paga',
+  open: 'Aberta',
+  closed: 'Fechada',
+  overdue: 'Vencida',
+};
 
 interface LinhaResumo {
   id: string;
@@ -83,6 +96,9 @@ export class MesPage {
   private readonly launcher = inject(LancamentoLauncher);
   private readonly pendencias = inject(PendenciasService);
   private readonly exclusao = inject(ExclusaoService);
+  private readonly cardsApi = inject(CardsService);
+  private readonly invoicesApi = inject(InvoicesService);
+  private readonly compras = inject(CardPurchasesService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly recarregar$ = new Subject<void>();
 
@@ -94,6 +110,7 @@ export class MesPage {
   protected readonly erro = signal<string | null>(null);
   protected readonly erroAcao = signal<string | null>(null);
   protected readonly carteiras = signal<Wallet[]>([]);
+  protected readonly cartoes = signal<CreditCardOverview[]>([]);
   protected readonly ordem = signal<Ordem | null>(null);
   protected readonly transferenciasAbertas = signal(false);
   protected readonly alterandoId = signal<string | null>(null);
@@ -116,9 +133,24 @@ export class MesPage {
   protected readonly transferencias = computed(() =>
     this.situacao() === 'planned' ? [] : (this.visao()?.transfers ?? []),
   );
+  /**
+   * Faturas com vencimento no mês, na lista de Saídas (FR-021). Sem sentido de "prevista" para uma
+   * fatura paga e vice-versa: Previstas = ainda com valor em aberto; Realizadas = Pagas.
+   */
+  protected readonly faturas = computed<MonthInvoiceLine[]>(() => {
+    const todas = this.visao()?.invoices ?? [];
+    const situacao = this.situacao();
+    if (situacao === null) return todas;
+    return todas.filter((f) => (f.status === 'paid') === (situacao === 'settled'));
+  });
   protected readonly mesVazio = computed(() => {
     const v = this.visao();
-    return v !== null && v.entries.length === 0 && v.transfers.length === 0;
+    return (
+      v !== null &&
+      v.entries.length === 0 &&
+      v.transfers.length === 0 &&
+      (v.invoices ?? []).length === 0
+    );
   });
   protected readonly semResultadoNoFiltro = computed(
     () =>
@@ -126,6 +158,7 @@ export class MesPage {
       !this.mesVazio() &&
       this.entradas().length === 0 &&
       this.saidas().length === 0 &&
+      this.faturas().length === 0 &&
       this.transferencias().length === 0,
   );
 
@@ -229,6 +262,8 @@ export class MesPage {
       this.pendencias.alteradas$,
       this.transfersApi.criadas$,
       this.exclusao.mudou$,
+      this.compras.criadas$,
+      this.compras.alteradas$,
     )
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.recarregar$.next());
@@ -237,6 +272,7 @@ export class MesPage {
       .subscribe(() => this.carregarCarteiras());
 
     this.carregarCarteiras();
+    this.carregarCartoes();
   }
 
   protected nomeCarteira(id: string): string {
@@ -245,6 +281,72 @@ export class MesPage {
 
   protected corCarteira(id: string): string {
     return this.porId().get(id)?.color ?? 'transparent';
+  }
+
+  protected corCartao(id: string): string {
+    return this.cartoes().find((c) => c.id === id)?.color ?? 'transparent';
+  }
+
+  /** Carteira que paga o cartão (a lista de cartões inclui arquivados). */
+  protected carteiraDaFatura(f: MonthInvoiceLine): string {
+    const id = this.cartoes().find((c) => c.id === f.creditCardId)?.paymentWalletId;
+    return id === undefined ? '' : this.nomeCarteira(id);
+  }
+
+  protected rotuloFatura(f: MonthInvoiceLine): string {
+    return ROTULO_SITUACAO_FATURA[f.status];
+  }
+
+  /** A caixinha da fatura fica marcada só com a fatura Paga (FR-019). */
+  protected faturaPaga(f: MonthInvoiceLine): boolean {
+    return f.status === 'paid';
+  }
+
+  /** Sem pagamentos e sem restante não há o que marcar. */
+  protected faturaSemAcao(f: MonthInvoiceLine): boolean {
+    return !this.faturaPaga(f) && f.remainingCents <= 0;
+  }
+
+  protected abrirFatura(f: MonthInvoiceLine): void {
+    void this.router.navigate(['/cartoes', f.creditCardId, 'faturas', f.dueMonth]);
+  }
+
+  /**
+   * US5.1/US5.6: marcar paga o Restante com os padrões da FR-017 (corpo vazio); desmarcar exclui
+   * os pagamentos e oferece "Desfazer".
+   */
+  protected alternarFatura(f: MonthInvoiceLine): void {
+    if (this.alterandoId() !== null) return;
+    const chave = `fatura-${f.creditCardId}-${f.dueMonth}`;
+    this.alterandoId.set(chave);
+    this.erroAcao.set(null);
+    const falhou = (error: unknown) => {
+      this.alterandoId.set(null);
+      this.erroAcao.set(problemMessage(error));
+      this.recarregar$.next(); // desfaz a marcação visual da caixinha
+    };
+    if (this.faturaPaga(f)) {
+      this.invoicesApi.deletePayments(f.creditCardId, f.dueMonth).subscribe({
+        next: (resultado) => {
+          this.alterandoId.set(null);
+          this.exclusao.oferecerDesfazer(resultado.deletionBatchId);
+          this.recarregar$.next();
+        },
+        error: falhou,
+      });
+      return;
+    }
+    this.invoicesApi.pay(f.creditCardId, f.dueMonth, {}, novaChaveIdempotencia()).subscribe({
+      next: () => {
+        this.alterandoId.set(null);
+        this.recarregar$.next();
+      },
+      error: falhou,
+    });
+  }
+
+  protected idFatura(f: MonthInvoiceLine): string {
+    return `fatura-${f.creditCardId}-${f.dueMonth}`;
   }
 
   protected data(data: string): string {
@@ -380,6 +482,16 @@ export class MesPage {
     return this.desktop()
       ? ordenar(filtradas, this.ordem(), (id) => this.nomeCarteira(id))
       : filtradas;
+  }
+
+  private carregarCartoes(): void {
+    this.cardsApi
+      .list('all')
+      .pipe(
+        catchError(() => EMPTY),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((lista) => this.cartoes.set(lista));
   }
 
   private carregarCarteiras(): void {

@@ -19,6 +19,11 @@ export class CardPurchasesService {
   /** Emite cada criação (à vista, parcelas ou em andamento) para as telas recarregarem. */
   readonly criadas$ = this.criadasSubject.asObservable();
 
+  private readonly alteradasSubject = new Subject<void>();
+
+  /** Emite depois de editar ou excluir uma compra, para a visão do mês recarregar (FR-016). */
+  readonly alteradas$ = this.alteradasSubject.asObservable();
+
   /** `idempotencyKey`: uma por formulário, reaproveitada só em reenvio idêntico (research R2). */
   create(input: CardPurchaseCreate, idempotencyKey: string): Observable<CardPurchaseResult> {
     return this.api
@@ -31,12 +36,16 @@ export class CardPurchasesService {
   }
 
   update(id: string, corpo: CardPurchaseUpdate): Observable<CardPurchase> {
-    return this.api.put<CardPurchase>(`/card-purchases/${id}`, corpo);
+    return this.api
+      .put<CardPurchase>(`/card-purchases/${id}`, corpo)
+      .pipe(tap(() => this.alteradasSubject.next()));
   }
 
   /** Exclui (RT-09); devolve o lote para o "Desfazer". */
   delete(id: string, scope: EscopoCompra = 'this'): Observable<DeletionResult> {
-    return this.api.delete<DeletionResult>(`/card-purchases/${id}?scope=${scope}`);
+    return this.api
+      .delete<DeletionResult>(`/card-purchases/${id}?scope=${scope}`)
+      .pipe(tap(() => this.alteradasSubject.next()));
   }
 
   setReconciled(id: string, reconciled: boolean): Observable<CardPurchase> {

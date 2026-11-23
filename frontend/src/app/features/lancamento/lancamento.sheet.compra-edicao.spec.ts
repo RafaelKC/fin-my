@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { carteira } from '../carteiras/testing';
 import { compra } from '../cartoes/fatura/testing';
 import { cartao } from '../cartoes/testing';
@@ -37,7 +37,9 @@ describe('LancamentoSheet — editar compra no cartão (003 T009, FR-015)', () =
       ],
     });
     http = TestBed.inject(HttpTestingController);
-    vi.spyOn(TestBed.inject(MatSnackBar), 'open').mockReturnValue(undefined as never);
+    vi.spyOn(TestBed.inject(MatSnackBar), 'open').mockReturnValue({
+      onAction: () => new Subject<void>(),
+    } as never);
     fixture = TestBed.createComponent(LancamentoSheet);
     el = fixture.nativeElement;
     fixture.detectChanges();
@@ -63,7 +65,7 @@ describe('LancamentoSheet — editar compra no cartão (003 T009, FR-015)', () =
     http.verify();
   });
 
-  it('abre preenchido, sem abas de tipo, parcelas, duplicar nem excluir', async () => {
+  it('abre preenchido, sem abas de tipo, parcelas nem duplicar', async () => {
     await abrir();
     expect(el.querySelector('#lancamento-titulo')!.textContent).toContain('Editar compra');
     expect(el.querySelector('[role="radiogroup"]')).toBeNull();
@@ -73,7 +75,7 @@ describe('LancamentoSheet — editar compra no cartão (003 T009, FR-015)', () =
     expect(el.querySelector<HTMLSelectElement>('#lancamento-cartao')!.value).toBe('c-azul');
     expect(el.querySelector('#lancamento-parcelas')).toBeNull();
     expect(el.querySelector('[data-testid="duplicar"]')).toBeNull();
-    expect(el.querySelector('[data-testid="excluir"]')).toBeNull();
+    expect(el.querySelector('[data-testid="excluir"]')).not.toBeNull();
     expect(el.querySelector('[data-testid="salvar-outro"]')).toBeNull();
   });
 
@@ -143,5 +145,82 @@ describe('LancamentoSheet — editar compra no cartão (003 T009, FR-015)', () =
       'alterado em outro aparelho',
     );
     expect(el.querySelector<HTMLInputElement>('#lancamento-descricao')!.value).toBe('Uber (outro)');
+  });
+
+  describe('parcelas (US3.4, US3.5)', () => {
+    const parcela = () =>
+      compra({
+        id: 'p2',
+        description: 'Casa China',
+        displayDescription: 'Casa China 2/3',
+        installmentPlanId: 'plano-1',
+        installmentNumber: 2,
+        installmentTotal: 3,
+      });
+    const escolher = (valor: string | null) =>
+      vi.spyOn(TestBed.inject(MatDialog), 'open').mockReturnValue({
+        afterClosed: () => of(valor),
+      } as never);
+
+    it('editar pergunta "só esta ou todas" e envia o escopo escolhido', async () => {
+      await abrir(parcela());
+      const dialogo = escolher('all');
+      await digitar('#lancamento-descricao', 'Casa China Nova');
+      await salvar();
+      expect(dialogo.mock.calls[0][1]).toMatchObject({
+        data: { titulo: 'Alterar só esta parcela ou todas?' },
+      });
+      const req = http.expectOne('/api/v1/card-purchases/p2');
+      expect(req.request.body).toMatchObject({ description: 'Casa China Nova', scope: 'all' });
+      req.flush(parcela());
+      expect(fechar).toHaveBeenCalled();
+    });
+
+    it('cancelar a pergunta não salva', async () => {
+      await abrir(parcela());
+      escolher(null);
+      await salvar();
+      http.expectNone('/api/v1/card-purchases/p2');
+      expect(fechar).not.toHaveBeenCalled();
+    });
+
+    it('formulário inválido não chega a perguntar o escopo', async () => {
+      await abrir(parcela());
+      const dialogo = escolher('this');
+      await digitar('#lancamento-descricao', '');
+      await salvar();
+      expect(dialogo).not.toHaveBeenCalled();
+    });
+
+    it('excluir oferece "só esta / esta e as seguintes / todas" e o Desfazer', async () => {
+      await abrir(parcela());
+      const dialogo = escolher('this_and_following');
+      el.querySelector<HTMLElement>('[data-testid="excluir"]')!.click();
+      await atualizar();
+      expect(dialogo.mock.calls[0][1]).toMatchObject({
+        data: {
+          opcoes: [{ valor: 'this' }, { valor: 'this_and_following' }, { valor: 'all' }],
+        },
+      });
+      const req = http.expectOne('/api/v1/card-purchases/p2?scope=this_and_following');
+      expect(req.request.method).toBe('DELETE');
+      req.flush({ deletionBatchId: 'lote-9' });
+      expect(fechar).toHaveBeenCalled();
+      expect(TestBed.inject(MatSnackBar).open).toHaveBeenCalledWith(
+        'Excluído',
+        'Desfazer',
+        expect.objectContaining({ duration: 8000 }),
+      );
+    });
+  });
+
+  it('compra à vista exclui direto, sem perguntar o escopo', async () => {
+    await abrir();
+    const dialogo = vi.spyOn(TestBed.inject(MatDialog), 'open');
+    el.querySelector<HTMLElement>('[data-testid="excluir"]')!.click();
+    await atualizar();
+    expect(dialogo).not.toHaveBeenCalled();
+    http.expectOne('/api/v1/card-purchases/p1?scope=this').flush({ deletionBatchId: 'lote-1' });
+    expect(fechar).toHaveBeenCalled();
   });
 });

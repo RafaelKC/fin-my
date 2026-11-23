@@ -6,10 +6,12 @@ import { provideRouter, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { carteira } from '../carteiras/testing';
+import { cartao } from '../cartoes/testing';
+import { CardPurchasesService } from '../lancamento/card-purchases.service';
 import { Entry } from '../lancamento/entry.models';
 import { LancamentoLauncher } from '../lancamento/lancamento.launcher';
 import { TransfersService } from '../lancamento/transfers.service';
-import { MonthView, SummaryColumn, Transfer } from './month.models';
+import { MonthInvoiceLine, MonthView, SummaryColumn, Transfer } from './month.models';
 import { MesPage } from './mes.page';
 
 const col = (p: Partial<SummaryColumn>): SummaryColumn => ({
@@ -45,6 +47,22 @@ const transferencia = (p: Partial<Transfer> = {}): Transfer => ({
   description: 'Transferência',
   createdAt: '',
   version: 1,
+  ...p,
+});
+/** Exemplo da US5: fatura Azul de março com Total 200,00, Fechada, hoje 20/03/2026. */
+const faturaDoMes = (p: Partial<MonthInvoiceLine> = {}): MonthInvoiceLine => ({
+  creditCardId: 'c-azul',
+  creditCardName: 'Azul',
+  dueMonth: '2026-03',
+  closingDate: '2026-03-18',
+  dueDate: '2026-03-25',
+  id: 'f1',
+  status: 'closed',
+  totalCents: 20000,
+  paidCents: 0,
+  remainingCents: 20000,
+  plannedCents: 20000,
+  actualCents: 0,
   ...p,
 });
 const visao = (p: Partial<MonthView> = {}): MonthView => ({
@@ -96,7 +114,10 @@ describe('MesPage', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideRouter([{ path: 'mes/:mes', component: MesPage }]),
+        provideRouter([
+          { path: 'mes/:mes', component: MesPage },
+          { path: 'cartoes/:id/faturas/:mes', children: [] },
+        ]),
       ],
     });
     http = TestBed.inject(HttpTestingController);
@@ -106,6 +127,7 @@ describe('MesPage', () => {
     http
       .expectOne('/api/v1/wallets?archived=all')
       .flush([carteira(), carteira({ id: 'w-verde', name: 'Verde' })]);
+    http.expectOne('/api/v1/credit-cards?archived=all').flush([cartao()]);
     http.expectOne((r) => r.url.startsWith('/api/v1/months/')).flush(dados);
     harness.detectChanges();
     el = harness.routeNativeElement as HTMLElement;
@@ -298,5 +320,152 @@ describe('MesPage', () => {
       'Desfazer',
       expect.objectContaining({ duration: 8000 }),
     );
+  });
+
+  describe('faturas (US5.1, US5.6; FR-019, FR-021)', () => {
+    const caixa = () => el.querySelector<HTMLInputElement>('[data-testid="fatura-caixinha"]')!;
+
+    it('lista "Fatura <Cartão>" nas Saídas com situação, Total, Pago e Restante', async () => {
+      await abrir(
+        '/mes/2026-03',
+        visao({
+          invoices: [faturaDoMes({ paidCents: 15000, remainingCents: 5000, actualCents: 15000 })],
+        }),
+      );
+      const linha = txt('fatura-mes')!;
+      expect(linha).toContain('Fatura Azul');
+      expect(txt('fatura-situacao')).toBe('Fechada');
+      expect(txt('fatura-total')).toBe('R$ 200,00');
+      expect(txt('fatura-pago')).toBe('R$ 150,00');
+      expect(txt('fatura-restante')).toBe('R$ 50,00');
+      expect(caixa().checked).toBe(false);
+    });
+
+    it('mês só com fatura não é "vazio"', async () => {
+      await abrir('/mes/2026-03', visao({ entries: [], invoices: [faturaDoMes()] }));
+      expect(el.querySelector('[data-testid="mes-vazio"]')).toBeNull();
+      expect(el.querySelector('[data-testid="fatura-mes"]')).not.toBeNull();
+    });
+
+    it('marcar a caixinha paga com os padrões (corpo vazio) e recarrega', async () => {
+      await abrir('/mes/2026-03', visao({ invoices: [faturaDoMes()] }));
+      caixa().click();
+      const post = http.expectOne('/api/v1/credit-cards/c-azul/invoices/2026-03/payments');
+      expect(post.request.method).toBe('POST');
+      expect(post.request.body).toEqual({});
+      expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
+      post.flush({});
+      http.expectOne('/api/v1/months/2026-03').flush(
+        visao({
+          invoices: [
+            faturaDoMes({
+              status: 'paid',
+              paidCents: 20000,
+              remainingCents: 0,
+              actualCents: 20000,
+            }),
+          ],
+        }),
+      );
+      harness.detectChanges();
+      expect(txt('fatura-situacao')).toBe('Paga');
+      expect(caixa().checked).toBe(true);
+    });
+
+    it('desmarcar exclui os pagamentos e oferece Desfazer (US5.6)', async () => {
+      await abrir(
+        '/mes/2026-03',
+        visao({
+          invoices: [
+            faturaDoMes({
+              status: 'paid',
+              paidCents: 20000,
+              remainingCents: 0,
+              actualCents: 20000,
+            }),
+          ],
+        }),
+      );
+      const snack = vi
+        .spyOn(TestBed.inject(MatSnackBar), 'open')
+        .mockReturnValue({ onAction: () => new Subject<void>() } as never);
+      expect(caixa().checked).toBe(true);
+      caixa().click();
+      const del = http.expectOne('/api/v1/credit-cards/c-azul/invoices/2026-03/payments');
+      expect(del.request.method).toBe('DELETE');
+      del.flush({ deletionBatchId: 'lote-3' });
+      http.expectOne('/api/v1/months/2026-03').flush(visao({ invoices: [faturaDoMes()] }));
+      expect(snack).toHaveBeenCalledWith(
+        'Excluído',
+        'Desfazer',
+        expect.objectContaining({ duration: 8000 }),
+      );
+    });
+
+    it('erro ao pagar mostra o aviso e recarrega a marcação', async () => {
+      await abrir('/mes/2026-03', visao({ invoices: [faturaDoMes()] }));
+      caixa().click();
+      http
+        .expectOne('/api/v1/credit-cards/c-azul/invoices/2026-03/payments')
+        .flush(
+          { code: 'invoice.nothing_to_pay', title: 'x', detail: 'Não há valor a pagar.' },
+          { status: 422, statusText: 'Unprocessable Entity' },
+        );
+      http.expectOne('/api/v1/months/2026-03').flush(visao({ invoices: [faturaDoMes()] }));
+      harness.detectChanges();
+      expect(el.textContent).toContain('Não há valor a pagar.');
+    });
+
+    it('fatura zerada e sem pagamento não pode ser marcada', async () => {
+      await abrir(
+        '/mes/2026-03',
+        visao({
+          invoices: [
+            faturaDoMes({
+              status: 'no_amount_due',
+              totalCents: 0,
+              remainingCents: 0,
+              plannedCents: 0,
+            }),
+          ],
+        }),
+      );
+      expect(caixa().disabled).toBe(true);
+    });
+
+    it('tocar na linha abre a fatura', async () => {
+      await abrir('/mes/2026-03', visao({ invoices: [faturaDoMes()] }));
+      el.querySelector<HTMLButtonElement>('[data-testid="fatura-abrir"]')!.click();
+      await harness.fixture.whenStable();
+      expect(TestBed.inject(Router).url).toBe('/cartoes/c-azul/faturas/2026-03');
+    });
+
+    it('filtro Previstas esconde a fatura paga; Realizadas esconde a aberta', async () => {
+      const paga = faturaDoMes({ status: 'paid', paidCents: 20000, remainingCents: 0 });
+      await abrir('/mes/2026-03?situacao=planned', visao({ invoices: [paga] }));
+      expect(el.querySelector('[data-testid="fatura-mes"]')).toBeNull();
+    });
+
+    it('filtro Realizadas mostra só a fatura paga', async () => {
+      const paga = faturaDoMes({ status: 'paid', paidCents: 20000, remainingCents: 0 });
+      await abrir(
+        '/mes/2026-03?situacao=settled',
+        visao({
+          invoices: [
+            paga,
+            faturaDoMes({ dueMonth: '2026-03', creditCardId: 'c-verde', creditCardName: 'Verde' }),
+          ],
+        }),
+      );
+      expect(el.querySelectorAll('[data-testid="fatura-mes"]')).toHaveLength(1);
+      expect(txt('fatura-mes')).toContain('Fatura Azul');
+    });
+
+    it('recarrega a visão quando uma compra no cartão é editada', async () => {
+      await abrir('/mes/2026-03', visao({ invoices: [faturaDoMes()] }));
+      TestBed.inject(CardPurchasesService).delete('p1').subscribe();
+      http.expectOne('/api/v1/card-purchases/p1?scope=this').flush({ deletionBatchId: 'l' });
+      http.expectOne('/api/v1/months/2026-03').flush(visao());
+    });
   });
 });

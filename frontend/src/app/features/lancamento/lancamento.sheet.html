@@ -439,22 +439,24 @@
       >
         Salvar e lançar outro
       </button>
-    } @else if (!editandoCompra) {
-      <button
-        type="button"
-        class="botao secundario"
-        data-testid="duplicar"
-        [disabled]="ocupado()"
-        (click)="abrirDuplicar()"
-      >
-        Duplicar
-      </button>
+    } @else {
+      @if (!editandoCompra) {
+        <button
+          type="button"
+          class="botao secundario"
+          data-testid="duplicar"
+          [disabled]="ocupado()"
+          (click)="abrirDuplicar()"
+        >
+          Duplicar
+        </button>
+      }
       <button
         type="button"
         class="botao perigo"
         data-testid="excluir"
         [disabled]="ocupado()"
-        (click)="excluir()"
+        (click)="editandoCompra ? excluirCompra() : excluir()"
       >
         Excluir
       </button>
