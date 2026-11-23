@@ -24,6 +24,7 @@ import { WalletsService } from '../carteiras/wallets.service';
 import { EntriesService } from '../lancamento/entries.service';
 import { Entry } from '../lancamento/entry.models';
 import { LancamentoLauncher } from '../lancamento/lancamento.launcher';
+import { TransfersService } from '../lancamento/transfers.service';
 import {
   ColunaOrdem,
   FiltroSituacao,
@@ -40,7 +41,7 @@ import {
   montarQuery,
   ordenar,
 } from './mes-logic';
-import { MonthView, SummaryColumn } from './month.models';
+import { MonthView, SummaryColumn, Transfer } from './month.models';
 import { MonthsService } from './months.service';
 import { PendenciasComponent } from './pendencias/pendencias.component';
 import { PendenciasService } from './pendencias/pendencias.service';
@@ -76,6 +77,7 @@ export class MesPage {
   private readonly router = inject(Router);
   private readonly months = inject(MonthsService);
   private readonly entries = inject(EntriesService);
+  private readonly transfersApi = inject(TransfersService);
   private readonly wallets = inject(WalletsService);
   private readonly launcher = inject(LancamentoLauncher);
   private readonly pendencias = inject(PendenciasService);
@@ -143,6 +145,11 @@ export class MesPage {
     });
     const comSaldoDeCarteira =
       v.planned.walletsInitialBalanceCents !== 0 || v.actual.walletsInitialBalanceCents !== 0;
+    // Com uma única carteira filtrada, as transferências entram no resumo (contracts/ui-rotas.md);
+    // com várias, só quando alguma cruza o filtro (senão o saldo final não fecha com as linhas).
+    const comTransferencias =
+      this.carteirasSelecionadas().length === 1 ||
+      [v.planned, v.actual].some((c) => c.transfersInCents !== 0 || c.transfersOutCents !== 0);
     return [
       par('saldo-inicial', 'Saldo inicial', 'openingBalanceCents', {
         nota: comSaldoDeCarteira ? 'inclui saldo inicial de carteiras' : undefined,
@@ -150,6 +157,12 @@ export class MesPage {
       par('entradas', 'Entradas', 'incomeCents'),
       par('saidas', 'Saídas', 'expenseCents'),
       par('resultado', 'Resultado', 'resultCents', { destacaNegativo: true }),
+      ...(comTransferencias
+        ? [
+            par('transferencias-recebidas', 'Transferências recebidas', 'transfersInCents'),
+            par('transferencias-enviadas', 'Transferências enviadas', 'transfersOutCents'),
+          ]
+        : []),
       par('saldo-final', 'Saldo final', 'finalBalanceCents', { destacaNegativo: true }),
     ];
   });
@@ -208,10 +221,17 @@ export class MesPage {
       });
 
     // FR-016: o que mudar um lançamento (aqui, no formulário rápido) recarrega a visão.
-    merge(this.entries.criados$, this.entries.alterados$, this.pendencias.alteradas$)
+    merge(
+      this.entries.criados$,
+      this.entries.alterados$,
+      this.pendencias.alteradas$,
+      this.transfersApi.criadas$,
+    )
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.recarregar$.next());
-    this.entries.criados$.pipe(takeUntilDestroyed()).subscribe(() => this.carregarCarteiras());
+    merge(this.entries.criados$, this.transfersApi.criadas$)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.carregarCarteiras());
 
     this.carregarCarteiras();
   }
@@ -226,6 +246,16 @@ export class MesPage {
 
   protected data(data: string): string {
     return formatarData(data);
+  }
+
+  /**
+   * Com uma única carteira filtrada a transferência é "enviada" ou "recebida" (US5.2); sem filtro
+   * (ou com várias) é só "Transferência": o De → Para já aparece na linha.
+   */
+  protected rotuloTransferencia(t: Transfer): string {
+    const selecionadas = this.carteirasSelecionadas();
+    if (selecionadas.length !== 1) return 'Transferência';
+    return t.fromWalletId === selecionadas[0] ? 'Transferência enviada' : 'Transferência recebida';
   }
 
   protected atrasada(entry: Entry): boolean {

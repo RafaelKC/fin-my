@@ -286,7 +286,8 @@
                   <span class="descricao">{{ t.description }}</span>
                   <span class="valor-item">{{ t.amountCents | brl }}</span>
                   <span class="meta">
-                    {{ nomeCarteira(t.fromWalletId) }} → {{ nomeCarteira(t.toWalletId) }} ·
+                    <span data-testid="transferencia-rotulo">{{ rotuloTransferencia(t) }}</span>
+                    · {{ nomeCarteira(t.fromWalletId) }} → {{ nomeCarteira(t.toWalletId) }} ·
                     {{ data(t.date) }}
                   </span>
                 </div>

@@ -18,13 +18,15 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subject, catchError, of, switchMap, timer } from 'rxjs';
 import { asProblem, problemMessage } from '../../core/errors/problem-details';
 import { formatBrl, monthOfDate, parseValueExpression, today } from '../../core/money';
-import { DevicePrefsService } from '../../core/prefs/device-prefs.service';
+import { DevicePrefsService, LancamentoKind } from '../../core/prefs/device-prefs.service';
 import { AmountInput } from '../../shared/amount-input/amount-input';
 import { WALLET_COLORS, Wallet } from '../carteiras/wallet.models';
 import { WalletsService } from '../carteiras/wallets.service';
 import { EntriesService } from './entries.service';
+import { TransfersService } from './transfers.service';
 import {
   DESCRICAO_MAX,
+  DESCRICAO_TRANSFERENCIA,
   Entry,
   EntryCreate,
   EntryKind,
@@ -32,11 +34,13 @@ import {
   EntrySuggestion,
   EntryUpdate,
   OBSERVACAO_MAX,
+  TransferCreate,
 } from './entry.models';
 import { novaChaveIdempotencia, situacaoPadrao } from './lancamento-logic';
 
 export const MENSAGEM_SEM_CONEXAO_LANCAMENTO =
   'Sem conexão. O lançamento não foi salvo; tente de novo.';
+export const ERRO_MESMA_CARTEIRA = 'Escolha carteiras diferentes.';
 export const AVISO_DATA_ANTERIOR =
   'Esta data é anterior ao saldo inicial da carteira. O saldo inicial já deveria incluir este valor.';
 
@@ -56,12 +60,15 @@ function centavosParaExpressao(cents: number): string {
 /** Rascunho em `localStorage` (`finmy.draft.lancamento`, research R12). */
 interface Rascunho {
   savedOn: string;
-  kind: EntryKind;
+  kind: LancamentoKind;
   amount: string;
   description: string;
   date: string;
   walletId: string;
   walletManual: boolean;
+  /** Carteira de destino da transferência (rascunhos antigos não têm). */
+  toWalletId?: string;
+  toManual?: boolean;
   status: EntryStatus | null;
   refMonth: string | null;
   notes: string;
@@ -69,8 +76,8 @@ interface Rascunho {
 
 /**
  * Formulário rápido de lançamento (US2; FR-008..FR-013; contracts/ui-rotas.md). Aberto pelo "+"
- * da casca (`LancamentoLauncher`): tela cheia no celular, diálogo no computador. Por ora cria
- * Saída e Entrada; Transferência é da T016. Com `entry` nos dados do diálogo abre para editar
+ * da casca (`LancamentoLauncher`): tela cheia no celular, diálogo no computador. Cria Saída,
+ * Entrada e Transferência (De/Para, sem situação nem sugestões; US5). Com `entry` nos dados do diálogo abre para editar
  * (salva por PUT); Duplicar, Excluir e o tratamento de conflito de versão são da T018.
  */
 @Component({
@@ -83,6 +90,7 @@ interface Rascunho {
 export class LancamentoSheet {
   private readonly ref = inject<MatDialogRef<LancamentoSheet, Entry | undefined>>(MatDialogRef);
   private readonly entries = inject(EntriesService);
+  private readonly transfers = inject(TransfersService);
   private readonly wallets = inject(WalletsService);
   private readonly prefs = inject(DevicePrefsService);
   private readonly snackBar = inject(MatSnackBar);
@@ -96,11 +104,15 @@ export class LancamentoSheet {
   protected readonly observacaoMax = OBSERVACAO_MAX;
 
   protected readonly hoje = signal(today());
-  protected readonly kind = signal<EntryKind>(this.prefs.lastKind());
+  protected readonly kind = signal<LancamentoKind>(this.prefs.lastKind());
   protected readonly amount = signal('');
   protected readonly description = signal('');
   protected readonly date = signal(this.hoje());
+  /** Carteira da entrada/saída; na transferência é a de origem ("De"). */
   protected readonly walletId = signal('');
+  /** Carteira de destino da transferência ("Para"). */
+  protected readonly toWalletId = signal('');
+  private readonly toManual = signal(false);
   /** `true` quando a pessoa escolheu a carteira à mão: sugestões não a trocam mais (FR-011). */
   private readonly walletManual = signal(false);
   /** Situação escolhida à mão; `null` = segue a data (FR-012). */
@@ -131,6 +143,8 @@ export class LancamentoSheet {
     if (manual !== null) return manual;
     return DATA.test(this.date()) ? monthOfDate(this.date()) : '';
   });
+  protected readonly ehTransferencia = computed(() => this.kind() === 'transfer');
+  protected readonly descricaoPadrao = DESCRICAO_TRANSFERENCIA;
   protected readonly rotuloRealizada = computed(() =>
     this.kind() === 'income' ? 'Recebida' : 'Paga',
   );
@@ -140,8 +154,12 @@ export class LancamentoSheet {
     () => this.carteiras().find((w) => w.id === this.walletId()) ?? null,
   );
   protected readonly avisoDataAnterior = computed(() => {
-    const carteira = this.carteiraEscolhida();
-    return carteira !== null && DATA.test(this.date()) && this.date() < carteira.initialBalanceDate;
+    if (!DATA.test(this.date())) return false;
+    const envolvidas = [this.carteiraEscolhida()];
+    if (this.ehTransferencia()) {
+      envolvidas.push(this.carteiras().find((w) => w.id === this.toWalletId()) ?? null);
+    }
+    return envolvidas.some((w) => w !== null && this.date() < w.initialBalanceDate);
   });
   protected readonly previaSaldoNovo = computed(() => {
     const r = parseValueExpression(this.novaSaldo(), true);
@@ -157,10 +175,18 @@ export class LancamentoSheet {
   });
   protected readonly erroDescricao = computed(() => {
     const t = this.description().trim();
-    if (t.length === 0) return 'Informe a descrição.';
+    // Transferência sem descrição usa o padrão "Transferência" (FR-021).
+    if (t.length === 0) return this.ehTransferencia() ? null : 'Informe a descrição.';
     return t.length > DESCRICAO_MAX
       ? `A descrição pode ter até ${DESCRICAO_MAX} caracteres.`
       : null;
+  });
+
+  /** US5.3: origem e destino iguais são barrados antes de enviar. */
+  protected readonly erroDestino = computed(() => {
+    if (!this.ehTransferencia() || this.carregandoCarteiras()) return null;
+    if (this.toWalletId() === '') return 'Escolha a carteira de destino.';
+    return this.toWalletId() === this.walletId() ? ERRO_MESMA_CARTEIRA : null;
   });
 
   protected readonly termo$ = new Subject<string>();
@@ -175,14 +201,15 @@ export class LancamentoSheet {
     this.termo$
       .pipe(
         // `timer` (e não `debounceTime`): não depende de `Date.now`, que os testes congelam.
-        switchMap((q) =>
-          q.trim().length < 1
-            ? of<EntrySuggestion[]>([])
-            : timer(120).pipe(
-                switchMap(() => this.entries.suggestions(q.trim(), this.kind())),
-                catchError(() => of<EntrySuggestion[]>([])),
-              ),
-        ),
+        switchMap((q) => {
+          const kind = this.kind();
+          // Transferência não tem sugestões (contracts/ui-rotas.md).
+          if (kind === 'transfer' || q.trim().length < 1) return of<EntrySuggestion[]>([]);
+          return timer(120).pipe(
+            switchMap(() => this.entries.suggestions(q.trim(), kind)),
+            catchError(() => of<EntrySuggestion[]>([])),
+          );
+        }),
         takeUntilDestroyed(),
       )
       .subscribe((lista) => this.sugestoes.set(lista));
@@ -212,12 +239,13 @@ export class LancamentoSheet {
     afterNextRender(() => this.valorCampo()?.focus());
   }
 
-  protected escolherTipo(kind: EntryKind): void {
+  protected escolherTipo(kind: LancamentoKind): void {
     if (this.kind() === kind) return;
     this.kind.set(kind);
     this.sugestoes.set([]);
     this.termo$.next(this.description());
     if (!this.walletManual()) this.walletId.set(this.carteiraPadrao());
+    this.resolverDestino();
   }
 
   protected aoDigitarDescricao(texto: string): void {
@@ -237,6 +265,12 @@ export class LancamentoSheet {
   protected escolherCarteira(id: string): void {
     this.walletId.set(id);
     this.walletManual.set(true);
+    this.resolverDestino();
+  }
+
+  protected escolherDestino(id: string): void {
+    this.toWalletId.set(id);
+    this.toManual.set(true);
   }
 
   protected escolherSituacao(status: EntryStatus): void {
@@ -296,6 +330,11 @@ export class LancamentoSheet {
       return;
     }
 
+    if (this.ehTransferencia()) {
+      this.salvarTransferencia(lancarOutro);
+      return;
+    }
+
     const corpo = this.montarCorpo();
     if (corpo === null) return;
 
@@ -316,7 +355,7 @@ export class LancamentoSheet {
     this.entries.create(corpo, this.chave).subscribe({
       next: (entry) => {
         this.ocupado.set(false);
-        this.aoSalvar(entry, lancarOutro);
+        this.aoSalvar(entry.kind, entry.walletId, lancarOutro, entry);
       },
       error: (error: unknown) => {
         this.ocupado.set(false);
@@ -329,6 +368,46 @@ export class LancamentoSheet {
           problem?.code === 'not_found'
             ? 'Carteira não encontrada. Escolha outra carteira.'
             : problemMessage(error),
+        );
+      },
+    });
+  }
+
+  private salvarTransferencia(lancarOutro: boolean): void {
+    const corpo = this.montarCorpoTransferencia();
+    if (corpo === null) return;
+
+    // Mesma regra de chave das entradas/saídas: reenvio idêntico reaproveita a chave.
+    const serial = JSON.stringify(corpo);
+    if (serial !== this.ultimoCorpo) {
+      this.chave = novaChaveIdempotencia();
+      this.ultimoCorpo = serial;
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      this.avisarSemConexao();
+      return;
+    }
+
+    this.ocupado.set(true);
+    this.transfers.create(corpo, this.chave).subscribe({
+      next: (transfer) => {
+        this.ocupado.set(false);
+        this.aoSalvar('transfer', transfer.fromWalletId, lancarOutro, undefined);
+      },
+      error: (error: unknown) => {
+        this.ocupado.set(false);
+        if (this.semConexao(error)) {
+          this.avisarSemConexao();
+          return;
+        }
+        const problem = asProblem(error);
+        this.erro.set(
+          problem?.code === 'not_found'
+            ? 'Carteira não encontrada. Escolha outra carteira.'
+            : problem?.code === 'transfer.same_wallet'
+              ? ERRO_MESMA_CARTEIRA
+              : problemMessage(error),
         );
       },
     });
@@ -374,7 +453,34 @@ export class LancamentoSheet {
     this.ref.close(undefined);
   }
 
+  private montarCorpoTransferencia(): TransferCreate | null {
+    const valor = this.valor();
+    const descricao = this.description().trim();
+    const notas = this.notes().trim();
+    if (
+      !valor.ok ||
+      this.erroDescricao() !== null ||
+      !DATA.test(this.date()) ||
+      this.walletId() === '' ||
+      this.erroDestino() !== null ||
+      notas.length > OBSERVACAO_MAX
+    ) {
+      return null;
+    }
+    const corpo: TransferCreate = {
+      fromWalletId: this.walletId(),
+      toWalletId: this.toWalletId(),
+      amount: this.amount().trim(),
+      date: this.date(),
+    };
+    // Vazio → o servidor aplica "Transferência" (FR-021).
+    if (descricao !== '') corpo.description = descricao;
+    if (notas !== '') corpo.notes = notas;
+    return corpo;
+  }
+
   private montarCorpo(): EntryCreate | null {
+    if (this.kind() === 'transfer') return null;
     const valor = this.valor();
     const descricao = this.description().trim();
     const notas = this.notes().trim();
@@ -389,7 +495,7 @@ export class LancamentoSheet {
     }
 
     const corpo: EntryCreate = {
-      kind: this.kind(),
+      kind: this.kind() as EntryKind,
       description: descricao,
       amount: this.amount().trim(),
       date: this.date(),
@@ -404,8 +510,13 @@ export class LancamentoSheet {
     return corpo;
   }
 
-  private aoSalvar(entry: Entry, lancarOutro: boolean): void {
-    this.prefs.rememberSaved(entry.kind, entry.walletId);
+  private aoSalvar(
+    kind: LancamentoKind,
+    walletId: string,
+    lancarOutro: boolean,
+    entry: Entry | undefined,
+  ): void {
+    this.prefs.rememberSaved(kind, walletId);
     this.prefs.clearDraft();
     this.snackBar.open('Lançamento salvo.', undefined, { duration: 4000, verticalPosition: 'top' });
 
@@ -422,6 +533,7 @@ export class LancamentoSheet {
     this.statusManual.set(null);
     this.refManual.set(null);
     this.walletManual.set(false);
+    this.toManual.set(false);
     this.sugestoes.set([]);
     this.termo$.next('');
     this.tentou.set(false);
@@ -457,9 +569,24 @@ export class LancamentoSheet {
 
   private resolverCarteira(): void {
     const atual = this.walletId();
-    if (this.carteiras().some((w) => w.id === atual)) return;
-    this.walletManual.set(false);
-    this.walletId.set(this.carteiraPadrao());
+    if (!this.carteiras().some((w) => w.id === atual)) {
+      this.walletManual.set(false);
+      this.walletId.set(this.carteiraPadrao());
+    }
+    this.resolverDestino();
+  }
+
+  /**
+   * "Para" da transferência: mantém a escolha à mão enquanto válida; senão a primeira carteira
+   * diferente da origem (vazio quando só existe uma).
+   */
+  private resolverDestino(): void {
+    const ativas = this.carteiras();
+    const atual = this.toWalletId();
+    const valido = ativas.some((w) => w.id === atual) && atual !== this.walletId();
+    if (valido) return;
+    this.toManual.set(false);
+    this.toWalletId.set(ativas.find((w) => w.id !== this.walletId())?.id ?? '');
   }
 
   private preencherEdicao(entry: Entry): void {
@@ -483,7 +610,7 @@ export class LancamentoSheet {
     if (r === null || typeof r !== 'object') return;
     if ((r.amount ?? '') === '' && (r.description ?? '') === '' && (r.notes ?? '') === '') return;
 
-    if (r.kind === 'expense' || r.kind === 'income') this.kind.set(r.kind);
+    if (r.kind === 'expense' || r.kind === 'income' || r.kind === 'transfer') this.kind.set(r.kind);
     this.amount.set(r.amount ?? '');
     this.description.set(r.description ?? '');
     this.notes.set(r.notes ?? '');
@@ -493,6 +620,10 @@ export class LancamentoSheet {
     if (r.walletId) {
       this.walletId.set(r.walletId);
       this.walletManual.set(r.walletManual === true);
+    }
+    if (r.toWalletId) {
+      this.toWalletId.set(r.toWalletId);
+      this.toManual.set(r.toManual === true);
     }
     this.maisOpcoes.set(r.refMonth != null || (r.notes ?? '') !== '');
   }
@@ -507,6 +638,8 @@ export class LancamentoSheet {
       date: this.date(),
       walletId: this.walletId(),
       walletManual: this.walletManual(),
+      toWalletId: this.toWalletId(),
+      toManual: this.toManual(),
       status: this.statusManual(),
       refMonth: this.refManual(),
       notes: this.notes(),

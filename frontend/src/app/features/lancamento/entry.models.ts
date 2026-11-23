@@ -1,6 +1,4 @@
-import { LancamentoKind } from '../../core/prefs/device-prefs.service';
-
-export type EntryKind = LancamentoKind;
+export type EntryKind = 'expense' | 'income';
 export type EntryStatus = 'planned' | 'settled';
 
 /** `EntryCreate` do contrato; `amount` é a expressão (RT-05) enviada como digitada. */
@@ -47,3 +45,15 @@ export interface EntrySuggestion {
 
 export const DESCRICAO_MAX = 80;
 export const OBSERVACAO_MAX = 500;
+
+/** `TransferInput` do contrato; `description` vazia/ausente → "Transferência" no servidor. */
+export interface TransferCreate {
+  fromWalletId: string;
+  toWalletId: string;
+  amount: string;
+  date: string;
+  description?: string;
+  notes?: string | null;
+}
+
+export const DESCRICAO_TRANSFERENCIA = 'Transferência';
