@@ -140,9 +140,8 @@ test.describe('entrar (US2) — API simulada', () => {
 });
 
 // Contra a stack real (backend + Postgres, `E2E_BASE_URL`): cadastro, fechar/reabrir o navegador e
-// continuar logado. Depende de `POST /auth/refresh` (T022, ainda fora da main); pulado até lá.
-// Quando a T022 entrar, basta trocar `test.skip` por `test`.
-test.skip('fecha e reabre o navegador e continua logado (stack real)', async ({ browser }) => {
+// continuar logado (`POST /auth/refresh`, T022).
+test('fecha e reabre o navegador e continua logado (stack real)', async ({ browser }) => {
   const email = `ana+${Date.now()}@example.com`;
   const senha = 'senha-segura-1';
 

@@ -115,10 +115,9 @@ test.describe('perfil e sair (US5) — API simulada', () => {
 
 // Edge Case da troca de senha com DOIS contextos de navegador (dois aparelhos): ao trocar a
 // senha no aparelho A, o aparelho B cai na próxima ação (401 session_revoked → /entrar), e A
-// continua logado. O backend (T027, T015, T021) e a tela `/entrar` (T023) já estão prontos; falta
-// só `POST /auth/refresh` (T022), usado no `reload` do aparelho A e na reabertura do app. Pulado
-// até a T022 entrar na main; depois basta trocar `test.skip` por `test`.
-test.skip('troca de senha em um aparelho derruba o outro na próxima ação', async ({ browser }) => {
+// continua logado. Roda contra a stack real (E2E_BASE_URL): usa cadastro, login (T021), refresh
+// (T022), troca de senha (T027) e a tela `/entrar` (T023).
+test('troca de senha em um aparelho derruba o outro na próxima ação', async ({ browser }) => {
   const email = `ana+${Date.now()}@example.com`;
   const senhaAntiga = 'senha-antiga-1';
   const senhaNova = 'senha-nova-123';
