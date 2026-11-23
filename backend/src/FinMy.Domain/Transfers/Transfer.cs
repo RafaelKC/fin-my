@@ -19,20 +19,7 @@ public sealed class Transfer : TenantEntity
 
     private Transfer(Guid fromWalletId, Guid toWalletId, Money amount, DateOnly date, string? description, string? notes)
     {
-        if (fromWalletId == toWalletId)
-        {
-            throw Rules.Invalid("transfer.same_wallet", "toWalletId", "Escolha carteiras diferentes na origem e no destino");
-        }
-
-        FromWalletId = fromWalletId;
-        ToWalletId = toWalletId;
-        AmountCents = Rules.EntryAmount(amount);
-        TransferDate = Rules.Date(date, "transferDate");
-        Description = string.IsNullOrWhiteSpace(description)
-            ? DefaultDescription
-            : Rules.RequiredText(description, Rules.DescriptionMaxLength, "description", "description", "a descrição");
-        DescriptionNormalized = TextNormalizer.Normalize(Description);
-        Notes = Rules.OptionalText(notes, Rules.NotesMaxLength, "notes", "notes", "a observação");
+        Apply(fromWalletId, toWalletId, amount, date, description, notes);
     }
 
     public Guid FromWalletId { get; private set; }
@@ -59,4 +46,37 @@ public sealed class Transfer : TenantEntity
         string? description,
         string? notes) =>
         new(fromWalletId, toWalletId, amount, date, description, notes);
+
+    /// <summary>Substitui todos os campos editáveis (PUT); as mesmas regras da criação valem, e nada muda se alguma falhar.</summary>
+    public void Update(
+        Guid fromWalletId,
+        Guid toWalletId,
+        Money amount,
+        DateOnly date,
+        string? description,
+        string? notes) =>
+        Apply(fromWalletId, toWalletId, amount, date, description, notes);
+
+    private void Apply(Guid fromWalletId, Guid toWalletId, Money amount, DateOnly date, string? description, string? notes)
+    {
+        if (fromWalletId == toWalletId)
+        {
+            throw Rules.Invalid("transfer.same_wallet", "toWalletId", "Escolha carteiras diferentes na origem e no destino");
+        }
+
+        var amountCents = Rules.EntryAmount(amount);
+        var transferDate = Rules.Date(date, "transferDate");
+        var finalDescription = string.IsNullOrWhiteSpace(description)
+            ? DefaultDescription
+            : Rules.RequiredText(description, Rules.DescriptionMaxLength, "description", "description", "a descrição");
+        var finalNotes = Rules.OptionalText(notes, Rules.NotesMaxLength, "notes", "notes", "a observação");
+
+        FromWalletId = fromWalletId;
+        ToWalletId = toWalletId;
+        AmountCents = amountCents;
+        TransferDate = transferDate;
+        Description = finalDescription;
+        DescriptionNormalized = TextNormalizer.Normalize(finalDescription);
+        Notes = finalNotes;
+    }
 }
