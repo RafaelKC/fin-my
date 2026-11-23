@@ -51,6 +51,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IProfileStore, ProfileStore>();
         services.AddScoped<IDeletionStore, DeletionStore>();
         services.AddScoped<IIdempotencyStore, IdempotencyStore>();
+        services.AddScoped<IEntryStore, EntryStore>();
 
         // Envio do e-mail de redefinição: na própria requisição (padrão); AddFinMyHangfire troca por job em segundo plano.
         services.TryAddScoped<IPasswordResetDispatcher, InlinePasswordResetDispatcher>();

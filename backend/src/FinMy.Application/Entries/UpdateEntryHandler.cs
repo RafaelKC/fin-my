@@ -1,0 +1,71 @@
+using FinMy.Application.Abstractions;
+using FinMy.Domain.Common;
+using FinMy.Domain.Monetary;
+
+namespace FinMy.Application.Entries;
+
+/// <param name="Version">Obrigatória; divergente da atual → conflito de concorrência (research R11).</param>
+/// <param name="ReferenceMonth">Ausente ou igual ao atual → o mês acompanha a data só se nunca foi alterado (RT-04, research R7).</param>
+public sealed record UpdateEntryCommand(
+    Guid Id,
+    string? Kind,
+    string? Description,
+    string? Amount,
+    DateOnly? Date,
+    Guid? WalletId,
+    string? Status,
+    string? ReferenceMonth,
+    string? Notes,
+    long? Version);
+
+/// <summary>Edita todos os campos de um lançamento (FR-022). A carteira só precisa estar ativa ao ser trocada (research R7).</summary>
+public sealed class UpdateEntryHandler(IEntryStore store)
+{
+    public async Task<EntryView> HandleAsync(UpdateEntryCommand command, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var current = await store.GetAsync(command.Id, cancellationToken) ?? throw new DomainException(EntryErrors.NotFound);
+
+        var kind = EntryInput.ParseKind(command.Kind);
+        var amount = EntryInput.ParseAmount(command.Amount);
+        var date = command.Date ?? throw new DomainException(EntryErrors.Field("date.required", "date", "Informe a data"));
+        var walletId = command.WalletId is { } id && id != Guid.Empty
+            ? id
+            : throw new DomainException(EntryErrors.Field("wallet.required", "walletId", "Escolha a carteira"));
+        var status = EntryInput.ParseStatus(command.Status);
+        YearMonth? referenceMonth = string.IsNullOrEmpty(command.ReferenceMonth) ? null : EntryInput.ParseReferenceMonth(command.ReferenceMonth);
+        var version = command.Version ?? throw new DomainException(EntryErrors.Field("version.required", "version", "Informe a versão do lançamento"));
+
+        if (walletId != current.WalletId)
+        {
+            var wallet = await store.GetWalletAsync(walletId, cancellationToken) ?? throw new DomainException(EntryErrors.WalletNotFound);
+            if (wallet.IsArchived)
+            {
+                throw new DomainException(EntryErrors.WalletArchived);
+            }
+        }
+
+        var updated = await store.UpdateAsync(
+            command.Id,
+            version,
+            entry =>
+            {
+                var monthBefore = entry.ReferenceYearMonth;
+                entry.ChangeKind(kind);
+                entry.ChangeDescription(command.Description!);
+                entry.ChangeAmount(amount);
+                entry.ChangeWallet(walletId);
+                entry.ChangeStatus(status);
+                entry.ChangeNotes(command.Notes);
+                entry.ChangeDate(date); // acompanha o mês se ele nunca foi alterado à mão (RT-04)
+                if (referenceMonth is { } month && month != monthBefore)
+                {
+                    entry.ChangeReferenceMonth(month); // o cliente pediu outro mês de propósito
+                }
+            },
+            cancellationToken);
+
+        return updated ?? throw new DomainException(EntryErrors.NotFound);
+    }
+}
