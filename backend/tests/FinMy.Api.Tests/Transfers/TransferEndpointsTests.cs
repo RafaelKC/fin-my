@@ -20,8 +20,7 @@ namespace FinMy.Api.Tests.Transfers;
 
 /// <summary>
 /// <c>/api/v1/transfers</c> (US5.1 e US5.3 pelo servidor, exclusão e desfazer). Carteiras são criadas direto no banco
-/// (a API de carteiras é outra tarefa); o saldo é conferido pela mesma regra de research R5: saldo inicial + transferências
-/// recebidas − enviadas.
+/// (para poder arquivá-las e dar saldo inicial); o saldo é conferido por <c>GET /wallets</c>.
 /// </summary>
 public class TransferEndpointsTests(PostgresFixture postgres) : ApiTestBase(postgres)
 {
@@ -57,16 +56,11 @@ public class TransferEndpointsTests(PostgresFixture postgres) : ApiTestBase(post
         return wallet.Id;
     }
 
-    /// <summary>Saldo atual (research R5, sem lançamentos): saldo inicial + transferências recebidas − enviadas, ignorando as excluídas.</summary>
-    private async Task<long> BalanceAsync(TestAccount owner, Guid walletId)
+    /// <summary>Saldo atual da carteira como a API o mostra (<c>GET /wallets</c>, research R5).</summary>
+    private static async Task<long> BalanceAsync(Setup s, Guid walletId)
     {
-        await using var scope = Factory.Services.CreateAsyncScope();
-        scope.ServiceProvider.GetRequiredService<CurrentContext>().Populate(owner.Session.User.Id, owner.Session.Tenant.Id, Channel.App);
-        var db = scope.ServiceProvider.GetRequiredService<FinMyDbContext>();
-        var initial = await db.Set<Wallet>().Where(w => w.Id == walletId).Select(w => w.InitialBalanceCents).SingleAsync();
-        var received = await db.Set<Transfer>().Where(t => t.ToWalletId == walletId).SumAsync(t => (long?)t.AmountCents) ?? 0;
-        var sent = await db.Set<Transfer>().Where(t => t.FromWalletId == walletId).SumAsync(t => (long?)t.AmountCents) ?? 0;
-        return initial + received - sent;
+        var list = await (await s.Http.GetAsync("/api/v1/wallets?archived=all")).JsonAsync();
+        return list.EnumerateArray().Single(w => w.GetProperty("id").GetGuid() == walletId).GetProperty("currentBalanceCents").GetInt64();
     }
 
     private async Task<int> CountTransfersAsync(TestAccount owner)
@@ -114,8 +108,8 @@ public class TransferEndpointsTests(PostgresFixture postgres) : ApiTestBase(post
     public async Task Transferir_20_de_Azul_para_Poupanca_move_o_saldo_das_duas_carteiras()
     {
         var s = await NewUserAsync();
-        (await BalanceAsync(s.Account, s.Azul)).ShouldBe(100_000);
-        (await BalanceAsync(s.Account, s.Poupanca)).ShouldBe(0);
+        (await BalanceAsync(s, s.Azul)).ShouldBe(100_000);
+        (await BalanceAsync(s, s.Poupanca)).ShouldBe(0);
 
         var response = await PostAsync(s.Http, Body(s.Azul, s.Poupanca));
 
@@ -130,8 +124,8 @@ public class TransferEndpointsTests(PostgresFixture postgres) : ApiTestBase(post
         created.GetProperty("notes").ValueKind.ShouldBe(JsonValueKind.Null);
         created.GetProperty("version").GetInt64().ShouldBeGreaterThan(0);
         created.TryGetProperty("createdAt", out _).ShouldBeTrue();
-        (await BalanceAsync(s.Account, s.Azul)).ShouldBe(98_000);
-        (await BalanceAsync(s.Account, s.Poupanca)).ShouldBe(2_000);
+        (await BalanceAsync(s, s.Azul)).ShouldBe(98_000);
+        (await BalanceAsync(s, s.Poupanca)).ShouldBe(2_000);
     }
 
     [Fact]
@@ -270,7 +264,7 @@ public class TransferEndpointsTests(PostgresFixture postgres) : ApiTestBase(post
         other.StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);
         (await other.CodeAsync()).ShouldBe("idempotency.key_reused");
         (await CountTransfersAsync(s.Account)).ShouldBe(1);
-        (await BalanceAsync(s.Account, s.Azul)).ShouldBe(98_000);
+        (await BalanceAsync(s, s.Azul)).ShouldBe(98_000);
     }
 
     // ---- GET ----
@@ -330,9 +324,9 @@ public class TransferEndpointsTests(PostgresFixture postgres) : ApiTestBase(post
         updated.GetProperty("createdAt").GetString().ShouldBe(created.GetProperty("createdAt").GetString());
         updated.GetProperty("version").GetInt64().ShouldNotBe(version);
         (await Reload(s, id)).GetRawText().ShouldBe(updated.GetRawText());
-        (await BalanceAsync(s.Account, s.Azul)).ShouldBe(100_000);
-        (await BalanceAsync(s.Account, s.Poupanca)).ShouldBe(-3_550);
-        (await BalanceAsync(s.Account, verde)).ShouldBe(8_550);
+        (await BalanceAsync(s, s.Azul)).ShouldBe(100_000);
+        (await BalanceAsync(s, s.Poupanca)).ShouldBe(-3_550);
+        (await BalanceAsync(s, verde)).ShouldBe(8_550);
     }
 
     private static async Task<JsonElement> Reload(Setup s, Guid id) =>
@@ -441,8 +435,8 @@ public class TransferEndpointsTests(PostgresFixture postgres) : ApiTestBase(post
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         (await response.JsonAsync()).GetProperty("deletionBatchId").GetGuid().ShouldNotBe(Guid.Empty);
         (await s.Http.GetAsync($"/api/v1/transfers/{id}")).StatusCode.ShouldBe(HttpStatusCode.NotFound);
-        (await BalanceAsync(s.Account, s.Azul)).ShouldBe(100_000);
-        (await BalanceAsync(s.Account, s.Poupanca)).ShouldBe(0);
+        (await BalanceAsync(s, s.Azul)).ShouldBe(100_000);
+        (await BalanceAsync(s, s.Poupanca)).ShouldBe(0);
         (await s.Http.DeleteAsync($"/api/v1/transfers/{id}")).StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
@@ -465,8 +459,8 @@ public class TransferEndpointsTests(PostgresFixture postgres) : ApiTestBase(post
             restored.GetProperty(field).GetRawText().ShouldBe(created.GetProperty(field).GetRawText(), field);
         }
 
-        (await BalanceAsync(s.Account, s.Azul)).ShouldBe(98_000);
-        (await BalanceAsync(s.Account, s.Poupanca)).ShouldBe(2_000);
+        (await BalanceAsync(s, s.Azul)).ShouldBe(98_000);
+        (await BalanceAsync(s, s.Poupanca)).ShouldBe(2_000);
     }
 
     [Fact]
