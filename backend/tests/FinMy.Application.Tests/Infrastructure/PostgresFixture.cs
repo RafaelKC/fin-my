@@ -54,6 +54,19 @@ public sealed class PostgresFixture : IAsyncLifetime
 
     public Task DisposeAsync() => _container.DisposeAsync().AsTask();
 
+    /// <summary>Cria um banco vazio (sem tabelas) no mesmo servidor e devolve sua string de conexão.</summary>
+    public async Task<string> CreateEmptyDatabaseAsync()
+    {
+        var name = $"finmy_{Guid.NewGuid():N}";
+
+        await using var connection = new NpgsqlConnection(ConnectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand($"CREATE DATABASE {name}", connection);
+        await command.ExecuteNonQueryAsync();
+
+        return new NpgsqlConnectionStringBuilder(ConnectionString) { Database = name }.ConnectionString;
+    }
+
     /// <summary>Relógio fixo usado pelos interceptors quando o teste não informa outro.</summary>
     public static FakeClock DefaultClock { get; } = new(new DateTimeOffset(2026, 3, 10, 12, 0, 0, TimeSpan.Zero));
 
