@@ -1,4 +1,5 @@
 import {
+  addMonths,
   isYearMonth,
   monthLabel,
   monthOfDate,
@@ -33,5 +34,14 @@ describe('month', () => {
     expect(isYearMonth('2026-3')).toBe(false);
     expect(() => monthLabel('2026-13')).toThrow(RangeError);
     expect(() => monthOfDate('2026-02-32')).toThrow(RangeError);
+  });
+});
+
+describe('addMonths', () => {
+  it('soma e subtrai meses atravessando o ano', () => {
+    expect(addMonths('2026-11', 3)).toBe('2027-02');
+    expect(addMonths('2026-01', -1)).toBe('2025-12');
+    expect(addMonths('2026-03', 0)).toBe('2026-03');
+    expect(addMonths('2026-03', 24)).toBe('2028-03');
   });
 });
