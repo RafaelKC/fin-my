@@ -58,6 +58,14 @@ public static class ProblemFactory
             problem.Extensions["retryAfterSeconds"] = retry;
         }
 
+        if (error.Extensions is { Count: > 0 })
+        {
+            foreach (var (key, value) in error.Extensions)
+            {
+                problem.Extensions[key] = value;
+            }
+        }
+
         return problem;
     }
 
