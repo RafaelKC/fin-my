@@ -22,8 +22,9 @@ public sealed class GetMonthHandler(IMonthReader reader, IClock clock)
         var today = clock.Today;
         var data = await reader.ReadAsync(parsed, filter, today, cancellationToken);
 
-        // Extensão da 003: as faturas entram aqui (RT-07); na 002 não há nenhuma.
-        var summary = MonthSummaryCalculator.Calculate(parsed, data.Wallets, data.EntryTotals, data.TransferTotals, [], []);
+        // Extensão da 003 (RT-07): pagamentos de fatura entram nas Saídas do Realizado, no mês de vencimento da fatura.
+        // O valor das faturas no Previsto e a lista de faturas do mês ficam para a integração da visão do mês (T010).
+        var summary = MonthSummaryCalculator.Calculate(parsed, data.Wallets, data.EntryTotals, data.TransferTotals, [], data.InvoicePayments);
 
         IReadOnlyList<Guid>? applied = filter is null ? null : data.Wallets.Select(w => w.WalletId).ToList();
         return new MonthViewResult(parsed.ToString(), today, applied, summary, data.Entries, data.Transfers, data.Pending);
