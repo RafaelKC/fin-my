@@ -47,4 +47,19 @@ describe('ApiClient', () => {
     api.delete('/x').subscribe();
     expect(http.expectOne('/api/v1/x').request.method).toBe('DELETE');
   });
+
+  it('post e put enviam os cabeçalhos informados (Idempotency-Key)', () => {
+    api.post('/entries', { a: 1 }, { 'Idempotency-Key': 'k-1' }).subscribe();
+    const post = http.expectOne('/api/v1/entries');
+    expect(post.request.headers.get('Idempotency-Key')).toBe('k-1');
+    post.flush({});
+
+    api.put('/entries/1', {}, { 'X-Teste': 'a' }).subscribe();
+    const put = http.expectOne('/api/v1/entries/1');
+    expect(put.request.headers.get('X-Teste')).toBe('a');
+    put.flush({});
+
+    api.post('/x').subscribe();
+    expect(http.expectOne('/api/v1/x').request.headers.has('Idempotency-Key')).toBe(false);
+  });
 });
