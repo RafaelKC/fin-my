@@ -29,6 +29,12 @@ public sealed record EntryUpdateRequest(
 /// <summary>Corpo de <c>PATCH /entries/{id}/status</c>.</summary>
 public sealed record EntryStatusRequest(string? Status);
 
+/// <summary>Corpo de <c>POST /entries/bulk</c>: <c>action</c> é <c>settle|move_to_current_month|delete</c>.</summary>
+public sealed record EntryBulkRequest(IReadOnlyList<Guid>? Ids, string? Action);
+
+/// <summary>Resposta de <c>POST /entries/bulk</c>; <c>deletionBatchId</c> só vem na ação <c>delete</c>.</summary>
+public sealed record EntryBulkResponse(int Affected, Guid? DeletionBatchId);
+
 /// <summary>Entrada/Saída na resposta (<c>Entry</c>); dinheiro em centavos.</summary>
 public sealed record EntryResponse(
     Guid Id,

@@ -70,6 +70,55 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
         return ToView(entry, VersionOf(entry));
     }
 
+    public async Task<IReadOnlyList<EntryView>> ListPendingAsync(YearMonth currentMonth, CancellationToken cancellationToken)
+    {
+        var firstDay = currentMonth.FirstDay;
+        var rows = await db.Set<Entry>().AsNoTracking()
+            .Where(e => e.Status == EntryStatus.Planned && e.ReferenceMonth < firstDay)
+            .OrderBy(e => e.EntryDate).ThenBy(e => e.CreatedAt).ThenBy(e => e.Id)
+            .Select(e => new { Entry = e, Version = EF.Property<uint>(e, VersionColumn) })
+            .ToListAsync(cancellationToken);
+
+        return rows.ConvertAll(r => ToView(r.Entry, r.Version));
+    }
+
+    public async Task<bool> UpdateManyAsync(IReadOnlyCollection<Guid> ids, Action<Entry> change, CancellationToken cancellationToken)
+    {
+        var entries = await LoadAllAsync(ids, cancellationToken);
+        if (entries is null)
+        {
+            return false;
+        }
+
+        foreach (var entry in entries)
+        {
+            change(entry);
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> DeleteManyAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
+    {
+        var entries = await LoadAllAsync(ids, cancellationToken);
+        if (entries is null)
+        {
+            return false;
+        }
+
+        db.RemoveRange(entries);
+        await db.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    /// <summary>Carrega os lançamentos do Espaço com esses ids; <c>null</c> se algum não existir.</summary>
+    private async Task<List<Entry>?> LoadAllAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
+    {
+        var entries = await db.Set<Entry>().Where(e => ids.Contains(e.Id)).ToListAsync(cancellationToken);
+        return entries.Count == ids.Count ? entries : null;
+    }
+
     public async Task<IReadOnlyList<EntrySuggestion>> SuggestAsync(
         string normalizedText, EntryKind kind, DateOnly notBefore, int limit, CancellationToken cancellationToken)
     {

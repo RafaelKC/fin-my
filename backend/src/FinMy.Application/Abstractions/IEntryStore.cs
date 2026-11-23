@@ -47,4 +47,16 @@ public interface IEntryStore
     /// </summary>
     Task<IReadOnlyList<EntrySuggestion>> SuggestAsync(
         string normalizedText, EntryKind kind, DateOnly notBefore, int limit, CancellationToken cancellationToken);
+
+    /// <summary>Entradas/Saídas Previstas com Mês de referência anterior a <paramref name="currentMonth"/>, na ordem RT-12 (data, depois criação).</summary>
+    Task<IReadOnlyList<EntryView>> ListPendingAsync(YearMonth currentMonth, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Aplica <paramref name="change"/> a todos os lançamentos de <paramref name="ids"/> numa única gravação (tudo ou nada).
+    /// Devolve <c>false</c>, sem alterar nada, se algum id não existir no Espaço.
+    /// </summary>
+    Task<bool> UpdateManyAsync(IReadOnlyCollection<Guid> ids, Action<Entry> change, CancellationToken cancellationToken);
+
+    /// <summary>Exclui (lógico) todos os lançamentos de <paramref name="ids"/> numa única gravação; <c>false</c>, sem excluir nada, se algum id não existir.</summary>
+    Task<bool> DeleteManyAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken);
 }
