@@ -1,3 +1,5 @@
+using FinMy.Domain.Auth;
+
 namespace FinMy.Domain.Identity;
 
 /// <summary>Contador de tentativas de login por e-mail normalizado (<c>login_throttles</c>), exista ou não a conta.</summary>
@@ -21,4 +23,13 @@ public sealed class LoginThrottle
     public DateTimeOffset WindowStartedAt { get; private set; }
 
     public DateTimeOffset? LockedUntil { get; private set; }
+
+    public LoginThrottleState ToState() => new(FailedCount, WindowStartedAt, LockedUntil);
+
+    public void Apply(LoginThrottleState state)
+    {
+        FailedCount = state.FailedCount;
+        WindowStartedAt = state.WindowStartedAt;
+        LockedUntil = state.LockedUntil;
+    }
 }
