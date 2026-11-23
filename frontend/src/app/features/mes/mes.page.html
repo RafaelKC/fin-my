@@ -291,6 +291,16 @@
                     {{ data(t.date) }}
                   </span>
                 </div>
+                <button
+                  type="button"
+                  class="botao excluir"
+                  data-testid="excluir-transferencia"
+                  [attr.aria-label]="'Excluir ' + t.description"
+                  [disabled]="alterandoId() === t.id"
+                  (click)="excluirTransferencia(t)"
+                >
+                  Excluir
+                </button>
               </li>
             }
           </ul>

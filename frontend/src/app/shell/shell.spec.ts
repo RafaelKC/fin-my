@@ -57,4 +57,18 @@ describe('Shell', () => {
     botao!.click();
     expect(abrir).toHaveBeenCalledOnce();
   });
+
+  it('tem o item "Busca" levando a /busca, depois do "+"', () => {
+    const fixture = TestBed.createComponent(Shell);
+    fixture.detectChanges();
+    const nav = (fixture.nativeElement as HTMLElement).querySelector(
+      'nav[aria-label="Principal"]',
+    )!;
+    const link = nav.querySelector('a[href="/busca"]');
+    expect(link?.textContent).toContain('Busca');
+    const itens = Array.from(nav.children).map((c) => c.textContent?.trim());
+    expect(itens.findIndex((t) => t?.includes('Lançar'))).toBeLessThan(
+      itens.findIndex((t) => t?.includes('Busca')),
+    );
+  });
 });

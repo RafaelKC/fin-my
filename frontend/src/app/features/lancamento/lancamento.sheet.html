@@ -248,6 +248,33 @@
     @if (erro(); as mensagem) {
       <p class="erro" role="alert" data-testid="erro-lancamento">{{ mensagem }}</p>
     }
+
+    @if (duplicando()) {
+      <div class="mini" role="group" aria-label="Duplicar lançamento" data-testid="duplicar-painel">
+        <label for="lancamento-data-duplicada">Nova data</label>
+        <input
+          id="lancamento-data-duplicada"
+          type="date"
+          [value]="dataDuplicada()"
+          (input)="dataDuplicada.set($any($event.target).value)"
+        />
+        @if (erroDuplicar(); as mensagem) {
+          <p class="erro" role="alert" data-testid="erro-duplicar">{{ mensagem }}</p>
+        }
+        <button
+          type="button"
+          class="botao principal"
+          data-testid="duplicar-confirmar"
+          [disabled]="ocupado()"
+          (click)="confirmarDuplicar()"
+        >
+          Duplicar
+        </button>
+        <button type="button" class="botao secundario" (click)="cancelarDuplicar()">
+          Cancelar
+        </button>
+      </div>
+    }
   </div>
 
   <footer class="rodape">
@@ -269,6 +296,25 @@
         (click)="salvar(true)"
       >
         Salvar e lançar outro
+      </button>
+    } @else {
+      <button
+        type="button"
+        class="botao secundario"
+        data-testid="duplicar"
+        [disabled]="ocupado()"
+        (click)="abrirDuplicar()"
+      >
+        Duplicar
+      </button>
+      <button
+        type="button"
+        class="botao perigo"
+        data-testid="excluir"
+        [disabled]="ocupado()"
+        (click)="excluir()"
+      >
+        Excluir
       </button>
     }
   </footer>

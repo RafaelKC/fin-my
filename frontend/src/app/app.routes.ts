@@ -63,6 +63,10 @@ export const routes: Routes = [
           import('./features/carteiras/carteira-form.page').then((m) => m.CarteiraFormPage),
       },
       {
+        path: 'busca',
+        loadComponent: () => import('./features/busca/busca.page').then((m) => m.BuscaPage),
+      },
+      {
         path: 'perfil',
         loadComponent: () => import('./features/perfil/perfil.page').then((m) => m.PerfilPage),
       },

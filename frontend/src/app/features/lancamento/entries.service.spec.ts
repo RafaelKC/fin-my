@@ -99,3 +99,61 @@ describe('EntriesService (situação e edição)', () => {
     expect(vistos).toEqual(['e1', 'e1']);
   });
 });
+
+describe('EntriesService (duplicar e buscar)', () => {
+  let service: EntriesService;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    service = TestBed.inject(EntriesService);
+    http = TestBed.inject(HttpTestingController);
+  });
+  afterEach(() => http.verify());
+
+  it('duplicate envia só a data com Idempotency-Key e avisa em criados$', () => {
+    const avisados: Entry[] = [];
+    service.criados$.subscribe((e) => avisados.push(e));
+    service.duplicate('e1', '2026-04-10', 'chave-1').subscribe();
+    const req = http.expectOne('/api/v1/entries/e1/duplicate');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ date: '2026-04-10' });
+    expect(req.request.headers.get('Idempotency-Key')).toBe('chave-1');
+    req.flush({ id: 'e2' });
+    expect(avisados).toHaveLength(1);
+  });
+
+  it('search monta a consulta só com os filtros preenchidos', () => {
+    service
+      .search({
+        q: ' uber ',
+        kinds: ['expense', 'transfer'],
+        walletIds: ['w1', 'w2'],
+        status: 'settled',
+        from: '2026-01-01',
+        to: '',
+        cursor: 'abc=',
+        limit: 50,
+      })
+      .subscribe();
+    const req = http.expectOne((r) => r.url.startsWith('/api/v1/entries/search'));
+    const params = new URLSearchParams(req.request.urlWithParams.split('?')[1]);
+    expect(Object.fromEntries(params)).toEqual({
+      q: 'uber',
+      kinds: 'expense,transfer',
+      walletIds: 'w1,w2',
+      status: 'settled',
+      from: '2026-01-01',
+      cursor: 'abc=',
+      limit: '50',
+    });
+    req.flush({ items: [], totalCents: 0, totalCount: 0 });
+  });
+
+  it('search sem filtros não manda query string', () => {
+    service.search({}).subscribe();
+    http.expectOne('/api/v1/entries/search').flush({ items: [], totalCents: 0, totalCount: 0 });
+  });
+});
