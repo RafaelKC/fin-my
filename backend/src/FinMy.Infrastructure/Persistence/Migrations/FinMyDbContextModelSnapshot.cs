@@ -120,6 +120,14 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("reconciled");
 
+                    b.Property<Guid?>("SettlementTagId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("settlement_tag_id");
+
+                    b.Property<Guid?>("SplitGroupId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("split_group_id");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
@@ -164,6 +172,13 @@ namespace FinMy.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("TenantId", "InvoiceId")
                         .HasDatabaseName("ix_card_purchases_tenant_id_invoice_id");
+
+                    b.HasIndex("TenantId", "SettlementTagId")
+                        .HasDatabaseName("ix_card_purchases_tenant_id_settlement_tag_id");
+
+                    b.HasIndex("TenantId", "SplitGroupId")
+                        .HasDatabaseName("ix_card_purchases_tenant_id_split_group_id")
+                        .HasFilter("split_group_id IS NOT NULL");
 
                     b.HasIndex("TenantId", "InvoiceId", "CreditCardId")
                         .HasDatabaseName("ix_card_purchases_tenant_id_invoice_id_credit_card_id");
@@ -683,6 +698,14 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("reference_month");
 
+                    b.Property<Guid?>("SettlementTagId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("settlement_tag_id");
+
+                    b.Property<Guid?>("SplitGroupId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("split_group_id");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text")
@@ -726,6 +749,13 @@ namespace FinMy.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("TenantId", "ReferenceMonth")
                         .HasDatabaseName("ix_entries_tenant_id_reference_month");
+
+                    b.HasIndex("TenantId", "SettlementTagId")
+                        .HasDatabaseName("ix_entries_tenant_id_settlement_tag_id");
+
+                    b.HasIndex("TenantId", "SplitGroupId")
+                        .HasDatabaseName("ix_entries_tenant_id_split_group_id")
+                        .HasFilter("split_group_id IS NOT NULL");
 
                     b.HasIndex("TenantId", "WalletId")
                         .HasDatabaseName("ix_entries_tenant_id_wallet_id");
@@ -1058,6 +1088,157 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("FinMy.Domain.Tags.CardPurchaseTag", b =>
+                {
+                    b.Property<Guid>("CardPurchaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("card_purchase_id");
+
+                    b.Property<Guid>("TagId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tag_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("CardPurchaseId", "TagId")
+                        .HasName("pk_card_purchase_tags");
+
+                    b.HasIndex("TenantId", "CardPurchaseId")
+                        .HasDatabaseName("ix_card_purchase_tags_tenant_id_card_purchase_id");
+
+                    b.HasIndex("TenantId", "TagId")
+                        .HasDatabaseName("ix_card_purchase_tags_tenant_id_tag_id");
+
+                    b.ToTable("card_purchase_tags", (string)null);
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Tags.EntryTag", b =>
+                {
+                    b.Property<Guid>("EntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("entry_id");
+
+                    b.Property<Guid>("TagId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tag_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("EntryId", "TagId")
+                        .HasName("pk_entry_tags");
+
+                    b.HasIndex("TenantId", "EntryId")
+                        .HasDatabaseName("ix_entry_tags_tenant_id_entry_id");
+
+                    b.HasIndex("TenantId", "TagId")
+                        .HasDatabaseName("ix_entry_tags_tenant_id_tag_id");
+
+                    b.ToTable("entry_tags", (string)null);
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Tags.Tag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("archived_at");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasColumnName("color");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("CreatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("created_via");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid?>("DeletionBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deletion_batch_id");
+
+                    b.Property<bool>("IsSettlement")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_settlement");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NameNormalized")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("name_normalized");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("UpdatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("updated_via");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_tags");
+
+                    b.HasAlternateKey("TenantId", "Id")
+                        .HasName("ak_tag_tenant_id_id");
+
+                    b.HasIndex("TenantId", "NameNormalized")
+                        .IsUnique()
+                        .HasDatabaseName("ix_tags_tenant_id_name_normalized")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.ToTable("tags", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_tags_color", "color ~ '^#[0-9A-Fa-f]{6}$'");
+                        });
+                });
+
             modelBuilder.Entity("FinMy.Domain.Transfers.Transfer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1317,6 +1498,13 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_card_purchases_installment_plan_tenant_id_installment_plan_");
 
+                    b.HasOne("FinMy.Domain.Tags.Tag", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "SettlementTagId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_card_purchases_tag_tenant_id_settlement_tag_id");
+
                     b.HasOne("FinMy.Domain.Cards.Invoice", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "InvoiceId", "CreditCardId")
@@ -1415,6 +1603,13 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_entries_tenant_tenant_id");
 
+                    b.HasOne("FinMy.Domain.Tags.Tag", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "SettlementTagId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_entries_tag_tenant_id_settlement_tag_id");
+
                     b.HasOne("FinMy.Domain.Wallets.Wallet", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "WalletId")
@@ -1459,6 +1654,68 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_tenant_members_user_user_id");
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Tags.CardPurchaseTag", b =>
+                {
+                    b.HasOne("FinMy.Domain.Identity.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_card_purchase_tags_tenant_tenant_id");
+
+                    b.HasOne("FinMy.Domain.Cards.CardPurchase", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "CardPurchaseId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_card_purchase_tags_card_purchases_tenant_id_card_purchase_id");
+
+                    b.HasOne("FinMy.Domain.Tags.Tag", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "TagId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_card_purchase_tags_tag_tenant_id_tag_id");
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Tags.EntryTag", b =>
+                {
+                    b.HasOne("FinMy.Domain.Identity.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_entry_tags_tenant_tenant_id");
+
+                    b.HasOne("FinMy.Domain.Entries.Entry", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "EntryId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_entry_tags_entries_tenant_id_entry_id");
+
+                    b.HasOne("FinMy.Domain.Tags.Tag", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "TagId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_entry_tags_tag_tenant_id_tag_id");
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Tags.Tag", b =>
+                {
+                    b.HasOne("FinMy.Domain.Identity.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_tags_tenant_tenant_id");
                 });
 
             modelBuilder.Entity("FinMy.Domain.Transfers.Transfer", b =>

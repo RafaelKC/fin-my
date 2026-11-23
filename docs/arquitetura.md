@@ -93,8 +93,10 @@ public interface IArchivable        { DateTimeOffset? ArchivedAt; }
 public abstract class TenantEntity : ITenantEntity, IAudited, ISoftDeletable { ... }  // base padrão
 ```
 
-- Toda tabela financeira MUST herdar `TenantEntity` (ou implementar `ITenantEntity`, para tabelas de
-  ligação). Exceções globais (não pertencem a Espaço): `users`, `tenants`, `tenant_members`,
+- Toda tabela financeira MUST herdar `TenantEntity` (ou implementar `ITenantEntity`). Tabelas de
+  ligação N:N (`entry_tags`, `card_purchase_tags`) implementam `ITenantLink : ITenantScoped`: têm
+  `tenant_id` e chave composta, sem `Id`, auditoria nem exclusão lógica; recebem o filtro de Espaço e
+  o `TenantInterceptor` preenche o `TenantId`. Exceções globais (não pertencem a Espaço): `users`, `tenants`, `tenant_members`,
   `refresh_tokens`, `password_reset_tokens`, `login_throttles`, `idempotency_keys`. Teste de arquitetura falha se uma
   entidade mapeada não for `ITenantEntity` e não estiver nessa lista.
 - Setters de `TenantId` e dos campos de auditoria são `internal`/privados: só os interceptors os

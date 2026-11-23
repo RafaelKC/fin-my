@@ -67,8 +67,9 @@ public class IdentityMigrationTests(PostgresFixture postgres)
 
         tables.ShouldBe(
             [
-                "card_purchases", "credit_cards", "entries", "idempotency_keys", "installment_plans", "invoice_payments", "invoices",
-                "login_throttles", "password_reset_tokens", "refresh_tokens", "tenant_members", "tenants", "transfers", "users", "wallets",
+                "card_purchase_tags", "card_purchases", "credit_cards", "entries", "entry_tags", "idempotency_keys", "installment_plans",
+                "invoice_payments", "invoices", "login_throttles", "password_reset_tokens", "refresh_tokens", "tags", "tenant_members",
+                "tenants", "transfers", "users", "wallets",
             ]);
     }
 

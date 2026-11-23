@@ -7,7 +7,7 @@ namespace FinMy.Infrastructure.Persistence.Interceptors;
 
 /// <summary>
 /// Isola a escrita por Espaço (docs/arquitetura.md §3.4): atribui o <c>TenantId</c> do contexto às
-/// entidades novas e recusa gravar sem Espaço, trocar o Espaço ou alterar/excluir dado de outro Espaço.
+/// entidades novas (inclusive as tabelas de ligação, <see cref="ITenantLink"/>) e recusa gravar sem Espaço, trocar o Espaço ou alterar/excluir dado de outro Espaço.
 /// </summary>
 public sealed class TenantInterceptor : SaveChangesInterceptor
 {
@@ -36,7 +36,7 @@ public sealed class TenantInterceptor : SaveChangesInterceptor
         var current = InterceptorContext.Current(dbContext);
         dbContext.ChangeTracker.DetectChanges();
 
-        foreach (var entry in dbContext.ChangeTracker.Entries<ITenantEntity>().ToList())
+        foreach (var entry in dbContext.ChangeTracker.Entries().Where(e => e.Entity is ITenantEntity or ITenantLink).ToList())
         {
             switch (entry.State)
             {
@@ -51,10 +51,10 @@ public sealed class TenantInterceptor : SaveChangesInterceptor
         }
     }
 
-    private static void ApplyToAdded(EntityEntry<ITenantEntity> entry, Guid? contextTenant)
+    private static void ApplyToAdded(EntityEntry entry, Guid? contextTenant)
     {
         var tenantId = contextTenant ?? throw new MissingTenantContextException();
-        var property = entry.Property(nameof(ITenantEntity.TenantId));
+        var property = entry.Property(nameof(ITenantScoped.TenantId));
         var informed = (Guid)property.CurrentValue!;
 
         if (informed != Guid.Empty && informed != tenantId)
@@ -66,10 +66,10 @@ public sealed class TenantInterceptor : SaveChangesInterceptor
         property.CurrentValue = tenantId;
     }
 
-    private static void EnsureSameTenant(EntityEntry<ITenantEntity> entry, Guid? contextTenant)
+    private static void EnsureSameTenant(EntityEntry entry, Guid? contextTenant)
     {
         var tenantId = contextTenant ?? throw new MissingTenantContextException();
-        var property = entry.Property(nameof(ITenantEntity.TenantId));
+        var property = entry.Property(nameof(ITenantScoped.TenantId));
 
         if ((Guid)property.OriginalValue! != (Guid)property.CurrentValue!)
         {

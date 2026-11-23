@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace FinMy.Architecture.Tests;
 
-/// <summary>docs/arquitetura.md §3.2: toda entidade mapeada é <see cref="ITenantEntity"/> ou está na lista global.</summary>
+/// <summary>docs/arquitetura.md §3.2: toda entidade mapeada é <see cref="ITenantEntity"/>, tabela de ligação (<see cref="ITenantLink"/>) ou está na lista global.</summary>
 public class TenantEntityMappingTests
 {
     /// <summary>Entidades globais (não pertencem a Espaço): users, tenants, tenant_members, refresh_tokens, password_reset_tokens, login_throttles, idempotency_keys (esta tem filtro de Espaço próprio, via ITenantScoped).</summary>
@@ -41,6 +41,12 @@ public class TenantEntityMappingTests
     }
 
     [Fact]
+    public void Tabela_de_ligacao_ITenantLink_e_aceita()
+    {
+        Violacoes([typeof(DeEspaco), typeof(Ligacao)]).ShouldBeEmpty();
+    }
+
+    [Fact]
     public void Entidade_global_que_implementa_ITenantEntity_continua_valida()
     {
         Violacoes([typeof(DeEspaco), typeof(Tenant)]).ShouldBeEmpty();
@@ -51,13 +57,18 @@ public class TenantEntityMappingTests
 
     private static IEnumerable<string> Violacoes(IEnumerable<Type> clrTypes) =>
         clrTypes
-            .Where(t => !typeof(ITenantEntity).IsAssignableFrom(t) && !GlobalEntities.Contains(t.Name))
+            .Where(t => !typeof(ITenantEntity).IsAssignableFrom(t) && !typeof(ITenantLink).IsAssignableFrom(t) && !GlobalEntities.Contains(t.Name))
             .Select(t => t.Name);
 
     private sealed class DeEspaco : ITenantEntity
     {
         public Guid Id { get; init; }
 
+        public Guid TenantId { get; init; }
+    }
+
+    private sealed class Ligacao : ITenantLink
+    {
         public Guid TenantId { get; init; }
     }
 

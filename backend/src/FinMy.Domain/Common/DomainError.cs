@@ -18,12 +18,14 @@ public enum DomainErrorKind
 /// <param name="Kind">Categoria do erro.</param>
 /// <param name="FieldErrors">Mensagens por campo (somente <see cref="DomainErrorKind.Validation"/>).</param>
 /// <param name="RetryAfterSeconds">Espera sugerida (somente <see cref="DomainErrorKind.TooManyRequests"/>).</param>
+/// <param name="Extensions">Dados extras do erro (ex.: <c>differenceCents</c> em <c>split.sum_mismatch</c>), repassados pela Api como extensões do problema.</param>
 public sealed record DomainError(
     string Code,
     string Message,
     DomainErrorKind Kind,
     IReadOnlyDictionary<string, string[]>? FieldErrors = null,
-    int? RetryAfterSeconds = null);
+    int? RetryAfterSeconds = null,
+    IReadOnlyDictionary<string, object?>? Extensions = null);
 
 /// <summary>Transporta um <see cref="DomainError"/> até a borda da Api, que o converte em ProblemDetails.</summary>
 public sealed class DomainException(DomainError error) : Exception(error?.Message)

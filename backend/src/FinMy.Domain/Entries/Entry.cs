@@ -50,6 +50,12 @@ public sealed class Entry : TenantEntity
 
     public string? Notes { get; private set; }
 
+    /// <summary>Tag de acerto do lançamento (no máximo uma, 004 FR-002); a aplicação garante que a tag tem <c>is_settlement</c>.</summary>
+    public Guid? SettlementTagId { get; private set; }
+
+    /// <summary>Mesmo valor nas partes de uma divisão (004 FR-014).</summary>
+    public Guid? SplitGroupId { get; private set; }
+
     public Money Amount => new(AmountCents);
 
     public YearMonth ReferenceYearMonth => YearMonth.From(ReferenceMonth);
@@ -58,6 +64,10 @@ public sealed class Entry : TenantEntity
     /// Situação padrão (FR-012): data ≤ hoje → Recebida/Paga; data &gt; hoje → Prevista.
     /// <paramref name="today"/> vem de <c>IClock.Today</c> (RT-03).
     /// </summary>
+    public void ChangeSettlementTag(Guid? tagId) => SettlementTagId = tagId;
+
+    public void ChangeSplitGroup(Guid? splitGroupId) => SplitGroupId = splitGroupId;
+
     public static EntryStatus DefaultStatus(DateOnly date, DateOnly today) =>
         date <= today ? EntryStatus.Settled : EntryStatus.Planned;
 
