@@ -126,7 +126,7 @@ autenticação e casca do front prontas para as telas.
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T029 [P] Revisar segurança: CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy` em `frontend/nginx.conf`; atributos do cookie `finmy_rt`; garantir por teste que logs não contêm e-mail nem senha (`backend/tests/FinMy.Api.Tests/Logging/`)
+- [x] T029 [P] Revisar segurança: CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy` em `frontend/nginx.conf`; atributos do cookie `finmy_rt`; garantir por teste que logs não contêm e-mail nem senha (`backend/tests/FinMy.Api.Tests/Logging/`)
 - [ ] T030 Executar o roteiro de quickstart.md §3 nos dois viewports, completar `frontend/e2e/` com o que faltar, escrever `README.md` de desenvolvimento (como subir, testar e migrar) e registrar desvios em `docs/arquitetura.md` se houver
 
 ---
