@@ -4,7 +4,7 @@
 </header>
 
 <nav class="menu" aria-label="Principal">
-  @for (item of itens; track item.rota; let i = $index) {
+  @for (item of itens; track item.rota) {
     <a
       class="item"
       [routerLink]="item.rota"
@@ -14,13 +14,49 @@
       <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{ item.icone }}</mat-icon>
       <span>{{ item.rotulo }}</span>
     </a>
-    @if (i === 1) {
-      <button type="button" class="item lancar" data-testid="lancar" (click)="lancar()">
-        <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">add</mat-icon>
-        <span>Lançar</span>
-      </button>
-    }
   }
+  <button type="button" class="item lancar" data-testid="lancar" (click)="lancar()">
+    <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">add</mat-icon>
+    <span>Lançar</span>
+  </button>
+  <a
+    class="item"
+    [routerLink]="busca.rota"
+    routerLinkActive="ativo"
+    [routerLinkActiveOptions]="{ exact: false }"
+  >
+    <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{ busca.icone }}</mat-icon>
+    <span>{{ busca.rotulo }}</span>
+  </a>
+
+  <div class="mais" [class.aberto]="maisAberto()" routerLinkActive="mais-ativo">
+    <button
+      type="button"
+      class="item mais-botao"
+      data-testid="mais"
+      aria-controls="mais-painel"
+      [attr.aria-expanded]="maisAberto()"
+      (click)="alternarMais()"
+    >
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">more_horiz</mat-icon>
+      <span>Mais</span>
+    </button>
+    <div class="mais-painel" id="mais-painel">
+      @for (item of mais; track item.rota) {
+        <a
+          class="item"
+          [routerLink]="item.rota"
+          routerLinkActive="ativo"
+          [routerLinkActiveOptions]="{ exact: false }"
+        >
+          <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{
+            item.icone
+          }}</mat-icon>
+          <span>{{ item.rotulo }}</span>
+        </a>
+      }
+    </div>
+  </div>
 </nav>
 
 <main class="conteudo">

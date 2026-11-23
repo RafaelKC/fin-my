@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { irPara } from './navegacao';
 
 const sessao = {
   accessToken: 'token',
@@ -147,7 +148,7 @@ test('troca de senha em um aparelho derruba o outro na próxima ação', async (
   await expect(a.getByTestId('senha-trocada')).toBeVisible();
 
   // Aparelho B: a próxima ação autenticada cai no login.
-  await b.getByRole('link', { name: 'Perfil' }).click();
+  await irPara(b, 'Perfil');
   await b.getByRole('button', { name: 'Salvar nome' }).click();
   await expect(b).toHaveURL(/\/entrar/);
 
