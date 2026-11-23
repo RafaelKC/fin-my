@@ -1,0 +1,17 @@
+# Override usado só pelo job `e2e` do CI:
+#   docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --build --wait
+# - Mailpit captura os e-mails lidos pelo e2e da recuperação de senha (API em :8025).
+# - O limitador de 20 req/min por IP derrubaria execuções seguidas de e2e contra a mesma API.
+
+services:
+  mailpit:
+    image: docker.io/axllent/mailpit:latest
+    ports:
+      - "127.0.0.1:${MAILPIT_PORT:-8025}:8025"
+
+  api:
+    environment:
+      RateLimiting__Auth__PermitLimit: ${RateLimiting__Auth__PermitLimit:-100000}
+    depends_on:
+      mailpit:
+        condition: service_started
