@@ -150,6 +150,8 @@ public class AuditInterceptorTests(PostgresFixture postgres)
 
         public Guid DeletionBatchId { get; } = Guid.CreateVersion7();
 
+        public Guid BeginDeletionBatch() => throw new NotSupportedException();
+
         public IDisposable BeginSystemScope(Guid tenantId) => throw new NotSupportedException();
     }
 }

@@ -18,7 +18,9 @@ public sealed class CurrentContext : ICurrentContext
 
     public Guid TenantIdOrEmpty => TenantId ?? Guid.Empty;
 
-    public Guid DeletionBatchId { get; } = Guid.CreateVersion7();
+    public Guid DeletionBatchId { get; private set; } = Guid.CreateVersion7();
+
+    public Guid BeginDeletionBatch() => DeletionBatchId = Guid.CreateVersion7();
 
     /// <summary>Preenche o contexto a partir de claims já validadas (usado pelo middleware).</summary>
     public void Populate(Guid userId, Guid tenantId, Channel channel)

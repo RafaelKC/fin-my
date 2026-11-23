@@ -85,6 +85,7 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
             "PATCH /api/v1/me",
             "POST /api/v1/me/password",
             "PATCH /api/v1/tenant",
+            "POST /api/v1/deletions/{batchId}/restore",
         ];
         esperadas.ShouldBeSubsetOf(operations.Select(o => o.Key));
     }
@@ -133,9 +134,9 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
                     }
                 }
 
-                if (injected == Where.Path && (status != 404 || code != "not_found"))
+                if (injected == Where.Path && (status != 404 || !IsNotFoundCode(code)))
                 {
-                    falhas.Add($"{label}: id de A na rota deveria dar 404 not_found, deu {status} ({code}).");
+                    falhas.Add($"{label}: id de A na rota deveria dar 404 not_found (ou <recurso>.not_found), deu {status} ({code}).");
                 }
                 else if (injected == Where.Other && status is not (404 or 422))
                 {
@@ -156,6 +157,10 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
         statuses["PATCH /api/v1/tenant"].ShouldBe(200);
         statuses["PATCH /api/v1/me"].ShouldBe(200);
     }
+
+    // Erros de negócio de recurso usam o prefixo do recurso (ex.: deletion.not_found, contracts/openapi.yaml).
+    private static bool IsNotFoundCode(string? code) =>
+        code is not null && (code == "not_found" || code.EndsWith(".not_found", StringComparison.Ordinal));
 
     private enum Where { None, Path, Other }
 
