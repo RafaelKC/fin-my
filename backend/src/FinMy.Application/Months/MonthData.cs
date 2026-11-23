@@ -1,3 +1,4 @@
+using FinMy.Application.Abstractions;
 using FinMy.Domain.Cards;
 using FinMy.Domain.Entries;
 using FinMy.Domain.Monetary;
@@ -17,7 +18,9 @@ public sealed record MonthEntryItem(
     Guid WalletId,
     string? Notes,
     DateTimeOffset CreatedAt,
-    uint Version);
+    uint Version,
+    IReadOnlyList<Guid> TagIds,
+    Guid? SettlementTagId);
 
 /// <summary>Transferência da lista do mês (contracts/openapi.yaml <c>Transfer</c>).</summary>
 public sealed record MonthTransferItem(
@@ -61,9 +64,17 @@ public sealed record MonthData(
     IReadOnlyList<MonthEntryItem> Entries,
     IReadOnlyList<MonthTransferItem> Transfers,
     IReadOnlyList<MonthInvoiceItem> Invoices,
-    PendingSummary Pending);
+    PendingSummary Pending,
+    IReadOnlyList<CardPurchaseView> Purchases);
 
-/// <summary>Resposta de <c>GET /months/{month}</c> (contracts/openapi.yaml <c>MonthView</c>).</summary>
+/// <summary>Totais dos itens listados com filtro de tags (004 research R6): Entradas, Saídas e Compras (Débitos − Créditos).</summary>
+public sealed record MonthFilterTotals(long IncomeCents, long ExpenseCents, long PurchasesNetCents);
+
+/// <summary>
+/// Resposta de <c>GET /months/{month}</c> (contracts/openapi.yaml <c>MonthView</c>). Com filtro de tags, <see cref="Purchases"/>
+/// traz as compras das faturas que vencem no mês e <see cref="FilterTotals"/> a soma do que foi listado; sem filtro ficam
+/// vazio e <c>null</c> (as compras aparecem nas faturas).
+/// </summary>
 public sealed record MonthViewResult(
     string Month,
     DateOnly Today,
@@ -72,4 +83,6 @@ public sealed record MonthViewResult(
     IReadOnlyList<MonthEntryItem> Entries,
     IReadOnlyList<MonthTransferItem> Transfers,
     IReadOnlyList<MonthInvoiceItem> Invoices,
-    PendingSummary Pending);
+    PendingSummary Pending,
+    IReadOnlyList<CardPurchaseView> Purchases,
+    MonthFilterTotals? FilterTotals);

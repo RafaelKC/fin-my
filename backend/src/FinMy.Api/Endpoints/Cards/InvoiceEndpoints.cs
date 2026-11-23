@@ -17,8 +17,8 @@ public sealed class InvoiceEndpoints : IEndpointModule
         // `month` chega como texto para o cartão ser conferido antes do formato (id de outro Espaço → 404).
         var invoices = app.MapGroup("/api/v1/credit-cards/{id:guid}/invoices/{month}").WithTags("invoices").RequireAuthorization();
 
-        invoices.MapGet("/", async (Guid id, string month, GetInvoiceHandler handler, CancellationToken cancellationToken) =>
-            Results.Ok(InvoiceResponse.From(await handler.HandleAsync(id, month, cancellationToken))));
+        invoices.MapGet("/", async (Guid id, string month, string? tagIds, GetInvoiceHandler handler, CancellationToken cancellationToken) =>
+            Results.Ok(InvoiceResponse.From(await handler.HandleAsync(id, month, tagIds, cancellationToken))));
 
         invoices.MapPost("/payments", async (Guid id, string month, InvoicePaymentCreateRequest? body, RegisterInvoicePaymentHandler handler, CancellationToken cancellationToken) =>
         {

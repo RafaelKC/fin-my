@@ -1,9 +1,11 @@
 using FinMy.Application.Abstractions;
+using FinMy.Application.Tags;
 using FinMy.Domain.Common;
 using FinMy.Domain.Monetary;
 
 namespace FinMy.Application.Entries;
 
+/// <param name="TagIds">Substitui as tags do lançamento (004 R1); ausente = não mexe nas tags.</param>
 /// <param name="Version">Obrigatória; divergente da atual → conflito de concorrência (research R11).</param>
 /// <param name="ReferenceMonth">Ausente ou igual ao atual → o mês acompanha a data só se nunca foi alterado (RT-04, research R7).</param>
 public sealed record UpdateEntryCommand(
@@ -16,10 +18,11 @@ public sealed record UpdateEntryCommand(
     string? Status,
     string? ReferenceMonth,
     string? Notes,
-    long? Version);
+    long? Version,
+    IReadOnlyList<Guid>? TagIds = null);
 
 /// <summary>Edita todos os campos de um lançamento (FR-022). A carteira só precisa estar ativa ao ser trocada (research R7).</summary>
-public sealed class UpdateEntryHandler(IEntryStore store)
+public sealed class UpdateEntryHandler(IEntryStore store, ITagStore tags)
 {
     public async Task<EntryView> HandleAsync(UpdateEntryCommand command, CancellationToken cancellationToken)
     {
@@ -46,6 +49,10 @@ public sealed class UpdateEntryHandler(IEntryStore store)
             }
         }
 
+        var selection = command.TagIds is null
+            ? null
+            : await TagSelector.ResolveAsync(tags, command.TagIds, current.TagIds, cancellationToken);
+
         var updated = await store.UpdateAsync(
             command.Id,
             version,
@@ -63,7 +70,13 @@ public sealed class UpdateEntryHandler(IEntryStore store)
                 {
                     entry.ChangeReferenceMonth(month); // o cliente pediu outro mês de propósito
                 }
+
+                if (selection is not null)
+                {
+                    entry.ChangeSettlementTag(selection.SettlementTagId);
+                }
             },
+            selection?.CommonTagIds,
             cancellationToken);
 
         return updated ?? throw new DomainException(EntryErrors.NotFound);

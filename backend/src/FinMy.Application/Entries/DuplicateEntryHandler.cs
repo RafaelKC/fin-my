@@ -7,9 +7,9 @@ namespace FinMy.Application.Entries;
 
 /// <summary>
 /// Duplica um lançamento com nova data (FR-024): tipo, descrição, valor, carteira e observação se repetem; o Mês de referência
-/// e a Situação são recalculados como na criação. A carteira original precisa estar ativa.
+/// e a Situação são recalculados como na criação; as tags (menos as arquivadas) também se repetem. A carteira original precisa estar ativa.
 /// </summary>
-public sealed class DuplicateEntryHandler(IEntryStore store, IClock clock)
+public sealed class DuplicateEntryHandler(IEntryStore store, ITagStore tagStore, IClock clock)
 {
     public async Task<EntryView> HandleAsync(Guid id, DateOnly? date, CancellationToken cancellationToken)
     {
@@ -25,6 +25,10 @@ public sealed class DuplicateEntryHandler(IEntryStore store, IClock clock)
             throw new DomainException(EntryErrors.WalletArchived);
         }
 
-        return await store.AddAsync(copy, cancellationToken);
+        // A cópia leva as tags do original (as arquivadas ficam de fora: tag arquivada só se mantém, nunca se adiciona).
+        var tags = await tagStore.FindManyAsync(source.TagIds, cancellationToken);
+        var active = tags.Where(t => !t.IsArchived).ToList();
+        copy.ChangeSettlementTag(active.SingleOrDefault(t => t.IsSettlement)?.Id);
+        return await store.AddAsync(copy, active.Where(t => !t.IsSettlement).Select(t => t.Id).ToList(), cancellationToken);
     }
 }

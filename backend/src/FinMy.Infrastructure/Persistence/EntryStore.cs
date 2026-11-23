@@ -4,6 +4,7 @@ using FinMy.Domain.Cards;
 using FinMy.Domain.Common;
 using FinMy.Domain.Entries;
 using FinMy.Domain.Monetary;
+using FinMy.Domain.Tags;
 using FinMy.Domain.Wallets;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,17 +28,25 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
             .Select(e => new { Entry = e, Version = EF.Property<uint>(e, VersionColumn) })
             .SingleOrDefaultAsync(cancellationToken);
 
-        return row is null ? null : ToView(row.Entry, row.Version);
+        if (row is null)
+        {
+            return null;
+        }
+
+        var links = await TagLinks.ForEntriesAsync(db, [id], cancellationToken);
+        return ToView(row.Entry, row.Version, TagLinks.All(row.Entry.SettlementTagId, links, id));
     }
 
-    public async Task<EntryView> AddAsync(Entry entry, CancellationToken cancellationToken)
+    public async Task<EntryView> AddAsync(Entry entry, IReadOnlyCollection<Guid> commonTagIds, CancellationToken cancellationToken)
     {
         db.Set<Entry>().Add(entry);
+        db.AddRange(commonTagIds.Select(t => new EntryTag(entry.Id, t)));
         await db.SaveChangesAsync(cancellationToken);
-        return ToView(entry, VersionOf(entry));
+        return ToView(entry, VersionOf(entry), TagLinks.All(entry.SettlementTagId, commonTagIds));
     }
 
-    public async Task<EntryView?> UpdateAsync(Guid id, long? expectedVersion, Action<Entry> change, CancellationToken cancellationToken)
+    public async Task<EntryView?> UpdateAsync(
+        Guid id, long? expectedVersion, Action<Entry> change, IReadOnlyCollection<Guid>? commonTagIds, CancellationToken cancellationToken)
     {
         var entry = await db.Set<Entry>().SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
         if (entry is null)
@@ -59,6 +68,15 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
 
         change(entry);
 
+        var current = (await TagLinks.ForEntriesAsync(db, [id], cancellationToken)).GetValueOrDefault(id) ?? [];
+        if (commonTagIds is not null)
+        {
+            var wanted = commonTagIds.ToHashSet();
+            db.RemoveRange(await db.Set<EntryTag>().Where(l => l.EntryId == id && !wanted.Contains(l.TagId)).ToListAsync(cancellationToken));
+            db.AddRange(wanted.Except(current).Select(t => new EntryTag(id, t)));
+            current = [.. wanted];
+        }
+
         try
         {
             await db.SaveChangesAsync(cancellationToken);
@@ -68,7 +86,7 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
             throw new DomainException(EntryErrors.ConcurrencyConflict);
         }
 
-        return ToView(entry, VersionOf(entry));
+        return ToView(entry, VersionOf(entry), TagLinks.All(entry.SettlementTagId, current));
     }
 
     public async Task<IReadOnlyList<EntryView>> ListPendingAsync(YearMonth currentMonth, CancellationToken cancellationToken)
@@ -80,7 +98,8 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
             .Select(e => new { Entry = e, Version = EF.Property<uint>(e, VersionColumn) })
             .ToListAsync(cancellationToken);
 
-        return rows.ConvertAll(r => ToView(r.Entry, r.Version));
+        var links = await TagLinks.ForEntriesAsync(db, rows.Select(r => r.Entry.Id).ToList(), cancellationToken);
+        return rows.ConvertAll(r => ToView(r.Entry, r.Version, TagLinks.All(r.Entry.SettlementTagId, links, r.Entry.Id)));
     }
 
     public async Task<bool> UpdateManyAsync(IReadOnlyCollection<Guid> ids, Action<Entry> change, CancellationToken cancellationToken)
@@ -188,38 +207,65 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
 
             Guid? walletId = null;
             Guid? creditCardId = null;
+            IReadOnlyList<Guid> tagIds = [];
             if (kind is { } entryKind)
             {
-                walletId = await sameEntries
+                var latestOfKind = await sameEntries
                     .Where(e => e.Kind == entryKind)
                     .OrderByDescending(e => e.EntryDate).ThenByDescending(e => e.CreatedAt)
-                    .Select(e => (Guid?)e.WalletId)
+                    .Select(e => new { e.Id, e.WalletId, e.SettlementTagId })
                     .FirstOrDefaultAsync(cancellationToken);
+                walletId = latestOfKind?.WalletId;
 
                 if (walletId is { } id
                     && !await db.Set<Wallet>().AsNoTracking().AnyAsync(w => w.Id == id && w.ArchivedAt == null, cancellationToken))
                 {
                     walletId = null;
                 }
+
+                if (latestOfKind is not null)
+                {
+                    var links = await TagLinks.ForEntriesAsync(db, [latestOfKind.Id], cancellationToken);
+                    tagIds = await ActiveTagIdsAsync(TagLinks.All(latestOfKind.SettlementTagId, links, latestOfKind.Id), cancellationToken);
+                }
             }
             else
             {
-                creditCardId = await samePurchases
+                var latestPurchaseRow = await samePurchases
                     .OrderByDescending(p => p.PurchaseDate).ThenByDescending(p => p.CreatedAt)
-                    .Select(p => (Guid?)p.CreditCardId)
+                    .Select(p => new { p.Id, p.CreditCardId, p.SettlementTagId })
                     .FirstOrDefaultAsync(cancellationToken);
+                creditCardId = latestPurchaseRow?.CreditCardId;
 
                 if (creditCardId is { } cardId
                     && !await db.Set<CreditCard>().AsNoTracking().AnyAsync(c => c.Id == cardId && c.ArchivedAt == null, cancellationToken))
                 {
                     creditCardId = null;
                 }
+
+                if (latestPurchaseRow is not null)
+                {
+                    var links = await TagLinks.ForPurchasesAsync(db, [latestPurchaseRow.Id], cancellationToken);
+                    tagIds = await ActiveTagIdsAsync(TagLinks.All(latestPurchaseRow.SettlementTagId, links, latestPurchaseRow.Id), cancellationToken);
+                }
             }
 
-            result.Add(new EntrySuggestion(latest.Description, group.Uses, walletId, creditCardId));
+            result.Add(new EntrySuggestion(latest.Description, group.Uses, walletId, creditCardId, tagIds));
         }
 
         return result;
+    }
+
+    /// <summary>Mantém só as tags ativas (tag arquivada não é sugerida), na ordem recebida.</summary>
+    private async Task<IReadOnlyList<Guid>> ActiveTagIdsAsync(IReadOnlyList<Guid> tagIds, CancellationToken cancellationToken)
+    {
+        if (tagIds.Count == 0)
+        {
+            return tagIds;
+        }
+
+        var active = (await db.Set<Tag>().AsNoTracking().Where(t => tagIds.Contains(t.Id) && t.ArchivedAt == null).Select(t => t.Id).ToListAsync(cancellationToken)).ToHashSet();
+        return tagIds.Where(active.Contains).ToList();
     }
 
     private sealed record Usage(string Key, int Uses, DateOnly LastDate, DateTimeOffset LastCreated);
@@ -228,7 +274,7 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
 
     private uint VersionOf(Entry entry) => db.Entry(entry).Property<uint>(VersionColumn).CurrentValue;
 
-    private static EntryView ToView(Entry e, uint version) => new(
+    private static EntryView ToView(Entry e, uint version, IReadOnlyList<Guid> tagIds) => new(
         e.Id,
         e.Kind,
         e.Description,
@@ -239,7 +285,9 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
         e.WalletId,
         e.Notes,
         e.CreatedAt,
-        version);
+        version,
+        tagIds,
+        e.SettlementTagId);
 
     internal static string EscapeLike(string text) =>
         text.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("%", "\\%", StringComparison.Ordinal).Replace("_", "\\_", StringComparison.Ordinal);

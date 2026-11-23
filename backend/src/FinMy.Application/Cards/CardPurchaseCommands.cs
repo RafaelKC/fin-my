@@ -11,6 +11,7 @@ public sealed record InstallmentsCommand(int? Total, string? Mode, int? NextNumb
 /// <param name="Amount">Expressão RT-05; negativa vira crédito (research R6).</param>
 /// <param name="Installments">Ausente → à vista.</param>
 /// <param name="ConfirmPaidInvoice">Confirma a compra numa fatura já paga (research R5).</param>
+/// <param name="TagIds">Tags de cada compra/parcela criada (004 R1); ausente = nenhuma.</param>
 public sealed record CreateCardPurchaseCommand(
     string? Description,
     string? Amount,
@@ -19,9 +20,11 @@ public sealed record CreateCardPurchaseCommand(
     Guid? CreditCardId,
     string? Notes,
     InstallmentsCommand? Installments,
-    bool ConfirmPaidInvoice);
+    bool ConfirmPaidInvoice,
+    IReadOnlyList<Guid>? TagIds = null);
 
-/// <param name="Scope"><c>this</c> (padrão) ou <c>all</c>: vale para descrição e observação das parcelas.</param>
+/// <param name="Scope"><c>this</c> (padrão) ou <c>all</c>: vale para descrição, observação e tags das parcelas.</param>
+/// <param name="TagIds">Substitui as tags (004 R1); ausente = não mexe nas tags.</param>
 /// <param name="Version">Obrigatória; divergente da atual → conflito de concorrência (research R11).</param>
 public sealed record UpdateCardPurchaseCommand(
     Guid Id,
@@ -33,7 +36,8 @@ public sealed record UpdateCardPurchaseCommand(
     string? Notes,
     string? Scope,
     bool ConfirmPaidInvoice,
-    long? Version);
+    long? Version,
+    IReadOnlyList<Guid>? TagIds = null);
 
 /// <param name="Direction"><c>previous</c> ou <c>next</c>.</param>
 /// <param name="Scope"><c>this</c> (padrão) ou <c>this_and_following</c>.</param>

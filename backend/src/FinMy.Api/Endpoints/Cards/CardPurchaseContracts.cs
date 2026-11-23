@@ -15,7 +15,8 @@ public sealed record CardPurchaseCreateRequest(
     Guid? CreditCardId,
     string? Notes,
     InstallmentsRequest? Installments,
-    bool? ConfirmPaidInvoice)
+    bool? ConfirmPaidInvoice,
+    IReadOnlyList<Guid>? TagIds = null)
 {
     internal CreateCardPurchaseCommand ToCommand() => new(
         Description,
@@ -25,7 +26,8 @@ public sealed record CardPurchaseCreateRequest(
         CreditCardId,
         Notes,
         Installments is null ? null : new InstallmentsCommand(Installments.Total, Installments.Mode, Installments.NextNumber, Installments.FirstInvoiceMonth),
-        ConfirmPaidInvoice ?? false);
+        ConfirmPaidInvoice ?? false,
+        TagIds);
 }
 
 /// <summary>Corpo de <c>PUT /card-purchases/{id}</c>.</summary>
@@ -38,10 +40,11 @@ public sealed record CardPurchaseUpdateRequest(
     string? Notes,
     string? Scope,
     bool? ConfirmPaidInvoice,
-    long? Version)
+    long? Version,
+    IReadOnlyList<Guid>? TagIds = null)
 {
     internal UpdateCardPurchaseCommand ToCommand(Guid id) =>
-        new(id, Description, Amount, Nature, Date, CreditCardId, Notes, Scope, ConfirmPaidInvoice ?? false, Version);
+        new(id, Description, Amount, Nature, Date, CreditCardId, Notes, Scope, ConfirmPaidInvoice ?? false, Version, TagIds);
 }
 
 /// <summary>Corpo de <c>PATCH /card-purchases/{id}/reconciled</c>.</summary>
@@ -71,7 +74,9 @@ public sealed record CardPurchaseResponse(
     int? InstallmentNumber,
     int? InstallmentTotal,
     DateTimeOffset CreatedAt,
-    long Version)
+    long Version,
+    IReadOnlyList<Guid> TagIds,
+    Guid? SettlementTagId)
 {
     public static CardPurchaseResponse From(CardPurchaseView p) => new(
         p.Id,
@@ -90,7 +95,9 @@ public sealed record CardPurchaseResponse(
         p.InstallmentNumber,
         p.InstallmentTotal,
         p.CreatedAt,
-        p.Version);
+        p.Version,
+        p.TagIds,
+        p.SettlementTagId);
 
     private static string ToText(Domain.Cards.PurchaseNature nature) => nature == Domain.Cards.PurchaseNature.Credit ? "credit" : "debit";
 

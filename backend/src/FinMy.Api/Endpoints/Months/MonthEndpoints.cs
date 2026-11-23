@@ -11,9 +11,9 @@ public sealed class MonthEndpoints : IEndpointModule
 
         var group = app.MapGroup("/api/v1/months").WithTags("months").RequireAuthorization();
 
-        group.MapGet("/{month}", async (string month, string? walletIds, GetMonthHandler handler, HttpContext http, CancellationToken cancellationToken) =>
+        group.MapGet("/{month}", async (string month, string? walletIds, string? tagIds, GetMonthHandler handler, HttpContext http, CancellationToken cancellationToken) =>
         {
-            var result = await handler.HandleAsync(month, walletIds, cancellationToken);
+            var result = await handler.HandleAsync(month, walletIds, tagIds, cancellationToken);
             http.Response.Headers.CacheControl = "no-store";
             return Results.Ok(MonthViewDto.From(result));
         });

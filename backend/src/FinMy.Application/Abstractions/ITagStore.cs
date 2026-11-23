@@ -21,6 +21,9 @@ public interface ITagStore
 {
     Task<Tag?> FindAsync(Guid id, CancellationToken cancellationToken);
 
+    /// <summary>Tags do Espaço com esses ids (qualquer estado), sem rastreamento; ids de outro Espaço não vêm.</summary>
+    Task<IReadOnlyList<Tag>> FindManyAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken);
+
     /// <summary>Id da tag (qualquer estado) com este nome normalizado, exceto <paramref name="exceptId"/>.</summary>
     Task<Guid?> FindIdByNormalizedNameAsync(string normalizedName, Guid? exceptId, CancellationToken cancellationToken);
 

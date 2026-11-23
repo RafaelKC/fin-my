@@ -1,3 +1,4 @@
+using FinMy.Api.Endpoints.Cards;
 using FinMy.Application.Months;
 using FinMy.Domain.Cards;
 using FinMy.Domain.Months;
@@ -26,7 +27,9 @@ public sealed record EntryDto(
     Guid WalletId,
     string? Notes,
     DateTimeOffset CreatedAt,
-    long Version);
+    long Version,
+    IReadOnlyList<Guid> TagIds,
+    Guid? SettlementTagId);
 
 public sealed record TransferDto(
     Guid Id,
@@ -56,6 +59,9 @@ public sealed record MonthInvoiceDto(
 
 public sealed record PendingDto(int Count, long ToReceiveCents, long ToPayCents);
 
+/// <summary>Totais dos itens listados com filtro de tags (<c>filterTotals</c>).</summary>
+public sealed record FilterTotalsDto(long IncomeCents, long ExpenseCents, long PurchasesNetCents);
+
 /// <summary>Resposta de <c>GET /months/{month}</c> (<c>MonthView</c>).</summary>
 public sealed record MonthViewDto(
     string Month,
@@ -66,7 +72,9 @@ public sealed record MonthViewDto(
     IReadOnlyList<EntryDto> Entries,
     IReadOnlyList<TransferDto> Transfers,
     IReadOnlyList<MonthInvoiceDto> Invoices,
-    PendingDto Pending)
+    PendingDto Pending,
+    IReadOnlyList<CardPurchaseResponse> Purchases,
+    FilterTotalsDto? FilterTotals)
 {
     public static MonthViewDto From(MonthViewResult r) => new(
         r.Month,
@@ -77,7 +85,9 @@ public sealed record MonthViewDto(
         r.Entries.Select(From).ToList(),
         r.Transfers.Select(From).ToList(),
         r.Invoices.Select(From).ToList(),
-        new PendingDto(r.Pending.Count, r.Pending.ToReceiveCents, r.Pending.ToPayCents));
+        new PendingDto(r.Pending.Count, r.Pending.ToReceiveCents, r.Pending.ToPayCents),
+        r.Purchases.Select(CardPurchaseResponse.From).ToList(),
+        r.FilterTotals is { } t ? new FilterTotalsDto(t.IncomeCents, t.ExpenseCents, t.PurchasesNetCents) : null);
 
     private static SummaryColumnDto From(SummaryColumn c) => new(
         c.OpeningBalanceCents,
@@ -100,7 +110,9 @@ public sealed record MonthViewDto(
         e.WalletId,
         e.Notes,
         e.CreatedAt,
-        e.Version);
+        e.Version,
+        e.TagIds,
+        e.SettlementTagId);
 
     private static TransferDto From(MonthTransferItem t) => new(
         t.Id, t.FromWalletId, t.ToWalletId, t.AmountCents, t.Date, t.Description, t.Notes, t.CreatedAt, t.Version);

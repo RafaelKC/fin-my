@@ -1,4 +1,5 @@
 using FinMy.Application.Abstractions;
+using FinMy.Application.Tags;
 using FinMy.Domain.Cards;
 using FinMy.Domain.Common;
 using FinMy.Domain.Monetary;
@@ -10,7 +11,7 @@ namespace FinMy.Application.Cards;
 /// afetam a parcela editada; cartão e data afetam todas e redistribuem as faturas (as movidas à mão não mudam de mês),
 /// sem a restrição de fatura fechada da mudança de dias do cartão. Exige <c>version</c> (research R11).
 /// </summary>
-public sealed class UpdateCardPurchaseHandler(ICreditCardStore cards, ICardPurchaseStore purchases, IInvoiceRepository invoices, IClock clock)
+public sealed class UpdateCardPurchaseHandler(ICreditCardStore cards, ICardPurchaseStore purchases, IInvoiceRepository invoices, ITagStore tags, IClock clock)
 {
     public async Task<CardPurchaseView> HandleAsync(UpdateCardPurchaseCommand command, CancellationToken cancellationToken)
     {
@@ -37,14 +38,18 @@ public sealed class UpdateCardPurchaseHandler(ICreditCardStore cards, ICardPurch
 
         purchases.ExpectVersion(purchase, version);
 
+        var selection = command.TagIds is null
+            ? null
+            : await TagSelector.ResolveAsync(tags, command.TagIds, await purchases.GetTagIdsAsync(purchase, cancellationToken), cancellationToken);
+
         await using var transaction = await purchases.BeginTransactionAsync(cancellationToken);
         if (purchase.InstallmentPlanId is { } planId)
         {
-            await UpdateInstallmentAsync(command, purchase, planId, card, amount, nature, date, all, cancellationToken);
+            await UpdateInstallmentAsync(command, purchase, planId, card, amount, nature, date, all, selection, cancellationToken);
         }
         else
         {
-            await UpdateSingleAsync(command, purchase, card, amount, nature, date, cancellationToken);
+            await UpdateSingleAsync(command, purchase, card, amount, nature, date, selection, cancellationToken);
         }
 
         await purchases.SaveAsync(cancellationToken);
@@ -54,7 +59,7 @@ public sealed class UpdateCardPurchaseHandler(ICreditCardStore cards, ICardPurch
     }
 
     private async Task UpdateSingleAsync(
-        UpdateCardPurchaseCommand command, CardPurchase purchase, CreditCard card, Money amount, PurchaseNature nature, DateOnly date, CancellationToken cancellationToken)
+        UpdateCardPurchaseCommand command, CardPurchase purchase, CreditCard card, Money amount, PurchaseNature nature, DateOnly date, TagSelection? selection, CancellationToken cancellationToken)
     {
         var oldMonth = (await purchases.GetInvoicesAsync([purchase.InvoiceId], cancellationToken))[purchase.InvoiceId].DueYearMonth;
         var relocated = card.Id != purchase.CreditCardId || date != purchase.PurchaseDate;
@@ -74,6 +79,7 @@ public sealed class UpdateCardPurchaseHandler(ICreditCardStore cards, ICardPurch
         purchase.ChangeNature(nature);
         purchase.ChangeNotes(command.Notes);
         purchase.ChangeDate(date);
+        await ApplyTagsAsync(purchase, selection, cancellationToken);
 
         if (invoiceChanged)
         {
@@ -82,7 +88,7 @@ public sealed class UpdateCardPurchaseHandler(ICreditCardStore cards, ICardPurch
     }
 
     private async Task UpdateInstallmentAsync(
-        UpdateCardPurchaseCommand command, CardPurchase purchase, Guid planId, CreditCard card, Money amount, PurchaseNature nature, DateOnly date, bool all, CancellationToken cancellationToken)
+        UpdateCardPurchaseCommand command, CardPurchase purchase, Guid planId, CreditCard card, Money amount, PurchaseNature nature, DateOnly date, bool all, TagSelection? selection, CancellationToken cancellationToken)
     {
         var plan = await purchases.FindPlanAsync(planId, cancellationToken) ?? throw new InvalidOperationException("Plano da parcela não encontrado.");
         var parcels = await purchases.ListPlanAsync(planId, cancellationToken);
@@ -133,6 +139,7 @@ public sealed class UpdateCardPurchaseHandler(ICreditCardStore cards, ICardPurch
         {
             parcel.ChangeDescription(command.Description ?? string.Empty);
             parcel.ChangeNotes(command.Notes);
+            await ApplyTagsAsync(parcel, selection, cancellationToken);
         }
 
         if (all)
@@ -150,6 +157,17 @@ public sealed class UpdateCardPurchaseHandler(ICreditCardStore cards, ICardPurch
                 parcel.Reassign(card.Id, (await invoices.GetOrCreateAsync(card.Id, month, cancellationToken)).Id);
             }
         }
+    }
+
+    private async Task ApplyTagsAsync(CardPurchase purchase, TagSelection? selection, CancellationToken cancellationToken)
+    {
+        if (selection is null)
+        {
+            return;
+        }
+
+        purchase.ChangeSettlementTag(selection.SettlementTagId);
+        await purchases.ReplaceTagsAsync(purchase, selection.CommonTagIds, cancellationToken);
     }
 
     private async Task RequireConfirmationAsync(bool confirmed, List<(Guid CardId, YearMonth Month)> targets, CancellationToken cancellationToken)

@@ -1,4 +1,5 @@
 using FinMy.Application.Abstractions;
+using FinMy.Application.Tags;
 using FinMy.Domain.Cards;
 using FinMy.Domain.Common;
 using FinMy.Domain.Monetary;
@@ -10,7 +11,7 @@ namespace FinMy.Application.Cards;
 /// parcela vem do ciclo do cartão (FR-008, FR-012, FR-014); valor negativo vira crédito (research R6); compra que reabre
 /// fatura paga pede confirmação (research R5). Tudo numa transação.
 /// </summary>
-public sealed class CreateCardPurchaseHandler(ICreditCardStore cards, ICardPurchaseStore purchases, IInvoiceRepository invoices, IClock clock)
+public sealed class CreateCardPurchaseHandler(ICreditCardStore cards, ICardPurchaseStore purchases, IInvoiceRepository invoices, ITagStore tags, IClock clock)
 {
     private sealed record Target(int Number, Money Amount, YearMonth Month);
 
@@ -56,6 +57,7 @@ public sealed class CreateCardPurchaseHandler(ICreditCardStore cards, ICardPurch
             throw new DomainException(CardPurchaseErrors.InvoicePaidConfirmationRequired);
         }
 
+        var selection = await TagSelector.ResolveAsync(tags, command.TagIds, [], cancellationToken);
         var created = new List<CardPurchase>();
         await using var transaction = await purchases.BeginTransactionAsync(cancellationToken);
         if (plan is not null)
@@ -69,7 +71,9 @@ public sealed class CreateCardPurchaseHandler(ICreditCardStore cards, ICardPurch
             var purchase = plan is null
                 ? CardPurchase.CreateManual(card.Id, invoice.Id, description, target.Amount, nature, date, command.Notes)
                 : CardPurchase.CreateInstallment(card.Id, invoice.Id, plan, target.Number, target.Amount, command.Notes);
+            purchase.ChangeSettlementTag(selection.SettlementTagId);
             purchases.Add(purchase);
+            purchases.AddTags(purchase, selection.CommonTagIds);
             created.Add(purchase);
         }
 

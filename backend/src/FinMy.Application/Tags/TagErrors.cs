@@ -23,6 +23,18 @@ public static class TagErrors
     public static readonly DomainError VersionRequired = Invalid(
         "validation_failed", "version", "Informe a versão da tag.");
 
+    public static readonly DomainError TooManyTags = Invalid(
+        "tags.too_many", "tagIds", $"Use no máximo {TagSelector.MaxTags} tags por lançamento.");
+
+    public static readonly DomainError MultipleSettlement = Invalid(
+        "tags.multiple_settlement", "tagIds", "Um lançamento só pode ter uma tag de acerto. Use Dividir.");
+
+    public static readonly DomainError ArchivedTag = Invalid(
+        "tag.archived", "tagIds", "Esta tag está arquivada. Desarquive-a para usá-la em outro lançamento.");
+
+    public static readonly DomainError InvalidTagFilter = Invalid(
+        "tagIds.invalid", "tagIds", "Informe ids de tag válidos, separados por vírgula.");
+
     public static DomainError NameTaken(Guid? existingTagId) => new(
         "tag.name_taken",
         "Já existe uma tag com esse nome.",

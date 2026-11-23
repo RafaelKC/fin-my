@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using FinMy.Application.Abstractions;
+using FinMy.Application.Tags;
 using FinMy.Domain.Common;
 using FinMy.Domain.Monetary;
 
@@ -15,12 +16,13 @@ public sealed record SearchLedgerCommand(
     DateOnly? From,
     DateOnly? To,
     string? Cursor,
-    int? Limit);
+    int? Limit,
+    string? TagIds = null);
 
 /// <summary>Resultado da busca; <see cref="NextCursor"/> é opaco e <c>null</c> na última página.</summary>
 public sealed record SearchLedgerResult(IReadOnlyList<LedgerItemView> Items, long TotalCents, int TotalCount, string? NextCursor);
 
-/// <summary>Busca em Entradas, Saídas e Transferências de qualquer mês (FR-025, research R10).</summary>
+/// <summary>Busca em Entradas, Saídas, Transferências e Compras no cartão de qualquer mês (FR-025, research R10).</summary>
 public sealed class SearchLedgerHandler(ILedgerSearchStore store)
 {
     public const int DefaultLimit = 50;
@@ -58,7 +60,8 @@ public sealed class SearchLedgerHandler(ILedgerSearchStore store)
             command.From,
             command.To,
             string.IsNullOrEmpty(command.Cursor) ? null : DecodeCursor(command.Cursor),
-            limit);
+            limit,
+            TagSelector.ParseFilter(command.TagIds));
 
         var page = await store.SearchAsync(criteria, cancellationToken);
         return new SearchLedgerResult(page.Items, page.TotalCents, page.TotalCount, page.Next is { } next ? EncodeCursor(next) : null);
@@ -74,7 +77,8 @@ public sealed class SearchLedgerHandler(ILedgerSearchStore store)
                 "income" => LedgerItemKind.Income,
                 "expense" => LedgerItemKind.Expense,
                 "transfer" => LedgerItemKind.Transfer,
-                _ => throw new DomainException(EntryErrors.Field("kinds.invalid", "kinds", "Use income, expense ou transfer")),
+                "card_purchase" => LedgerItemKind.CardPurchase,
+                _ => throw new DomainException(EntryErrors.Field("kinds.invalid", "kinds", "Use income, expense, transfer ou card_purchase")),
             };
             if (!kinds.Contains(kind))
             {
