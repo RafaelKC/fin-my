@@ -10,9 +10,21 @@ describe('DevicePrefsService', () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it('primeiro uso: tipo Saída e nenhuma carteira lembrada (FR-009)', () => {
-    expect(prefs.lastKind()).toBe('expense');
+  it('primeiro uso: tipo Cartão e nenhuma carteira ou cartão lembrado (FR-009, 003 FR-010)', () => {
+    expect(prefs.lastKind()).toBe('card');
     expect(prefs.lastWalletId('expense')).toBeNull();
+    expect(prefs.lastCardId()).toBeNull();
+  });
+
+  it('lembra o último cartão usado e o tipo Cartão (research R9)', () => {
+    prefs.rememberSaved('expense', 'w-azul');
+    prefs.rememberSaved('card', 'c-azul');
+    expect(prefs.lastKind()).toBe('card');
+    expect(prefs.lastCardId()).toBe('c-azul');
+    expect(prefs.lastWalletId('expense')).toBe('w-azul');
+    prefs.rememberSaved('income', 'w-verde');
+    expect(prefs.lastKind()).toBe('income');
+    expect(prefs.lastCardId()).toBe('c-azul');
   });
 
   it('lembra o último tipo e a última carteira por tipo (FR-010)', () => {
@@ -29,9 +41,9 @@ describe('DevicePrefsService', () => {
 
   it('ignora preferências corrompidas', () => {
     localStorage.setItem('finmy.prefs.v1', '{não é json');
-    expect(prefs.lastKind()).toBe('expense');
+    expect(prefs.lastKind()).toBe('card');
     localStorage.setItem('finmy.prefs.v1', JSON.stringify({ lastKind: 'cartao' }));
-    expect(prefs.lastKind()).toBe('expense');
+    expect(prefs.lastKind()).toBe('card');
   });
 
   it('lembra Transferência como último tipo e a origem usada (FR-009)', () => {
@@ -58,7 +70,7 @@ describe('DevicePrefsService', () => {
     vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
       throw new Error('bloqueado');
     });
-    expect(prefs.lastKind()).toBe('expense');
+    expect(prefs.lastKind()).toBe('card');
     expect(() => prefs.rememberSaved('income', 'w')).not.toThrow();
     expect(() => prefs.saveDraft({})).not.toThrow();
     expect(() => prefs.clearDraft()).not.toThrow();

@@ -72,7 +72,11 @@ describe('LancamentoSheet — Transferência (US5)', () => {
     )!;
   const tem = (seletor: string) => el.querySelector(seletor) !== null;
 
-  beforeEach(() => localStorage.clear());
+  // Primeiro uso abre em Cartão (003 FR-010); estes testes partem de Saída.
+  beforeEach(() => {
+    localStorage.clear();
+    localStorage.setItem('finmy.prefs.v1', JSON.stringify({ lastKind: 'expense' }));
+  });
   afterEach(() => {
     fixture.destroy();
     http.match((r) => r.url.startsWith('/api/v1/entries/suggestions'));

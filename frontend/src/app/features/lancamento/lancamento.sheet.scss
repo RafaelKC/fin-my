@@ -180,6 +180,28 @@
   color: var(--mat-sys-error);
 }
 
+.previa {
+  margin: 0;
+  padding: 8px 12px;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-secondary-container);
+  background: var(--mat-sys-secondary-container);
+  border-radius: 8px;
+}
+
+.opcao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  font: var(--mat-sys-label-large);
+
+  input {
+    width: 24px;
+    height: 24px;
+  }
+}
+
 .rodape {
   display: flex;
   flex-wrap: wrap;
