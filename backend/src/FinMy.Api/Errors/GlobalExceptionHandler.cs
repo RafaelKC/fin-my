@@ -1,6 +1,6 @@
 using System.Text.Json;
-using FluentValidation;
 using FinMy.Domain.Common;
+using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

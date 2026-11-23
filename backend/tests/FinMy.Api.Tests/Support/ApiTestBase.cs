@@ -29,10 +29,15 @@ public abstract class ApiTestBase(PostgresFixture postgres) : IAsyncLifetime
 
     protected HttpClient Client { get; private set; } = null!;
 
+    /// <summary>String de conexão do banco próprio deste teste.</summary>
+    protected string DatabaseConnection { get; private set; } = null!;
+
+    protected PostgresFixture Postgres => postgres;
+
     public async Task InitializeAsync()
     {
-        var connection = await postgres.CreateEmptyDatabaseAsync();
-        _factory = new ApiFactory(connection, Settings, ExtraEndpoints);
+        DatabaseConnection = await postgres.CreateEmptyDatabaseAsync();
+        _factory = new ApiFactory(DatabaseConnection, Settings, ExtraEndpoints);
         await _factory.MigrateAsync();
         Client = _factory.CreateClient();
     }

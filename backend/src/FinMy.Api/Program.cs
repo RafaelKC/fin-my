@@ -11,17 +11,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseFinMySerilog();
 builder.Services.AddFinMyApi(builder.Configuration);
 
-// Hangfire (jobs em segundo plano) só sobe quando há conexão com o PostgreSQL configurada.
+// Hangfire (jobs em segundo plano) só sobe quando há conexão com o PostgreSQL configurada
+// e `Hangfire:Enabled` não está desligado (os testes HTTP o desligam para poupar conexões).
 var connectionString = builder.Configuration.GetConnectionString("Default");
-if (!string.IsNullOrWhiteSpace(connectionString))
+var hangfireEnabled = !string.IsNullOrWhiteSpace(connectionString) && builder.Configuration.GetValue("Hangfire:Enabled", true);
+if (hangfireEnabled)
 {
-    builder.Services.AddFinMyHangfire(connectionString);
+    builder.Services.AddFinMyHangfire(connectionString!);
     builder.Services.AddHangfireServer();
 }
 
 var app = builder.Build();
 
-if (!string.IsNullOrWhiteSpace(connectionString))
+if (hangfireEnabled)
 {
     app.Services.GetRequiredService<IRecurringJobManager>().RegisterFinMyRecurringJobs();
 }

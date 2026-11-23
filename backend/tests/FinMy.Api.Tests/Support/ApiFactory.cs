@@ -26,6 +26,7 @@ public sealed class ApiFactory(string connectionString, IReadOnlyDictionary<stri
     {
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:Default", connectionString);
+        builder.UseSetting("Hangfire:Enabled", "false");
 
         foreach (var (key, value) in settings ?? new Dictionary<string, string?>())
         {
