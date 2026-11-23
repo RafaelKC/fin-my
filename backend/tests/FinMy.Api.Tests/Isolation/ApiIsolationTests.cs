@@ -94,6 +94,10 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
             "POST /api/v1/wallets/{id}/make-primary",
             "POST /api/v1/wallets/{id}/archive",
             "POST /api/v1/wallets/{id}/unarchive",
+            "POST /api/v1/transfers",
+            "GET /api/v1/transfers/{id}",
+            "PUT /api/v1/transfers/{id}",
+            "DELETE /api/v1/transfers/{id}",
         ];
         esperadas.ShouldBeSubsetOf(operations.Select(o => o.Key));
     }

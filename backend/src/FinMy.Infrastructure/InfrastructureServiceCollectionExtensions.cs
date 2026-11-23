@@ -51,6 +51,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IProfileStore, ProfileStore>();
         services.AddScoped<IDeletionStore, DeletionStore>();
         services.AddScoped<IWalletStore, WalletStore>();
+        services.AddScoped<ITransferStore, TransferStore>();
         services.AddScoped<IIdempotencyStore, IdempotencyStore>();
         services.AddScoped<IEntryStore, EntryStore>();
 

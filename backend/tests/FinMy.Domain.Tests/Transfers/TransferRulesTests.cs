@@ -58,4 +58,34 @@ public class TransferRulesTests
         Should.Throw<DomainException>(() => Transfer.Create(Azul, Verde, Dinheiro.FromCents(1), Data, new string('a', 81), null))
             .Error.Code.ShouldBe("description.too_long");
     }
+
+    [Fact]
+    public void Update_troca_os_campos_e_recalcula_a_descricao_normalizada()
+    {
+        var transfer = Transfer.Create(Azul, Verde, Dinheiro.FromCents(1_000), Data, "Reserva", "nota");
+
+        transfer.Update(Verde, Azul, Dinheiro.FromCents(2_500), new DateOnly(2026, 4, 1), "  Mesada da Duda ", null);
+
+        transfer.FromWalletId.ShouldBe(Verde);
+        transfer.ToWalletId.ShouldBe(Azul);
+        transfer.AmountCents.ShouldBe(2_500);
+        transfer.TransferDate.ShouldBe(new DateOnly(2026, 4, 1));
+        transfer.Description.ShouldBe("Mesada da Duda");
+        transfer.DescriptionNormalized.ShouldBe("mesada da duda");
+        transfer.Notes.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Update_invalido_nao_altera_nada()
+    {
+        var transfer = Transfer.Create(Azul, Verde, Dinheiro.FromCents(1_000), Data, "Reserva", null);
+
+        Should.Throw<DomainException>(() => transfer.Update(Azul, Azul, Dinheiro.FromCents(5), Data, "Outra", null))
+            .Error.Code.ShouldBe("transfer.same_wallet");
+        Should.Throw<DomainException>(() => transfer.Update(Azul, Verde, Dinheiro.FromCents(5), Data, new string('a', 81), null))
+            .Error.Code.ShouldBe("description.too_long");
+
+        transfer.AmountCents.ShouldBe(1_000);
+        transfer.Description.ShouldBe("Reserva");
+    }
 }
