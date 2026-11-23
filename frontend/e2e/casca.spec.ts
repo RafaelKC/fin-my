@@ -10,16 +10,42 @@ const sessao = {
 test.describe('casca do app logado', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('**/api/v1/auth/refresh', (route) => route.fulfill({ json: sessao }));
+    await page.route('**/api/v1/wallets**', (route) => route.fulfill({ json: [] }));
+    await page.route('**/api/v1/months/**', (route) => {
+      const mes = new URL(route.request().url()).pathname.split('/').pop();
+      const zero = {
+        openingBalanceCents: 0,
+        walletsInitialBalanceCents: 0,
+        incomeCents: 0,
+        expenseCents: 0,
+        resultCents: 0,
+        transfersInCents: 0,
+        transfersOutCents: 0,
+        finalBalanceCents: 0,
+      };
+      return route.fulfill({
+        json: {
+          month: mes,
+          today: '2026-03-10',
+          walletIds: null,
+          planned: zero,
+          actual: zero,
+          entries: [],
+          transfers: [],
+          pending: { count: 0, toReceiveCents: 0, toPayCents: 0 },
+        },
+      });
+    });
   });
 
-  test('mostra o nome do Espaço e a página Mês; /entrar com sessão volta para "/"', async ({
+  test('mostra o nome do Espaço e a visão do mês; /entrar com sessão volta para o mês de hoje', async ({
     page,
   }) => {
     await page.goto('/entrar');
 
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
     await expect(page.getByTestId('nome-do-espaco')).toHaveText('Espaço da Ana');
-    await expect(page.getByRole('heading', { level: 1, name: 'Mês' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /de \d{4}$/ })).toBeVisible();
   });
 
   test('navegação: barra inferior no celular, menu lateral a partir de 1024 px', async ({

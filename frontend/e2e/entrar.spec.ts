@@ -34,7 +34,7 @@ test.describe('entrar (US2) — API simulada', () => {
     await preencher(page);
     await page.getByRole('button', { name: 'Entrar' }).click();
 
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
     await expect(page.getByTestId('nome-do-espaco')).toHaveText('Finanças de Ana');
     expect(corpo).toEqual({ email: 'ana@example.com', password: 'senha-segura' });
   });
@@ -124,7 +124,7 @@ test.describe('entrar (US2) — API simulada', () => {
     await a.goto('/entrar');
     await preencher(a);
     await a.getByRole('button', { name: 'Entrar' }).click();
-    await expect(a).toHaveURL(/\/$/);
+    await expect(a).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
     const estado = await primeiro.storageState();
     await primeiro.close();
 
@@ -152,7 +152,7 @@ test('fecha e reabre o navegador e continua logado (stack real)', async ({ brows
   await a.getByLabel('E-mail').fill(email);
   await a.getByLabel('Senha', { exact: true }).fill(senha);
   await a.getByRole('button', { name: 'Criar conta' }).click();
-  await expect(a).toHaveURL(/\/$/);
+  await expect(a).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
 
   // Sai e entra de novo pela tela de login (cobre o POST /auth/login real).
   await primeiro.clearCookies();
@@ -160,7 +160,7 @@ test('fecha e reabre o navegador e continua logado (stack real)', async ({ brows
   await a.getByLabel('E-mail').fill(email);
   await a.getByLabel('Senha', { exact: true }).fill(senha);
   await a.getByRole('button', { name: 'Entrar' }).click();
-  await expect(a).toHaveURL(/\/$/);
+  await expect(a).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
   const estado = await primeiro.storageState();
   await primeiro.close();
 

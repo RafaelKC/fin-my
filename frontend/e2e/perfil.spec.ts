@@ -132,13 +132,13 @@ test('troca de senha em um aparelho derruba o outro na próxima ação', async (
   await a.getByLabel('E-mail').fill(email);
   await a.getByLabel('Senha', { exact: true }).fill(senhaAntiga);
   await a.getByRole('button', { name: 'Criar conta' }).click();
-  await expect(a).toHaveURL(/\/$/);
+  await expect(a).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
 
   await b.goto('/entrar');
   await b.getByLabel('E-mail').fill(email);
   await b.getByLabel('Senha', { exact: true }).fill(senhaAntiga);
   await b.getByRole('button', { name: 'Entrar' }).click();
-  await expect(b).toHaveURL(/\/$/);
+  await expect(b).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
 
   await a.goto('/perfil');
   await a.getByLabel('Senha atual').fill(senhaAntiga);

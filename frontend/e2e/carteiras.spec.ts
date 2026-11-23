@@ -281,7 +281,7 @@ test.describe('carteiras (US1) — stack real', () => {
     await page.getByLabel('E-mail').fill(email);
     await page.getByLabel('Senha', { exact: true }).fill('senha-teste-123');
     await page.getByRole('button', { name: 'Criar conta' }).click();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
   }
 
   async function nova(page: Page, nome: string, saldo: string) {

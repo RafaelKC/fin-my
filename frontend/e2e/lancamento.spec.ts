@@ -121,7 +121,7 @@ const abrir = async (page: Page) => {
 const valor = (page: Page) => page.getByLabel('Valor', { exact: true });
 const descricao = (page: Page) => page.getByRole('textbox', { name: 'Descrição' });
 const carteira = (page: Page) => page.getByLabel('Carteira', { exact: true });
-const situacao = (page: Page, nome: string) => page.getByRole('radio', { name: nome });
+const situacao = (page: Page, nome: string) => page.getByRole('radio', { name: nome, exact: true });
 
 test.describe('formulário rápido de lançamento (US2) — API simulada', () => {
   test('"+" abre o formulário: tela cheia no celular, diálogo no computador (FR-008)', async ({
@@ -485,7 +485,7 @@ test.describe('formulário rápido de lançamento (US2) — stack real', () => {
     await page.getByLabel('E-mail').fill(email);
     await page.getByLabel('Senha', { exact: true }).fill('senha-teste-123');
     await page.getByRole('button', { name: 'Criar conta' }).click();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
   }
 
   const criacao = (page: Page) =>
