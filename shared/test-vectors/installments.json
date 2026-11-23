@@ -1,0 +1,261 @@
+{
+  "rule": "InstallmentGenerator",
+  "description": "Parcelas de uma compra: total dividido (sobra na 1ª, RT-02), valor da parcela e parcelamento em andamento (p..N), cada uma na fatura seguinte à anterior. Origem: 003 US3.1, US3.2, US4.1 e research R1.",
+  "cases": [
+    {
+      "id": "us3-1-total-100-em-3",
+      "description": "US3.1: 'Casa China' R$ 100,00 em 3x no Azul, compra 28/01/2026 → faturas 2026-02..04, sobra na 1ª (RT-02)",
+      "input": {
+        "mode": "total_amount",
+        "installmentCount": 3,
+        "firstNumber": 1,
+        "amountCents": 10000,
+        "firstInvoiceMonth": "2026-02"
+      },
+      "expected": {
+        "installments": [
+          {
+            "number": 1,
+            "amountCents": 3334,
+            "dueMonth": "2026-02"
+          },
+          {
+            "number": 2,
+            "amountCents": 3333,
+            "dueMonth": "2026-03"
+          },
+          {
+            "number": 3,
+            "amountCents": 3333,
+            "dueMonth": "2026-04"
+          }
+        ]
+      }
+    },
+    {
+      "id": "us3-2-parcela-102-79-em-8",
+      "description": "US3.2: 'Shoppe Casa' R$ 102,79 em 8x no modo valor da parcela → 8 parcelas iguais (total R$ 822,32)",
+      "input": {
+        "mode": "installment_amount",
+        "installmentCount": 8,
+        "firstNumber": 1,
+        "amountCents": 10279,
+        "firstInvoiceMonth": "2026-02"
+      },
+      "expected": {
+        "installments": [
+          {
+            "number": 1,
+            "amountCents": 10279,
+            "dueMonth": "2026-02"
+          },
+          {
+            "number": 2,
+            "amountCents": 10279,
+            "dueMonth": "2026-03"
+          },
+          {
+            "number": 3,
+            "amountCents": 10279,
+            "dueMonth": "2026-04"
+          },
+          {
+            "number": 4,
+            "amountCents": 10279,
+            "dueMonth": "2026-05"
+          },
+          {
+            "number": 5,
+            "amountCents": 10279,
+            "dueMonth": "2026-06"
+          },
+          {
+            "number": 6,
+            "amountCents": 10279,
+            "dueMonth": "2026-07"
+          },
+          {
+            "number": 7,
+            "amountCents": 10279,
+            "dueMonth": "2026-08"
+          },
+          {
+            "number": 8,
+            "amountCents": 10279,
+            "dueMonth": "2026-09"
+          }
+        ]
+      }
+    },
+    {
+      "id": "us4-1-em-andamento-5-de-8",
+      "description": "US4.1: parcelamento em andamento 5/8 de R$ 102,74, parcela 5 em 2026-11 → 5/8..8/8 até 2027-02",
+      "input": {
+        "mode": "in_progress",
+        "installmentCount": 8,
+        "firstNumber": 5,
+        "amountCents": 10274,
+        "firstInvoiceMonth": "2026-11"
+      },
+      "expected": {
+        "installments": [
+          {
+            "number": 5,
+            "amountCents": 10274,
+            "dueMonth": "2026-11"
+          },
+          {
+            "number": 6,
+            "amountCents": 10274,
+            "dueMonth": "2026-12"
+          },
+          {
+            "number": 7,
+            "amountCents": 10274,
+            "dueMonth": "2027-01"
+          },
+          {
+            "number": 8,
+            "amountCents": 10274,
+            "dueMonth": "2027-02"
+          }
+        ]
+      }
+    },
+    {
+      "id": "em-andamento-ultima-parcela",
+      "description": "Em andamento na última parcela (8/8) gera só ela",
+      "input": {
+        "mode": "in_progress",
+        "installmentCount": 8,
+        "firstNumber": 8,
+        "amountCents": 10274,
+        "firstInvoiceMonth": "2026-11"
+      },
+      "expected": {
+        "installments": [
+          {
+            "number": 8,
+            "amountCents": 10274,
+            "dueMonth": "2026-11"
+          }
+        ]
+      }
+    },
+    {
+      "id": "em-andamento-primeira-parcela",
+      "description": "Em andamento na parcela 1 gera todas, com o valor informado em cada uma",
+      "input": {
+        "mode": "in_progress",
+        "installmentCount": 3,
+        "firstNumber": 1,
+        "amountCents": 5000,
+        "firstInvoiceMonth": "2026-12"
+      },
+      "expected": {
+        "installments": [
+          {
+            "number": 1,
+            "amountCents": 5000,
+            "dueMonth": "2026-12"
+          },
+          {
+            "number": 2,
+            "amountCents": 5000,
+            "dueMonth": "2027-01"
+          },
+          {
+            "number": 3,
+            "amountCents": 5000,
+            "dueMonth": "2027-02"
+          }
+        ]
+      }
+    },
+    {
+      "id": "total-110-94-em-4",
+      "description": "R$ 110,94 em 4x: sobra de 2 centavos na 1ª, virada de ano",
+      "input": {
+        "mode": "total_amount",
+        "installmentCount": 4,
+        "firstNumber": 1,
+        "amountCents": 11094,
+        "firstInvoiceMonth": "2026-11"
+      },
+      "expected": {
+        "installments": [
+          {
+            "number": 1,
+            "amountCents": 2775,
+            "dueMonth": "2026-11"
+          },
+          {
+            "number": 2,
+            "amountCents": 2773,
+            "dueMonth": "2026-12"
+          },
+          {
+            "number": 3,
+            "amountCents": 2773,
+            "dueMonth": "2027-01"
+          },
+          {
+            "number": 4,
+            "amountCents": 2773,
+            "dueMonth": "2027-02"
+          }
+        ]
+      }
+    },
+    {
+      "id": "total-1-centavo-em-3",
+      "description": "R$ 0,01 em 3x: o centavo fica na 1ª parcela",
+      "input": {
+        "mode": "total_amount",
+        "installmentCount": 3,
+        "firstNumber": 1,
+        "amountCents": 1,
+        "firstInvoiceMonth": "2026-03"
+      },
+      "expected": {
+        "installments": [
+          {
+            "number": 1,
+            "amountCents": 1,
+            "dueMonth": "2026-03"
+          },
+          {
+            "number": 2,
+            "amountCents": 0,
+            "dueMonth": "2026-04"
+          },
+          {
+            "number": 3,
+            "amountCents": 0,
+            "dueMonth": "2026-05"
+          }
+        ]
+      }
+    },
+    {
+      "id": "total-em-1-parcela",
+      "description": "Total em 1 parcela gera uma parcela com o valor inteiro",
+      "input": {
+        "mode": "total_amount",
+        "installmentCount": 1,
+        "firstNumber": 1,
+        "amountCents": 23980,
+        "firstInvoiceMonth": "2026-03"
+      },
+      "expected": {
+        "installments": [
+          {
+            "number": 1,
+            "amountCents": 23980,
+            "dueMonth": "2026-03"
+          }
+        ]
+      }
+    }
+  ]
+}

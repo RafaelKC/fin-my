@@ -1,0 +1,188 @@
+{
+  "rule": "InvoiceStatusRule",
+  "description": "Situação da fatura (FR-006), avaliada em ordem: sem valor a pagar, paga, aberta, fechada, vencida; fronteiras hoje = fechamento e hoje = vencimento (research R1).",
+  "cases": [
+    {
+      "id": "total-zero",
+      "description": "Total 0 → sem valor a pagar",
+      "input": {
+        "totalCents": 0,
+        "paidCents": 0,
+        "today": "2026-03-10",
+        "closingDate": "2026-03-18",
+        "dueDate": "2026-03-25"
+      },
+      "expected": {
+        "status": "no_amount_due"
+      }
+    },
+    {
+      "id": "total-negativo",
+      "description": "Total negativo (só estornos) → sem valor a pagar",
+      "input": {
+        "totalCents": -5000,
+        "paidCents": 0,
+        "today": "2026-03-10",
+        "closingDate": "2026-03-18",
+        "dueDate": "2026-03-25"
+      },
+      "expected": {
+        "status": "no_amount_due"
+      }
+    },
+    {
+      "id": "total-zero-vencida",
+      "description": "Total 0 depois do vencimento continua sem valor a pagar (regra 1 vem antes)",
+      "input": {
+        "totalCents": 0,
+        "paidCents": 0,
+        "today": "2026-04-10",
+        "closingDate": "2026-03-18",
+        "dueDate": "2026-03-25"
+      },
+      "expected": {
+        "status": "no_amount_due"
+      }
+    },
+    {
+      "id": "pago-antes-do-fechamento",
+      "description": "Paga antes do fechamento aparece como paga, não aberta (FR-006)",
+      "input": {
+        "totalCents": 10000,
+        "paidCents": 10000,
+        "today": "2026-03-10",
+        "closingDate": "2026-03-18",
+        "dueDate": "2026-03-25"
+      },
+      "expected": {
+        "status": "paid"
+      }
+    },
+    {
+      "id": "pago-a-mais",
+      "description": "Pago maior que o total → paga",
+      "input": {
+        "totalCents": 10000,
+        "paidCents": 12000,
+        "today": "2026-03-30",
+        "closingDate": "2026-03-18",
+        "dueDate": "2026-03-25"
+      },
+      "expected": {
+        "status": "paid"
+      }
+    },
+    {
+      "id": "pago-depois-do-vencimento",
+      "description": "Paga integralmente depois do vencimento → paga",
+      "input": {
+        "totalCents": 10000,
+        "paidCents": 10000,
+        "today": "2026-04-10",
+        "closingDate": "2026-03-18",
+        "dueDate": "2026-03-25"
+      },
+      "expected": {
+        "status": "paid"
+      }
+    },
+    {
+      "id": "aberta",
+      "description": "Hoje antes do fechamento com valor em aberto → aberta",
+      "input": {
+        "totalCents": 10000,
+        "paidCents": 0,
+        "today": "2026-03-17",
+        "closingDate": "2026-03-18",
+        "dueDate": "2026-03-25"
+      },
+      "expected": {
+        "status": "open"
+      }
+    },
+    {
+      "id": "parcial-aberta",
+      "description": "Pagamento parcial antes do fechamento → aberta",
+      "input": {
+        "totalCents": 10000,
+        "paidCents": 4000,
+        "today": "2026-03-10",
+        "closingDate": "2026-03-18",
+        "dueDate": "2026-03-25"
+      },
+      "expected": {
+        "status": "open"
+      }
+    },
+    {
+      "id": "hoje-igual-fechamento",
+      "description": "Hoje = fechamento → fechada",
+      "input": {
+        "totalCents": 10000,
+        "paidCents": 0,
+        "today": "2026-03-18",
+        "closingDate": "2026-03-18",
+        "dueDate": "2026-03-25"
+      },
+      "expected": {
+        "status": "closed"
+      }
+    },
+    {
+      "id": "fechada",
+      "description": "Entre fechamento e vencimento → fechada",
+      "input": {
+        "totalCents": 10000,
+        "paidCents": 0,
+        "today": "2026-03-20",
+        "closingDate": "2026-03-18",
+        "dueDate": "2026-03-25"
+      },
+      "expected": {
+        "status": "closed"
+      }
+    },
+    {
+      "id": "hoje-igual-vencimento",
+      "description": "Hoje = vencimento → fechada",
+      "input": {
+        "totalCents": 10000,
+        "paidCents": 0,
+        "today": "2026-03-25",
+        "closingDate": "2026-03-18",
+        "dueDate": "2026-03-25"
+      },
+      "expected": {
+        "status": "closed"
+      }
+    },
+    {
+      "id": "vencida",
+      "description": "Dia seguinte ao vencimento com restante → vencida",
+      "input": {
+        "totalCents": 10000,
+        "paidCents": 0,
+        "today": "2026-03-26",
+        "closingDate": "2026-03-18",
+        "dueDate": "2026-03-25"
+      },
+      "expected": {
+        "status": "overdue"
+      }
+    },
+    {
+      "id": "parcial-vencida",
+      "description": "Pagamento parcial e vencimento passado → vencida",
+      "input": {
+        "totalCents": 10000,
+        "paidCents": 9999,
+        "today": "2026-04-30",
+        "closingDate": "2026-03-18",
+        "dueDate": "2026-03-25"
+      },
+      "expected": {
+        "status": "overdue"
+      }
+    }
+  ]
+}

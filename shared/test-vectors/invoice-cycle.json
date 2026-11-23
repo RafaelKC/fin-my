@@ -1,0 +1,202 @@
+{
+  "rule": "InvoiceCycle",
+  "description": "Fatura (mês de vencimento) de uma compra e datas de fechamento/vencimento dessa fatura; compra no dia do fechamento vai para a próxima; dia inexistente vira o último do mês (RT-03). Origem: 003 spec 'Regra de fatura', FR-003/004/008 e research R1.",
+  "cases": [
+    {
+      "id": "azul-17-03",
+      "description": "Azul (fecha 18, vence 25): compra 17/03/2026 cai em 2026-03 (spec, Regra de fatura)",
+      "input": {
+        "date": "2026-03-17",
+        "closingDay": 18,
+        "dueDay": 25
+      },
+      "expected": {
+        "invoiceMonth": "2026-03",
+        "closingDate": "2026-03-18",
+        "dueDate": "2026-03-25"
+      }
+    },
+    {
+      "id": "azul-18-03-dia-do-fechamento",
+      "description": "Azul: compra no dia do fechamento vai para a próxima fatura (2026-04)",
+      "input": {
+        "date": "2026-03-18",
+        "closingDay": 18,
+        "dueDay": 25
+      },
+      "expected": {
+        "invoiceMonth": "2026-04",
+        "closingDate": "2026-04-18",
+        "dueDate": "2026-04-25"
+      }
+    },
+    {
+      "id": "azul-31-12-virada-de-ano",
+      "description": "Azul: compra 31/12/2026 cai em 2027-01",
+      "input": {
+        "date": "2026-12-31",
+        "closingDay": 18,
+        "dueDay": 25
+      },
+      "expected": {
+        "invoiceMonth": "2027-01",
+        "closingDate": "2027-01-18",
+        "dueDate": "2027-01-25"
+      }
+    },
+    {
+      "id": "verde-31-01",
+      "description": "Verde (fecha 1, vence 10): compra 31/01/2026 cai em 2026-02, fecha 01/02",
+      "input": {
+        "date": "2026-01-31",
+        "closingDay": 1,
+        "dueDay": 10
+      },
+      "expected": {
+        "invoiceMonth": "2026-02",
+        "closingDate": "2026-02-01",
+        "dueDate": "2026-02-10"
+      }
+    },
+    {
+      "id": "verde-01-02-dia-do-fechamento",
+      "description": "Verde: compra 01/02/2026 (dia do fechamento) cai em 2026-03",
+      "input": {
+        "date": "2026-02-01",
+        "closingDay": 1,
+        "dueDay": 10
+      },
+      "expected": {
+        "invoiceMonth": "2026-03",
+        "closingDate": "2026-03-01",
+        "dueDate": "2026-03-10"
+      }
+    },
+    {
+      "id": "x-27-02",
+      "description": "X (fecha 28, vence 5; fecha no mês anterior): compra 27/02/2026 cai em 2026-03, fecha 28/02",
+      "input": {
+        "date": "2026-02-27",
+        "closingDay": 28,
+        "dueDay": 5
+      },
+      "expected": {
+        "invoiceMonth": "2026-03",
+        "closingDate": "2026-02-28",
+        "dueDate": "2026-03-05"
+      }
+    },
+    {
+      "id": "x-28-02-dia-do-fechamento",
+      "description": "X: compra 28/02/2026 cai em 2026-04",
+      "input": {
+        "date": "2026-02-28",
+        "closingDay": 28,
+        "dueDay": 5
+      },
+      "expected": {
+        "invoiceMonth": "2026-04",
+        "closingDate": "2026-03-28",
+        "dueDate": "2026-04-05"
+      }
+    },
+    {
+      "id": "y-27-02-fechamento-dia-30-em-fevereiro",
+      "description": "Y (fecha 30, vence 8): fatura 2026-03 fecha 28/02/2026 (RT-03); compra 27/02 cai nela",
+      "input": {
+        "date": "2026-02-27",
+        "closingDay": 30,
+        "dueDay": 8
+      },
+      "expected": {
+        "invoiceMonth": "2026-03",
+        "closingDate": "2026-02-28",
+        "dueDate": "2026-03-08"
+      }
+    },
+    {
+      "id": "y-28-02-fechamento-dia-30-em-fevereiro",
+      "description": "Y: compra 28/02/2026 (dia do fechamento ajustado) cai em 2026-04",
+      "input": {
+        "date": "2026-02-28",
+        "closingDay": 30,
+        "dueDay": 8
+      },
+      "expected": {
+        "invoiceMonth": "2026-04",
+        "closingDate": "2026-03-30",
+        "dueDate": "2026-04-08"
+      }
+    },
+    {
+      "id": "y-31-01-duas-faturas-adiante",
+      "description": "Y: compra 31/01/2026 passa o fechamento de 30/01 e cai em 2026-03 (+2 meses, limite de R1)",
+      "input": {
+        "date": "2026-01-31",
+        "closingDay": 30,
+        "dueDay": 8
+      },
+      "expected": {
+        "invoiceMonth": "2026-03",
+        "closingDate": "2026-02-28",
+        "dueDate": "2026-03-08"
+      }
+    },
+    {
+      "id": "y-28-02-2028-bissexto",
+      "description": "Y em ano bissexto: fatura 2028-03 fecha 29/02/2028; compra 28/02 cai nela",
+      "input": {
+        "date": "2028-02-28",
+        "closingDay": 30,
+        "dueDay": 8
+      },
+      "expected": {
+        "invoiceMonth": "2028-03",
+        "closingDate": "2028-02-29",
+        "dueDate": "2028-03-08"
+      }
+    },
+    {
+      "id": "y-29-02-2028-bissexto-dia-do-fechamento",
+      "description": "Y em ano bissexto: compra 29/02/2028 (dia do fechamento) cai em 2028-04",
+      "input": {
+        "date": "2028-02-29",
+        "closingDay": 30,
+        "dueDay": 8
+      },
+      "expected": {
+        "invoiceMonth": "2028-04",
+        "closingDate": "2028-03-30",
+        "dueDate": "2028-04-08"
+      }
+    },
+    {
+      "id": "vencimento-31-em-fevereiro",
+      "description": "Vencimento dia 31 em mês curto vira o último dia (fecha 15, vence 31): 10/02/2026 → 2026-02, vence 28/02",
+      "input": {
+        "date": "2026-02-10",
+        "closingDay": 15,
+        "dueDay": 31
+      },
+      "expected": {
+        "invoiceMonth": "2026-02",
+        "closingDate": "2026-02-15",
+        "dueDate": "2026-02-28"
+      }
+    },
+    {
+      "id": "fechamento-igual-vencimento",
+      "description": "Fechamento = vencimento (10/10) fecha no mês anterior: 09/03/2026 → 2026-04, fecha 10/03",
+      "input": {
+        "date": "2026-03-09",
+        "closingDay": 10,
+        "dueDay": 10
+      },
+      "expected": {
+        "invoiceMonth": "2026-04",
+        "closingDate": "2026-03-10",
+        "dueDate": "2026-04-10"
+      }
+    }
+  ]
+}
