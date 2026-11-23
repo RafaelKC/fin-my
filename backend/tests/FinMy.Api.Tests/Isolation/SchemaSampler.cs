@@ -8,6 +8,13 @@ public static class SchemaSampler
     public static JsonNode? Sample(JsonObject root, JsonNode? schema, Guid idOfA, string name = "")
     {
         schema = OpenApiOperations.Resolve(root, schema);
+
+        // Corpo opcional vem como oneOf [null, X]: amostra o primeiro ramo que não é nulo.
+        if (schema?["oneOf"] is JsonArray branches)
+        {
+            schema = branches.Select(b => OpenApiOperations.Resolve(root, b)).FirstOrDefault(b => b?["type"]?.ToString() != "null");
+        }
+
         if (schema is null)
         {
             return "x";
@@ -34,6 +41,11 @@ public static class SchemaSampler
             case "boolean":
                 return false;
             default:
+                if (format == "date")
+                {
+                    return "2026-03-01";
+                }
+
                 if (format == "uuid" || name.EndsWith("Id", StringComparison.Ordinal))
                 {
                     return idOfA.ToString();
