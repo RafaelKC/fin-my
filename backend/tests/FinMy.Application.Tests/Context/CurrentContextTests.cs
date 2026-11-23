@@ -96,4 +96,19 @@ public class CurrentContextTests
         ctx.DeletionBatchId.ShouldBe(ctx.DeletionBatchId);
         new CurrentContext().DeletionBatchId.ShouldNotBe(ctx.DeletionBatchId);
     }
+
+    [Fact]
+    public void BeginDeletionBatch_abre_um_novo_lote_UUIDv7_e_o_torna_o_corrente()
+    {
+        var ctx = new CurrentContext();
+        var primeiro = ctx.DeletionBatchId;
+
+        var lote = ctx.BeginDeletionBatch();
+
+        lote.ShouldNotBe(primeiro);
+        lote.ShouldNotBe(Guid.Empty);
+        lote.Version.ShouldBe(7);
+        ctx.DeletionBatchId.ShouldBe(lote);
+        ctx.BeginDeletionBatch().ShouldNotBe(lote);
+    }
 }

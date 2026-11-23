@@ -27,7 +27,7 @@ dotnet test tests/FinMy.Api.Tests --filter "FullyQualifiedName~FinMy.Api.Tests.I
 | Arquivo | O que garante |
 |---|---|
 | `TenantEntityIsolationTests` | Descobre por reflexão todo tipo `ITenantEntity` mapeado e **falha se faltar fábrica** em `TenantDataFactories`; B não vê nem apaga linhas de A em nenhum tipo (e sem Espaço no contexto nada aparece). |
-| `ApiIsolationTests` | Lê as operações do **OpenAPI gerado pela própria API** (`/openapi/v1.json`, fora de produção) e chama cada uma como B depois de A criar dados: nada de A na resposta, id de A em rota → 404 `not_found`, id de A em corpo/consulta → 404/422 e nada de A alterado (`AccountSnapshot`). |
+| `ApiIsolationTests` | Lê as operações do **OpenAPI gerado pela própria API** (`/openapi/v1.json`, fora de produção) e chama cada uma como B depois de A criar dados: nada de A na resposta, id de A em rota → 404 `not_found` (ou `<recurso>.not_found`, ex.: `deletion.not_found`), id de A em corpo/consulta → 404/422 e nada de A alterado (`AccountSnapshot`). |
 | `TenantClaimTests` | O `tid` do token só é emitido para quem tem `tenant_members`; login e refresh recusam quem perdeu a participação. |
 
 ### Ao criar uma feature nova

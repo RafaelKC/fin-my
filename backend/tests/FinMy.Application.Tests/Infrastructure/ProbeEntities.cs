@@ -15,3 +15,9 @@ public sealed class ProbeItem : TenantEntity
 
     public string Label { get; set; } = string.Empty;
 }
+
+/// <summary>Sonda com índice único por nome entre as ativas (como as carteiras), para exercitar o conflito ao restaurar.</summary>
+public sealed class ProbeNamed : TenantEntity
+{
+    public string Name { get; set; } = string.Empty;
+}

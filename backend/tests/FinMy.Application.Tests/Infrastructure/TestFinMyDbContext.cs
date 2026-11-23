@@ -19,6 +19,8 @@ public sealed class TestFinMyDbContext : FinMyDbContext
 
     public DbSet<ProbeItem> Items => Set<ProbeItem>();
 
+    public DbSet<ProbeNamed> Named => Set<ProbeNamed>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ProbeParent>().ToTable("probe_parents");
@@ -26,6 +28,12 @@ public sealed class TestFinMyDbContext : FinMyDbContext
         {
             b.ToTable("probe_items");
             b.HasOne<ProbeParent>().WithMany().HasTenantForeignKey(i => i.ParentId);
+        });
+
+        modelBuilder.Entity<ProbeNamed>(b =>
+        {
+            b.ToTable("probe_named");
+            b.HasIndex("TenantId", nameof(ProbeNamed.Name)).IsUnique().HasFilter("deleted_at IS NULL");
         });
 
         base.OnModelCreating(modelBuilder);

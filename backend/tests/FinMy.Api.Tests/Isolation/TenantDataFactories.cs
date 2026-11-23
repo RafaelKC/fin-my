@@ -18,6 +18,7 @@ public static class TenantDataFactories
         new Dictionary<Type, Func<string, IReadOnlyList<object>>>
         {
             [typeof(ProbeParent)] = label => [new ProbeParent { Name = label }],
+            [typeof(ProbeNamed)] = label => [new ProbeNamed { Name = label }],
             [typeof(ProbeItem)] = label =>
             {
                 var parent = new ProbeParent { Name = label };
