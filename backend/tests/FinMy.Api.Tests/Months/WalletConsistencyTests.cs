@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using FinMy.Api.Tests.Support;
 using FinMy.Application.Tests.Infrastructure;
+using FinMy.Domain.Cards;
 using FinMy.Domain.Entries;
 using FinMy.Domain.Monetary;
 using FinMy.Domain.Wallets;
@@ -13,13 +14,15 @@ namespace FinMy.Api.Tests.Months;
 /// SC-003 (research R5): a soma dos saldos atuais das Carteiras é igual ao Saldo final Realizado (todas as Carteiras)
 /// do último mês que contém um lançamento efetivado ou uma data de saldo inicial. Os saldos atuais vêm de
 /// <c>GET /wallets</c> (<c>currentBalanceCents</c>) e também da fórmula da R5 aplicada aos próprios dados gerados,
-/// que não depende de nenhuma das duas consultas.
+/// que não depende de nenhuma das duas consultas. Desde a 003, os pagamentos de fatura (efetivados, no mês de vencimento da
+/// fatura, RT-04/RT-07) saem do saldo da carteira usada (FR-024) e das Saídas do Realizado.
 /// </summary>
 public class WalletConsistencyTests(PostgresFixture postgres) : ApiTestBase(postgres)
 {
     private const int EntryCount = 200;
 
-    private sealed record Generated(List<Wallet> Wallets, List<Entry> Entries, List<FinMy.Domain.Transfers.Transfer> Transfers);
+    private sealed record Generated(
+        List<Wallet> Wallets, List<Entry> Entries, List<FinMy.Domain.Transfers.Transfer> Transfers, List<CreditCard> Cards, List<Invoice> Invoices, List<InvoicePayment> Payments);
 
     private static Generated Generate(int seed)
     {
@@ -56,16 +59,43 @@ public class WalletConsistencyTests(PostgresFixture postgres) : ApiTestBase(post
             transfers.Add(NewTransfer(wallets[from].Id, wallets[to].Id, random.Next(1, 40000), date));
         }
 
-        return new Generated(wallets, entries, transfers);
+        // Dois cartões com faturas em vários meses e pagamentos (alguns parciais, vários por fatura) por carteiras variadas.
+        var cards = new List<CreditCard>
+        {
+            CreditCard.Create("Azul", "#1E88E5", 18, 25, wallets[0].Id),
+            CreditCard.Create("Verde", "#43A047", 1, 10, wallets[1].Id),
+        };
+        var invoices = new List<Invoice>();
+        var payments = new List<InvoicePayment>();
+        for (var i = 0; i < 12; i++)
+        {
+            var card = cards[i % cards.Count];
+            var dueMonth = YearMonth.Of(2024, 1).AddMonths(random.Next(0, 36));
+            if (invoices.Any(x => x.CreditCardId == card.Id && x.DueMonth == dueMonth.FirstDay))
+            {
+                continue;
+            }
+
+            var invoice = Invoice.Create(card.Id, dueMonth, dueMonth.FirstDay.AddDays(-7), dueMonth.FirstDay.AddDays(4));
+            invoices.Add(invoice);
+            for (var j = 0; j < random.Next(1, 4); j++)
+            {
+                payments.Add(InvoicePayment.Create(
+                    invoice.Id, wallets[random.Next(wallets.Count)].Id, Money.FromCents(random.Next(1, 50000)), dueMonth.FirstDay.AddDays(random.Next(0, 20))));
+            }
+        }
+
+        return new Generated(wallets, entries, transfers, cards, invoices, payments);
     }
 
-    /// <summary>Saldo atual de uma carteira (R5): inicial + recebidas − pagas + transferências recebidas − enviadas.</summary>
+    /// <summary>Saldo atual de uma carteira (R5): inicial + recebidas − pagas + transferências recebidas − enviadas − pagamentos de fatura.</summary>
     private static long CurrentBalance(Generated data, Wallet wallet) =>
         wallet.InitialBalanceCents
         + data.Entries.Where(e => e.WalletId == wallet.Id && e.Status == EntryStatus.Settled)
             .Sum(e => e.Kind == EntryKind.Income ? e.AmountCents : -e.AmountCents)
         + data.Transfers.Where(t => t.ToWalletId == wallet.Id).Sum(t => t.AmountCents)
-        - data.Transfers.Where(t => t.FromWalletId == wallet.Id).Sum(t => t.AmountCents);
+        - data.Transfers.Where(t => t.FromWalletId == wallet.Id).Sum(t => t.AmountCents)
+        - data.Payments.Where(p => p.WalletId == wallet.Id).Sum(p => p.AmountCents);
 
     [Fact]
     public async Task Soma_dos_saldos_atuais_e_igual_ao_saldo_final_Realizado_do_ultimo_mes_relevante()
@@ -74,10 +104,11 @@ public class WalletConsistencyTests(PostgresFixture postgres) : ApiTestBase(post
         var lia = await anonymous.SignUpAsync(name: "Lia");
         using var http = Factory.CreateClient().WithBearer(lia.AccessToken);
         var data = Generate(seed: 20260601);
-        await Factory.SeedAsync(lia, [.. data.Wallets, .. data.Entries, .. data.Transfers]);
+        await Factory.SeedAsync(lia, [.. data.Wallets, .. data.Entries, .. data.Transfers, .. data.Cards, .. data.Invoices, .. data.Payments]);
 
         var lastRelevant = data.Entries.Where(e => e.Status == EntryStatus.Settled).Select(e => e.ReferenceYearMonth)
             .Concat(data.Wallets.Select(w => YearMonth.From(w.InitialBalanceDate)))
+            .Concat(data.Payments.Select(p => data.Invoices.Single(i => i.Id == p.InvoiceId).DueYearMonth))
             .Max();
         var expected = data.Wallets.Sum(w => CurrentBalance(data, w));
 
