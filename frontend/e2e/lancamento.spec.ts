@@ -473,3 +473,65 @@ test.describe('formulário rápido de lançamento (US2) — API simulada', () =>
     await expect(valor(page)).toHaveValue('');
   });
 });
+
+// Contra a stack real (E2E_BASE_URL): o servidor aplica as regras (RT-05, FR-011, FR-012, RT-04).
+test.describe('formulário rápido de lançamento (US2) — stack real', () => {
+  test.skip(!process.env['E2E_BASE_URL'], 'precisa da stack real (E2E_BASE_URL)');
+
+  async function criarConta(page: Page) {
+    const email = `lia+${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
+    await page.goto('/criar-conta');
+    await page.getByLabel('Nome', { exact: true }).fill('Lia Souza');
+    await page.getByLabel('E-mail').fill(email);
+    await page.getByLabel('Senha', { exact: true }).fill('senha-teste-123');
+    await page.getByRole('button', { name: 'Criar conta' }).click();
+    await expect(page).toHaveURL(/\/$/);
+  }
+
+  const criacao = (page: Page) =>
+    page.waitForResponse(
+      (r) => r.url().endsWith('/api/v1/entries') && r.request().method() === 'POST',
+    );
+
+  test('cria a carteira ali, lança a conta 29+73,2, uma prevista e usa a sugestão do servidor', async ({
+    page,
+  }) => {
+    await criarConta(page);
+    await page.getByTestId('lancar').click();
+
+    await page.getByRole('button', { name: 'Criar carteira' }).click();
+    await page.getByLabel('Nome da carteira').fill('Azul');
+    await page.getByLabel('Saldo inicial').fill('500');
+    await page.getByRole('button', { name: 'Criar', exact: true }).click();
+    await expect(carteira(page)).toHaveValue(/.+/);
+
+    await valor(page).fill('29+73,2');
+    await descricao(page).fill('Tim');
+    const primeira = criacao(page);
+    await page.getByTestId('salvar-outro').click();
+    const lancamento = await (await primeira).json();
+    expect(lancamento).toMatchObject({
+      kind: 'expense',
+      description: 'Tim',
+      amountCents: 10220,
+      status: 'settled',
+    });
+    expect(lancamento.referenceMonth).toBe(lancamento.date.slice(0, 7));
+
+    // data futura sem mexer na situação → o servidor grava Prevista (US2.3)
+    const futura = new Date(Date.now() + 40 * 86_400_000).toISOString().slice(0, 10);
+    await page.getByLabel('Data').fill(futura);
+    await expect(situacao(page, 'Prevista')).toHaveAttribute('aria-checked', 'true');
+    await valor(page).fill('10');
+    await descricao(page).fill('Luz');
+    const segunda = criacao(page);
+    await page.getByTestId('salvar-outro').click();
+    expect(await (await segunda).json()).toMatchObject({ status: 'planned', amountCents: 1000 });
+
+    // sugestão vinda do servidor: aplica a carteira, nunca o valor (US2.4)
+    await descricao(page).fill('Ti');
+    await page.getByTestId('sugestao').filter({ hasText: 'Tim' }).click();
+    await expect(descricao(page)).toHaveValue('Tim');
+    await expect(valor(page)).toHaveValue('');
+  });
+});
