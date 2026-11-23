@@ -25,7 +25,7 @@ decisões da 002 (`specs/002-carteiras-e-lancamentos/research.md`).
 
 ## Phase 3: US2–US4 — Compras
 
-- [ ] T006 [US2] API `/card-purchases` e `/installment-plans/{id}`: criar à vista, parcelada (dois modos) e em andamento; natureza/estorno (research R6); confirmação de fatura paga (research R5); obter; editar com `scope` (research R7, FR-015); excluir com `scope` (lote; par de saldo levado junto); `reconciled`; `move` (FR-028); sugestões com `kind=card_purchase` e `creditCardId` (research R9); idempotência no POST; testes HTTP de US2.1–US2.4, US3.1, US3.2, US3.4, US3.5, US4.1, US4.2, US7.2, US7.3. Depende de T003, T004
+- [x] T006 [US2] API `/card-purchases` e `/installment-plans/{id}`: criar à vista, parcelada (dois modos) e em andamento; natureza/estorno (research R6); confirmação de fatura paga (research R5); obter; editar com `scope` (research R7, FR-015); excluir com `scope` (lote; par de saldo levado junto); `reconciled`; `move` (FR-028); sugestões com `kind=card_purchase` e `creditCardId` (research R9); idempotência no POST; testes HTTP de US2.1–US2.4, US3.1, US3.2, US3.4, US3.5, US4.1, US4.2, US7.2, US7.3. Depende de T003, T004
 - [ ] T007 [US2] Aba "Cartão" no formulário rápido (`features/lancamento/`): tipo padrão Cartão no primeiro uso, cartão padrão (research R9), parcelas e modos, parcelamento em andamento, pré-visualização da fatura e das parcelas pela porta TS (US2.1, US3.3), aviso de crédito, diálogo de confirmação de fatura paga, sugestões aplicando cartão; e2e `compra.spec.ts` e `parcelas.spec.ts` (US2, US3.1–US3.3, US4; SC-001). Depende de T002, T006
 
 ## Phase 4: US5/US7 — Fatura e pagamento
