@@ -1,7 +1,9 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideRouter, Router } from '@angular/router';
+import { Subject } from 'rxjs';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { carteira } from '../carteiras/testing';
 import { Entry } from '../lancamento/entry.models';
@@ -261,5 +263,40 @@ describe('MesPage', () => {
       harness.detectChanges();
       expect(txt('transferencias-alternar')).toContain('Transferências (1)');
     });
+  });
+
+  it('exclui uma transferência e recarrega o mês, oferecendo Desfazer (RT-09)', async () => {
+    await abrir(
+      '/mes/2026-03',
+      visao({
+        transfers: [
+          {
+            id: 't1',
+            fromWalletId: 'w-azul',
+            toWalletId: 'w-verde',
+            amountCents: 10000,
+            date: '2026-03-08',
+            description: 'Transferência',
+            createdAt: '',
+            version: 1,
+          },
+        ],
+      }),
+    );
+    const snack = vi
+      .spyOn(TestBed.inject(MatSnackBar), 'open')
+      .mockReturnValue({ onAction: () => new Subject<void>() } as never);
+    el.querySelector<HTMLButtonElement>('[data-testid="transferencias-alternar"]')!.click();
+    harness.detectChanges();
+    el.querySelector<HTMLButtonElement>('[data-testid="excluir-transferencia"]')!.click();
+    const del = http.expectOne('/api/v1/transfers/t1');
+    expect(del.request.method).toBe('DELETE');
+    del.flush({ deletionBatchId: 'lote-7' });
+    http.expectOne((r) => r.url.startsWith('/api/v1/months/')).flush(visao());
+    expect(snack).toHaveBeenCalledWith(
+      'Excluído',
+      'Desfazer',
+      expect.objectContaining({ duration: 8000 }),
+    );
   });
 });

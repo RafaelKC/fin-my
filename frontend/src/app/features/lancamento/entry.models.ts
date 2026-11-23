@@ -1,3 +1,5 @@
+import type { Transfer } from '../mes/month.models';
+
 export type EntryKind = 'expense' | 'income';
 export type EntryStatus = 'planned' | 'settled';
 
@@ -57,3 +59,38 @@ export interface TransferCreate {
 }
 
 export const DESCRICAO_TRANSFERENCIA = 'Transferência';
+
+/** Tipos que a busca devolve (`LedgerItem.type`). */
+export type LedgerKind = EntryKind | 'transfer';
+
+/** `LedgerItem` do contrato: `type` diz qual dos dois objetos veio preenchido. */
+export interface LedgerItem {
+  type: LedgerKind;
+  entry?: Entry;
+  transfer?: Transfer;
+}
+
+/** Filtros de `GET /entries/search` (FR-025); todos opcionais. */
+export interface SearchParams {
+  q?: string;
+  kinds?: readonly LedgerKind[];
+  walletIds?: readonly string[];
+  status?: EntryStatus | null;
+  from?: string;
+  to?: string;
+  cursor?: string | null;
+  limit?: number;
+}
+
+/** Resposta da busca; `totalCents` e `totalCount` valem para TODOS os resultados. */
+export interface SearchResult {
+  items: LedgerItem[];
+  totalCents: number;
+  totalCount: number;
+  nextCursor?: string | null;
+}
+
+/** `DeletionResult` do contrato. */
+export interface DeletionResult {
+  deletionBatchId: string;
+}

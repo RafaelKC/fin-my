@@ -24,6 +24,7 @@ import { WALLET_COLORS, Wallet } from '../carteiras/wallet.models';
 import { WalletsService } from '../carteiras/wallets.service';
 import { EntriesService } from './entries.service';
 import { TransfersService } from './transfers.service';
+import { ExclusaoService } from './exclusao.service';
 import {
   DESCRICAO_MAX,
   DESCRICAO_TRANSFERENCIA,
@@ -41,12 +42,14 @@ import { novaChaveIdempotencia, situacaoPadrao } from './lancamento-logic';
 export const MENSAGEM_SEM_CONEXAO_LANCAMENTO =
   'Sem conexão. O lançamento não foi salvo; tente de novo.';
 export const ERRO_MESMA_CARTEIRA = 'Escolha carteiras diferentes.';
+export const MENSAGEM_CONFLITO =
+  'Este lançamento foi alterado em outro aparelho. Os dados foram recarregados; confira e salve de novo.';
 export const AVISO_DATA_ANTERIOR =
   'Esta data é anterior ao saldo inicial da carteira. O saldo inicial já deveria incluir este valor.';
 
 const DATA = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 
-/** Dados do diálogo: com `entry`, o formulário abre em modo edição (T012; o completo é a T018). */
+/** Dados do diálogo: com `entry`, o formulário abre em modo edição (todos os campos, FR-022). */
 export interface LancamentoSheetData {
   entry?: Entry;
 }
@@ -77,8 +80,9 @@ interface Rascunho {
 /**
  * Formulário rápido de lançamento (US2; FR-008..FR-013; contracts/ui-rotas.md). Aberto pelo "+"
  * da casca (`LancamentoLauncher`): tela cheia no celular, diálogo no computador. Cria Saída,
- * Entrada e Transferência (De/Para, sem situação nem sugestões; US5). Com `entry` nos dados do diálogo abre para editar
- * (salva por PUT); Duplicar, Excluir e o tratamento de conflito de versão são da T018.
+ * Entrada e Transferência (De/Para, sem situação nem sugestões; US5). Com `entry` nos dados do
+ * diálogo abre para editar (salva por PUT com a `version`; 409 recarrega) e oferece Duplicar (só
+ * pede a nova data) e Excluir (com Desfazer de 8 s, RT-09).
  */
 @Component({
   selector: 'app-lancamento-sheet',
@@ -95,8 +99,11 @@ export class LancamentoSheet {
   private readonly prefs = inject(DevicePrefsService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly exclusao = inject(ExclusaoService);
   private readonly edicao =
     inject<LancamentoSheetData | null>(MAT_DIALOG_DATA, { optional: true })?.entry ?? null;
+  /** Lançamento aberto na edição, com a `version` mais recente conhecida. */
+  private atual: Entry | null = this.edicao;
   private readonly valorCampo = viewChild(AmountInput);
 
   protected readonly editando = this.edicao !== null;
@@ -128,6 +135,12 @@ export class LancamentoSheet {
   protected readonly tentou = signal(false);
   protected readonly ocupado = signal(false);
   protected readonly erro = signal<string | null>(null);
+
+  // duplicar (só a nova data) e excluir
+  protected readonly duplicando = signal(false);
+  protected readonly dataDuplicada = signal('');
+  protected readonly erroDuplicar = signal<string | null>(null);
+  private chaveDuplicar = novaChaveIdempotencia();
 
   // criar carteira inline (nenhuma cadastrada)
   protected readonly criandoCarteira = signal(false);
@@ -325,8 +338,8 @@ export class LancamentoSheet {
     this.tentou.set(true);
     this.erro.set(null);
 
-    if (this.edicao !== null) {
-      this.salvarEdicao(this.edicao);
+    if (this.atual !== null) {
+      this.salvarEdicao(this.atual);
       return;
     }
 
@@ -437,6 +450,107 @@ export class LancamentoSheet {
           verticalPosition: 'top',
         });
         this.ref.close(entry);
+      },
+      error: (error: unknown) => {
+        this.ocupado.set(false);
+        if (this.semConexao(error)) {
+          this.avisarSemConexao();
+          return;
+        }
+        if (asProblem(error)?.code === 'concurrency_conflict') {
+          this.recarregarPorConflito(original.id);
+          return;
+        }
+        this.erro.set(problemMessage(error));
+      },
+    });
+  }
+
+  /** 409 (research R11): avisa e traz a versão atual do servidor para o formulário. */
+  private recarregarPorConflito(id: string): void {
+    this.erro.set(MENSAGEM_CONFLITO);
+    this.entries.get(id).subscribe({
+      next: (entry) => {
+        this.atual = entry;
+        this.preencherEdicao(entry);
+        this.tentou.set(false);
+      },
+      error: (error: unknown) => {
+        // Excluído em outro aparelho: não há mais o que editar.
+        if (asProblem(error)?.code === 'not_found') {
+          this.snackBar.open('Este lançamento não existe mais.', undefined, {
+            duration: 4000,
+            verticalPosition: 'top',
+          });
+          this.ref.close(undefined);
+          return;
+        }
+        this.erro.set(problemMessage(error));
+      },
+    });
+  }
+
+  protected abrirDuplicar(): void {
+    this.duplicando.set(true);
+    this.erroDuplicar.set(null);
+    this.dataDuplicada.set(this.hoje());
+    this.chaveDuplicar = novaChaveIdempotencia();
+  }
+
+  protected cancelarDuplicar(): void {
+    this.duplicando.set(false);
+  }
+
+  /** FR-024: cria uma cópia com a nova data; mês e situação saem das regras de criação. */
+  protected confirmarDuplicar(): void {
+    const origem = this.atual;
+    if (origem === null || this.ocupado()) return;
+    const data = this.dataDuplicada();
+    if (!DATA.test(data)) {
+      this.erroDuplicar.set('Informe a nova data.');
+      return;
+    }
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      this.avisarSemConexao();
+      return;
+    }
+    this.ocupado.set(true);
+    this.erroDuplicar.set(null);
+    this.entries.duplicate(origem.id, data, this.chaveDuplicar).subscribe({
+      next: (entry) => {
+        this.ocupado.set(false);
+        this.snackBar.open('Lançamento duplicado.', undefined, {
+          duration: 4000,
+          verticalPosition: 'top',
+        });
+        this.ref.close(entry);
+      },
+      error: (error: unknown) => {
+        this.ocupado.set(false);
+        if (this.semConexao(error)) {
+          this.avisarSemConexao();
+          return;
+        }
+        this.erroDuplicar.set(problemMessage(error));
+      },
+    });
+  }
+
+  /** RT-09: exclui, fecha o formulário e oferece "Desfazer" por 8 s. */
+  protected excluir(): void {
+    const origem = this.atual;
+    if (origem === null || this.ocupado()) return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      this.avisarSemConexao();
+      return;
+    }
+    this.ocupado.set(true);
+    this.erro.set(null);
+    this.exclusao.excluir('entry', origem.id).subscribe({
+      next: (resultado) => {
+        this.ocupado.set(false);
+        this.ref.close(undefined);
+        this.exclusao.oferecerDesfazer(resultado.deletionBatchId);
       },
       error: (error: unknown) => {
         this.ocupado.set(false);
@@ -591,6 +705,7 @@ export class LancamentoSheet {
 
   private preencherEdicao(entry: Entry): void {
     this.kind.set(entry.kind);
+    this.refManual.set(null);
     this.amount.set(centavosParaExpressao(entry.amountCents));
     this.description.set(entry.description);
     this.date.set(entry.date);

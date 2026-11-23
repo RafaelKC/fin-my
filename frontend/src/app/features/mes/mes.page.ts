@@ -23,6 +23,7 @@ import { Wallet } from '../carteiras/wallet.models';
 import { WalletsService } from '../carteiras/wallets.service';
 import { EntriesService } from '../lancamento/entries.service';
 import { Entry } from '../lancamento/entry.models';
+import { ExclusaoService } from '../lancamento/exclusao.service';
 import { LancamentoLauncher } from '../lancamento/lancamento.launcher';
 import { TransfersService } from '../lancamento/transfers.service';
 import {
@@ -81,6 +82,7 @@ export class MesPage {
   private readonly wallets = inject(WalletsService);
   private readonly launcher = inject(LancamentoLauncher);
   private readonly pendencias = inject(PendenciasService);
+  private readonly exclusao = inject(ExclusaoService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly recarregar$ = new Subject<void>();
 
@@ -226,6 +228,7 @@ export class MesPage {
       this.entries.alterados$,
       this.pendencias.alteradas$,
       this.transfersApi.criadas$,
+      this.exclusao.mudou$,
     )
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.recarregar$.next());
@@ -325,6 +328,23 @@ export class MesPage {
   /** Tocar no item abre o formulário rápido em modo edição (a edição completa é da T018). */
   protected editar(entry: Entry): void {
     this.launcher.abrir(entry);
+  }
+
+  /** RT-09: exclui a transferência e oferece "Desfazer" por 8 s. */
+  protected excluirTransferencia(transfer: Transfer): void {
+    if (this.alterandoId() !== null) return;
+    this.alterandoId.set(transfer.id);
+    this.erroAcao.set(null);
+    this.exclusao.excluir('transfer', transfer.id).subscribe({
+      next: (resultado) => {
+        this.alterandoId.set(null);
+        this.exclusao.oferecerDesfazer(resultado.deletionBatchId);
+      },
+      error: (error: unknown) => {
+        this.alterandoId.set(null);
+        this.erroAcao.set(problemMessage(error));
+      },
+    });
   }
 
   protected iniciarDeslize(evento: PointerEvent): void {
