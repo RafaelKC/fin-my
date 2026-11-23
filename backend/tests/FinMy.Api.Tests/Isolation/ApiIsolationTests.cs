@@ -25,7 +25,7 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
 
     private sealed record Caller(HttpClient Http, string AccessToken, string RefreshToken, string Email, string Password);
 
-    private sealed record ContaDeA(TestAccount Account, string SecondAccessToken, Guid SessionId, IReadOnlyList<string> Secrets, IReadOnlyList<Guid> Ids);
+    private sealed record ContaDeA(TestAccount Account, string SecondAccessToken, Guid SessionId, IReadOnlyList<string> Secrets, IReadOnlyList<Guid> Ids, Guid WalletA, Guid WalletA2);
 
     private async Task<string> OpenApiJsonAsync()
     {
@@ -58,9 +58,37 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
         var second = await Client.LoginAsync(a.Email);
         var sessionId = Guid.Parse(JwtClaims.Get(a.AccessToken, "sid")!);
 
-        var secrets = new[] { a.Email, "Alice Isolada Segredo", "Espaço Secreto da Alice", a.AccessToken, second.AccessToken };
-        var ids = new[] { a.Session.User.Id, a.Session.Tenant.Id, sessionId, Guid.Parse(JwtClaims.Get(second.AccessToken, "sid")!) };
-        return new ContaDeA(a, second.AccessToken, sessionId, secrets, ids);
+        // Dados de negócio de A (carteiras, lançamentos, transferência, exclusão desfazível): ids de A nas rotas
+        // novas batem em linhas reais, não em ids inexistentes.
+        var azul = await CreateJsonAsync(asA, "/api/v1/wallets", new { name = "Azul Segredo da Alice", type = "checking", color = "#1E88E5", initialBalance = "500", initialBalanceDate = "2026-03-01" });
+        var verde = await CreateJsonAsync(asA, "/api/v1/wallets", new { name = "Verde Segredo da Alice", type = "savings", color = "#43A047", initialBalance = "0", initialBalanceDate = "2026-03-01" });
+        var azulId = azul.GetProperty("id").GetGuid();
+        var verdeId = verde.GetProperty("id").GetGuid();
+        var entry = await CreateJsonAsync(asA, "/api/v1/entries", new { kind = "expense", description = "Tim Segredo da Alice", amount = "44,99", date = "2026-03-10", walletId = azulId, notes = "Nota Secreta da Alice" });
+        var outra = await CreateJsonAsync(asA, "/api/v1/entries", new { kind = "income", description = "Salário Segredo da Alice", amount = "1000", date = "2026-03-05", walletId = azulId });
+        var transfer = await CreateJsonAsync(asA, "/api/v1/transfers", new { fromWalletId = azulId, toWalletId = verdeId, amount = "20,00", date = "2026-03-12", description = "Reserva Segredo da Alice" });
+        using var bulk = await asA.PostAsJsonAsync("/api/v1/entries/bulk", new { ids = new[] { outra.GetProperty("id").GetGuid() }, action = "delete" });
+        bulk.EnsureSuccessStatusCode();
+        var batchId = (await bulk.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("deletionBatchId").GetGuid();
+
+        var secrets = new[]
+        {
+            a.Email, "Alice Isolada Segredo", "Espaço Secreto da Alice", a.AccessToken, second.AccessToken,
+            "Azul Segredo da Alice", "Verde Segredo da Alice", "Tim Segredo da Alice", "Nota Secreta da Alice", "Salário Segredo da Alice", "Reserva Segredo da Alice",
+        };
+        var ids = new[]
+        {
+            a.Session.User.Id, a.Session.Tenant.Id, sessionId, Guid.Parse(JwtClaims.Get(second.AccessToken, "sid")!),
+            azulId, verdeId, entry.GetProperty("id").GetGuid(), outra.GetProperty("id").GetGuid(), transfer.GetProperty("id").GetGuid(), batchId,
+        };
+        return new ContaDeA(a, second.AccessToken, sessionId, secrets, ids, azulId, verdeId);
+    }
+
+    private static async Task<JsonElement> CreateJsonAsync(HttpClient http, string path, object body)
+    {
+        using var response = await http.PostAsJsonAsync(path, body);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<JsonElement>();
     }
 
     private async Task<string> SnapshotOfAAsync(ContaDeA a)
@@ -106,6 +134,17 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
             "GET /api/v1/transfers/{id}",
             "PUT /api/v1/transfers/{id}",
             "DELETE /api/v1/transfers/{id}",
+            "POST /api/v1/entries",
+            "GET /api/v1/entries/suggestions",
+            "GET /api/v1/entries/pending",
+            "POST /api/v1/entries/bulk",
+            "GET /api/v1/entries/search",
+            "GET /api/v1/entries/{id}",
+            "PUT /api/v1/entries/{id}",
+            "PATCH /api/v1/entries/{id}/status",
+            "DELETE /api/v1/entries/{id}",
+            "POST /api/v1/entries/{id}/duplicate",
+            "GET /api/v1/months/{month}",
         ];
         esperadas.ShouldBeSubsetOf(operations.Select(o => o.Key));
     }
@@ -176,6 +215,42 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
         // Controle: B autenticado opera de fato no próprio Espaço (a varredura não passou só por falhar).
         statuses["PATCH /api/v1/tenant"].ShouldBe(200);
         statuses["PATCH /api/v1/me"].ShouldBe(200);
+    }
+
+    [Fact]
+    public async Task Id_de_carteira_de_A_em_corpo_ou_consulta_de_B_nao_vaza_nem_grava()
+    {
+        var a = await CreateAAsync();
+        var before = await SnapshotOfAAsync(a);
+        var b = await NewCallerAsync("Beto Isolado");
+        var own = await CreateJsonAsync(b.Http, "/api/v1/wallets", new { name = "Azul do Beto", type = "checking", color = "#1E88E5", initialBalance = "0", initialBalanceDate = "2026-03-01" });
+        var ownId = own.GetProperty("id").GetGuid();
+
+        var respostas = new Dictionary<string, HttpResponseMessage>
+        {
+            ["POST /entries"] = await b.Http.PostAsJsonAsync("/api/v1/entries", new { kind = "expense", description = "Tim", amount = "1", date = "2026-03-10", walletId = a.WalletA }),
+            ["POST /transfers (origem de A)"] = await b.Http.PostAsJsonAsync("/api/v1/transfers", new { fromWalletId = a.WalletA, toWalletId = ownId, amount = "1", date = "2026-03-10" }),
+            ["POST /transfers (destino de A)"] = await b.Http.PostAsJsonAsync("/api/v1/transfers", new { fromWalletId = ownId, toWalletId = a.WalletA2, amount = "1", date = "2026-03-10" }),
+            ["GET /months (filtro)"] = await b.Http.GetAsync($"/api/v1/months/2026-03?walletIds={a.WalletA}"),
+        };
+
+        foreach (var (label, response) in respostas)
+        {
+            using (response)
+            {
+                // O filtro do mês (contracts: só 200/422) trata carteira desconhecida como filtro vazio: 200 sem dado de A.
+                var aceitos = label.StartsWith("GET /months", StringComparison.Ordinal) ? new[] { 200 } : new[] { 404, 422 };
+                ((int)response.StatusCode).ShouldBeOneOf(aceitos, $"{label}: status inesperado {(int)response.StatusCode}.");
+                var text = await response.Content.ReadAsStringAsync();
+                foreach (var secret in a.Secrets)
+                {
+                    text.ShouldNotContain(secret, Case.Insensitive, $"{label} expôs dado de A.");
+                }
+            }
+        }
+
+        (await SnapshotOfAAsync(a)).ShouldBe(before);
+        b.Http.Dispose();
     }
 
     // Erros de negócio de recurso usam o prefixo do recurso (ex.: deletion.not_found, contracts/openapi.yaml).

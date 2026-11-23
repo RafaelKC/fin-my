@@ -130,7 +130,7 @@ erDiagram
     }
     IDEMPOTENCY_KEYS {
         uuid tenant_id PK
-        varchar key PK
+        uuid key PK
         uuid user_id
         bytea request_hash
         int status_code
@@ -172,6 +172,8 @@ erDiagram
         bigint amount_cents
         date transfer_date
         varchar description
+        varchar description_normalized
+        varchar notes
     }
     CREDIT_CARDS {
         uuid id PK
@@ -367,7 +369,7 @@ válidas do usuário.
 
 ### `idempotency_keys` — arquitetura §6
 
-PK `(tenant_id, key)`; `user_id`; `request_hash bytea`; `status_code int`; `response_body jsonb`;
+PK `(tenant_id, key)` (`key uuid`, o valor do cabeçalho `Idempotency-Key`); `user_id`; `request_hash bytea`; `status_code int`; `response_body jsonb`;
 `created_at`. Expurgo > 24 h. Não é `TenantEntity` (sem auditoria/soft delete), mas tem filtro de Espaço.
 
 ---
@@ -418,6 +420,8 @@ PK `(tenant_id, key)`; `user_id`; `request_hash bytea`; `status_code int`; `resp
 | amount_cents | bigint | não | > 0 |
 | transfer_date | date | não | Mês = mês desta data (RT-04) |
 | description | varchar(80) | não | padrão "Transferência" |
+| description_normalized | varchar(80) | não | `description` sem acento/caixa (mesma normalização de `entries`); a busca (002 FR-025) lê esta coluna |
+| notes | varchar(500) | sim | observação livre |
 
 ### `credit_cards` — Cartão, 003 FR-001
 

@@ -231,10 +231,13 @@ test.describe('editar, excluir, duplicar e buscar (US6)', () => {
   }) => {
     const a = api(request, await criarConta(page));
     const azul = await a.carteira('Azul');
-    await a.lancar(azul.id, 'Uber Centro', '25,50', '2026-01-15');
-    await a.lancar(azul.id, 'UBER Aeroporto', '40,00', '2026-02-20');
-    await a.lancar(azul.id, 'Café Verde', '12,00', '2026-03-03');
-    await a.lancar(azul.id, 'Mercado', '99,90', '2026-03-04');
+    // Descrições únicas por execução: a busca não pode depender de dados de outros testes.
+    const u = `${Date.now()}${Math.floor(Math.random() * 1e6)}`;
+    const mercado = `Mercado ${u}`;
+    await a.lancar(azul.id, `Uber Centro ${u}`, '25,50', '2026-01-15');
+    await a.lancar(azul.id, `UBER Aeroporto ${u}`, '40,00', '2026-02-20');
+    await a.lancar(azul.id, `Café Verde ${u}`, '12,00', '2026-03-03');
+    await a.lancar(azul.id, mercado, '99,90', '2026-03-04');
     await a.transferir(azul.id, (await a.carteira('Verde')).id, '10,00', '2026-03-05');
 
     await page.goto('/busca');
@@ -248,7 +251,7 @@ test.describe('editar, excluir, duplicar e buscar (US6)', () => {
 
     await page.getByLabel('Descrição').fill('cafe');
     await expect(page.getByTestId('resultado')).toHaveCount(1);
-    await expect(page.getByTestId('resultado')).toContainText('Café Verde');
+    await expect(page.getByTestId('resultado')).toContainText(`Café Verde ${u}`);
 
     // Filtro de tipo: só transferências.
     await page.getByLabel('Descrição').fill('');
@@ -258,8 +261,10 @@ test.describe('editar, excluir, duplicar e buscar (US6)', () => {
 
     // Tocar num resultado abre a edição.
     await page.getByTestId('tipo-transfer').click();
-    await page.getByLabel('Descrição').fill('mercado');
-    await page.getByTestId('resultado').getByRole('button').click();
+    await page.getByLabel('Descrição').fill(mercado.toLowerCase());
+    const resultado = page.getByTestId('resultado').filter({ hasText: mercado });
+    await expect(page.getByTestId('resultado')).toHaveCount(1);
+    await resultado.getByRole('button', { name: new RegExp(mercado) }).click();
     await expect(page.getByRole('heading', { name: 'Editar lançamento' })).toBeVisible();
   });
 

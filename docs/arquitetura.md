@@ -95,7 +95,7 @@ public abstract class TenantEntity : ITenantEntity, IAudited, ISoftDeletable { .
 
 - Toda tabela financeira MUST herdar `TenantEntity` (ou implementar `ITenantEntity`, para tabelas de
   ligação). Exceções globais (não pertencem a Espaço): `users`, `tenants`, `tenant_members`,
-  `refresh_tokens`, `password_reset_tokens`, `login_throttles`. Teste de arquitetura falha se uma
+  `refresh_tokens`, `password_reset_tokens`, `login_throttles`, `idempotency_keys`. Teste de arquitetura falha se uma
   entidade mapeada não for `ITenantEntity` e não estiver nessa lista.
 - Setters de `TenantId` e dos campos de auditoria são `internal`/privados: só os interceptors os
   preenchem. Código de aplicação MUST NOT atribuí-los.
@@ -342,3 +342,14 @@ ou que não estava dito. Quando uma feature futura mexer em um destes pontos, at
 | 7 | Testcontainers no Podman | `PostgresFixture` usa `ContainerBuilder` genérico (imagem `postgres:17`, porta aleatória) e testa a prontidão abrindo uma conexão, em vez de `Testcontainers.PostgreSql` com a espera padrão. Localmente: `DOCKER_HOST` no socket do Podman, `TESTCONTAINERS_RYUK_DISABLED=true`, um projeto de teste por vez e `podman container prune -f --filter label=org.testcontainers=true` depois. | A espera padrão usa `exec` (`pg_isready`) e leitura de logs, que travam no socket do Podman rootless. Funciona igual com Docker no CI. |
 | 8 | nginx e o IP da API | O nginx do `web` resolve `api` uma vez, ao iniciar. Recriar só o container da `api` (IP novo) exige reiniciar o `web`. | Comportamento do `proxy_pass` com nome fixo; relevante no Podman manual, onde a ordem de criação é feita à mão. |
 | 9 | PWA: "instalar" no aparelho | O e2e verifica o que o navegador exige (manifest com `standalone`, ícones 192 e 512, worker registrado, nada de `/api/` no cache). A instalação em si ("Adicionar à tela inicial", abrir em tela cheia já logado) continua passo manual do quickstart §3.8. | O Playwright não aciona o prompt de instalação. |
+
+### Feature 002 (carteiras, lançamentos e visão do mês)
+
+Mesma regra: quando uma feature futura mexer em um destes pontos, atualize a lista.
+
+| # | Tema | O que foi feito | Por quê |
+|---|---|---|---|
+| 10 | `idempotency_keys.key` (§6) | A coluna é `uuid` (o cabeçalho `Idempotency-Key` MUST ser UUID), não `varchar`. A entidade é global (`ITenantScoped`, com filtro de Espaço), por isso consta na lista de exceções do §3 e no teste de isolamento (`AccountSnapshot`). | O cliente já gera UUID por formulário; o tipo `uuid` recusa chave malformada na borda. |
+| 11 | Filtro de carteira do mês | `GET /months/{mes}?walletIds=` com id inexistente ou de outro Espaço responde **200 com listas vazias**, não 404. | O contrato prevê só 200/422 para a rota (o filtro é um recorte, não um recurso). Nada de outro Espaço aparece; `ApiIsolationTests` cobre. |
+| 12 | Isolamento nas rotas novas | `ApiIsolationTests` passa a criar carteiras, lançamentos, transferência e um lote de exclusão em A, para que ids de A em rota batam em linhas reais, e a lista de operações esperadas inclui `entries` e `months`. Carteira de A em corpo/consulta de B tem teste próprio. | Com A sem dados de negócio, o 404 por id de A só provava "id inexistente". |
+| 13 | e2e real e o Podman | Todo e2e contra a stack real é pulado (`test.skip`) sem `E2E_BASE_URL`. Para rodar o compose local com Podman: `podman-compose` em um venv, `-p <projeto>`, `WEB_PORT=127.0.0.1:<porta>` e `APP_URL` com a mesma porta (o link do e-mail usa `APP_URL`). | Rodar a suíte sem stack não pode falhar; a 8080 costuma estar ocupada em máquinas de desenvolvimento. |

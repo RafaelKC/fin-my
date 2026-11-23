@@ -118,6 +118,7 @@ test.describe('perfil e sair (US5) — API simulada', () => {
 // continua logado. Roda contra a stack real (E2E_BASE_URL): usa cadastro, login (T021), refresh
 // (T022), troca de senha (T027) e a tela `/entrar` (T023).
 test('troca de senha em um aparelho derruba o outro na próxima ação', async ({ browser }) => {
+  test.skip(!process.env['E2E_BASE_URL'], 'precisa da stack real (E2E_BASE_URL)');
   const email = `ana+${Date.now()}@example.com`;
   const senhaAntiga = 'senha-antiga-1';
   const senhaNova = 'senha-nova-123';
