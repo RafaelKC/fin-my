@@ -98,6 +98,14 @@ Formato de `input`/`expected` dos arquivos da feature 002:
 | `money-split.json` | `{ "totalCents": 10000, "parts": 3 }` | `{ "partsCents": [3334, 3333, 3333] }` |
 | `text-normalize.json` | `{ "text": "  Açaí  " }` | `{ "text": "acai" }` |
 
+Formato dos arquivos da feature 003 (`today`, `date`, `closingDate`, `dueDate` em `AAAA-MM-DD`; meses em `AAAA-MM`):
+
+| Arquivo | `input` | `expected` |
+|---|---|---|
+| `invoice-cycle.json` | `{ "date": "2026-03-17", "closingDay": 18, "dueDay": 25 }` | `{ "invoiceMonth": "2026-03", "closingDate": "2026-03-18", "dueDate": "2026-03-25" }` (fatura da compra e datas dessa fatura) |
+| `invoice-status.json` | `{ "totalCents", "paidCents", "today", "closingDate", "dueDate" }` | `{ "status": "no_amount_due" \| "paid" \| "open" \| "closed" \| "overdue" }` |
+| `installments.json` | `{ "mode": "total_amount" \| "installment_amount" \| "in_progress", "installmentCount", "firstNumber", "amountCents", "firstInvoiceMonth" }` (`firstNumber` = 1 fora do modo em andamento) | `{ "installments": [{ "number", "amountCents", "dueMonth" }] }` |
+
 O vetor de valor usa o modo padrão do parser (resultado > 0). O modo que aceita zero e negativo (saldo
 inicial de carteira) não está nos vetores.
 
