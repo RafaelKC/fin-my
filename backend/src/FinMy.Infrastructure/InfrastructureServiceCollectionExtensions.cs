@@ -44,6 +44,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ISessionRegistry, SessionRegistry>();
         services.AddScoped<IRefreshTokenStore, RefreshTokenStore>();
         services.AddScoped<IAccountStore, AccountStore>();
+        services.AddScoped<IPasswordResetStore, PasswordResetStore>();
 
         return services;
     }

@@ -41,5 +41,13 @@ public sealed class User : IEntity
 
     public DateTimeOffset UpdatedAt { get; private set; }
 
+    /// <summary>Troca a senha e renova o <see cref="SecurityStamp"/>.</summary>
+    public void ChangePassword(string passwordHash, DateTimeOffset now)
+    {
+        PasswordHash = passwordHash;
+        SecurityStamp = Guid.NewGuid();
+        UpdatedAt = now;
+    }
+
     public static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 }
