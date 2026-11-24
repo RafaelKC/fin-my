@@ -25,6 +25,7 @@ public static class AccountSnapshot
         [typeof(PasswordResetToken)] = (nameof(PasswordResetToken.UserId), false),
         [typeof(IdempotencyKey)] = (nameof(IdempotencyKey.TenantId), true),
         [typeof(OAuthConsentTicket)] = (nameof(OAuthConsentTicket.UserId), false),
+        [typeof(OAuthAuthorizationUsage)] = (nameof(OAuthAuthorizationUsage.UserId), false),
     };
 
     /// <summary>Contadores por e-mail/IP e as tabelas do OpenIddict (aplicativos e autorizações do conector, 008): não têm dono por coluna; o isolamento delas é testado nos testes do OAuth.</summary>

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using FinMy.Api.Composition;
 using FinMy.Api.Endpoints.Auth;
 using FinMy.Application.Auth;
+using FinMy.Application.OAuth;
 using FinMy.Application.Profile;
 using FinMy.Infrastructure.Auth;
 
@@ -36,6 +37,20 @@ public sealed class MeEndpoints : IEndpointModule
             await handler.HandleAsync(new ChangePasswordCommand(body.CurrentPassword, body.NewPassword, sessionId), cancellationToken);
             return Results.NoContent();
         }).RequireRateLimiting(RateLimitPolicies.Auth);
+
+        // Aplicativos conectados (008 FR-003): os conectores autorizados (Claude), com o último uso; desconectar encerra o acesso na hora.
+        group.MapGet("/me/connected-apps", async (ListConnectedAppsHandler handler, HttpContext http, CancellationToken cancellationToken) =>
+        {
+            var apps = await handler.HandleAsync(cancellationToken);
+            http.Response.Headers.CacheControl = "no-store";
+            return Results.Ok(apps.Select(a => new ConnectedAppResponse(a.Id, a.Name, a.ConnectedAt, a.LastUsedAt)));
+        });
+
+        group.MapDelete("/me/connected-apps/{id}", async (string id, DisconnectConnectedAppHandler handler, CancellationToken cancellationToken) =>
+        {
+            await handler.HandleAsync(id, cancellationToken);
+            return Results.NoContent();
+        });
 
         group.MapPatch("/tenant", async (RenameRequest body, RenameTenantHandler handler, CancellationToken cancellationToken) =>
         {

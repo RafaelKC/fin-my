@@ -10,7 +10,7 @@ namespace FinMy.Architecture.Tests;
 /// <summary>docs/arquitetura.md §3.2: toda entidade mapeada é <see cref="ITenantEntity"/>, tabela de ligação (<see cref="ITenantLink"/>) ou está na lista global.</summary>
 public class TenantEntityMappingTests
 {
-    /// <summary>Entidades globais (não pertencem a Espaço): users, tenants, tenant_members, refresh_tokens, password_reset_tokens, login_throttles, idempotency_keys (esta tem filtro de Espaço próprio, via ITenantScoped), oauth_consent_tickets e as tabelas do OpenIddict (008).</summary>
+    /// <summary>Entidades globais (não pertencem a Espaço): users, tenants, tenant_members, refresh_tokens, password_reset_tokens, login_throttles, idempotency_keys (esta tem filtro de Espaço próprio, via ITenantScoped), oauth_consent_tickets, oauth_authorization_usage e as tabelas do OpenIddict (008).</summary>
     public static readonly IReadOnlySet<string> GlobalEntities = new HashSet<string>(OAuthModel.EntityNames)
     {
         "User",
@@ -21,6 +21,7 @@ public class TenantEntityMappingTests
         "LoginThrottle",
         "IdempotencyKey",
         "OAuthConsentTicket",
+        "OAuthAuthorizationUsage",
     };
 
     [Fact]

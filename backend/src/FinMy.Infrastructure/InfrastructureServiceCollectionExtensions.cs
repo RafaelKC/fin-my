@@ -59,6 +59,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddOpenIddict().AddCore(core => core.UseEntityFrameworkCore().UseDbContext<FinMyDbContext>());
         services.AddScoped<IOAuthAuthorizationRevoker, OAuthAuthorizationRevoker>();
         services.AddScoped<IConsentTicketService, ConsentTicketService>();
+        services.AddScoped<IConnectedAppsStore, ConnectedAppsStore>();
         services.AddScoped<IClientRegistrationService, ClientRegistrationService>();
         services.AddScoped<IDeletionStore, DeletionStore>();
         services.AddScoped<IWalletStore, WalletStore>();
