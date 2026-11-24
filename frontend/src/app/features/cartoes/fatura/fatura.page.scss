@@ -266,3 +266,22 @@ h2 {
   padding: 2px 8px;
   border-radius: 10px;
 }
+
+.estimativa {
+  margin: 16px 0;
+
+  h2 {
+    margin: 0 0 4px;
+    font: var(--mat-sys-title-medium);
+  }
+
+  p {
+    margin: 0 0 4px;
+  }
+
+  .botoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}

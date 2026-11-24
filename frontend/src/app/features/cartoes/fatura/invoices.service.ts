@@ -37,6 +37,13 @@ export class InvoicesService {
     return this.api.delete<DeletionResult>(`/credit-cards/${cardId}/invoices/${month}/payments`);
   }
 
+  /** 007 FR-009: define a estimativa da fatura; `null` remove. */
+  setEstimate(cardId: string, month: string, amount: string | null): Observable<Invoice> {
+    return this.api.put<Invoice>(`/credit-cards/${cardId}/invoices/${month}/estimate`, {
+      amount,
+    });
+  }
+
   /** FR-020: leva o restante para a próxima fatura. */
   carryOver(cardId: string, month: string): Observable<Invoice> {
     return this.api.post<Invoice>(`/credit-cards/${cardId}/invoices/${month}/carry-over`);

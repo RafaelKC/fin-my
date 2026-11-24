@@ -384,6 +384,49 @@ describe('MesPage', () => {
       expect(caixa().checked).toBe(false);
     });
 
+    it('US2.1: com estimativa válida mostra "Previsto … — lançado …"', async () => {
+      await abrir(
+        '/mes/2026-05',
+        visao({
+          month: '2026-05',
+          invoices: [
+            faturaDoMes({
+              status: 'open',
+              totalCents: 20553,
+              remainingCents: 20553,
+              plannedCents: 80000,
+              estimateCents: 80000,
+              estimateActive: true,
+            }),
+          ],
+        }),
+      );
+      expect(txt('fatura-estimativa')).toBe('Previsto R$ 800,00 — lançado R$ 205,53');
+    });
+
+    it('US2.3: depois do fechamento mostra só "Estimado R$ …" como referência', async () => {
+      await abrir(
+        '/mes/2026-03',
+        visao({
+          invoices: [
+            faturaDoMes({
+              totalCents: 64000,
+              remainingCents: 64000,
+              plannedCents: 64000,
+              estimateCents: 80000,
+              estimateActive: false,
+            }),
+          ],
+        }),
+      );
+      expect(txt('fatura-estimativa')).toBe('Estimado R$ 800,00');
+    });
+
+    it('sem estimativa não mostra a linha de estimativa', async () => {
+      await abrir('/mes/2026-03', visao({ invoices: [faturaDoMes()] }));
+      expect(el.querySelector('[data-testid="fatura-estimativa"]')).toBeNull();
+    });
+
     it('mês só com fatura não é "vazio"', async () => {
       await abrir('/mes/2026-03', visao({ entries: [], invoices: [faturaDoMes()] }));
       expect(el.querySelector('[data-testid="mes-vazio"]')).toBeNull();

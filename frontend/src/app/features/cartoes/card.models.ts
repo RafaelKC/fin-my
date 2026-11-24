@@ -36,6 +36,10 @@ export interface InvoiceSummary {
   totalCents: number;
   paidCents: number;
   remainingCents: number;
+  /** Estimativa de gasto da fatura (007 FR-009); fora de Total, Restante e limite. */
+  estimateCents?: number | null;
+  /** A estimativa ainda vale (hoje < fechamento): o Previsto usa `max(total, pago, estimativa)`. */
+  estimateActive?: boolean;
 }
 
 /** `CreditCardOverview` do contrato: cartão com fatura atual, próxima, em aberto e limite. */
