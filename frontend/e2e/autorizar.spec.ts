@@ -83,7 +83,9 @@ test.describe('autorizar (US1.1) — API simulada', () => {
     expect(authorize?.searchParams.get('state')).toBe('estado-1');
   });
 
-  test('Cancelar navega a página inteira para o authorize negando, sem pedir ticket', async ({ page }) => {
+  test('Cancelar navega a página inteira para o authorize negando, sem pedir ticket', async ({
+    page,
+  }) => {
     await page.route('**/api/v1/auth/refresh', (route) => route.fulfill({ json: sessao }));
     let pediuTicket = false;
     await page.route('**/api/v1/oauth/consent-tickets', (route) => {
