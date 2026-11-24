@@ -3,7 +3,7 @@ using FinMy.Application.Recurrences;
 
 namespace FinMy.Api.Endpoints.Recurrences;
 
-/// <summary>Recorrências (005 US1): <c>/recurrences</c>: listar, criar, obter, alterar a partir de um mês, encerrar e excluir (specs/005 contracts/api.md).</summary>
+/// <summary>Recorrências (005 US1): <c>/recurrences</c>: listar, criar, criar a partir de um lançamento, obter, alterar a partir de um mês, encerrar e excluir (specs/005 contracts/api.md).</summary>
 public sealed class RecurrenceEndpoints : IEndpointModule
 {
     public void MapEndpoints(IEndpointRouteBuilder app)
@@ -22,6 +22,12 @@ public sealed class RecurrenceEndpoints : IEndpointModule
         group.MapPost("/", async (RecurrenceRequest body, CreateRecurrenceHandler handler, CancellationToken cancellationToken) =>
         {
             var recurrence = RecurrenceResponse.From(await handler.HandleAsync(body.ToCreateCommand(), cancellationToken));
+            return Results.Created($"/api/v1/recurrences/{recurrence.Id}", recurrence);
+        }).WithIdempotency();
+
+        group.MapPost("/from-item", async (RecurrenceFromItemRequest body, CreateRecurrenceFromItemHandler handler, CancellationToken cancellationToken) =>
+        {
+            var recurrence = RecurrenceResponse.From(await handler.HandleAsync(body.ToCommand(), cancellationToken));
             return Results.Created($"/api/v1/recurrences/{recurrence.Id}", recurrence);
         }).WithIdempotency();
 

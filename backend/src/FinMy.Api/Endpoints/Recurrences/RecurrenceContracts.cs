@@ -45,6 +45,12 @@ public sealed record RecurrenceUpdateRequest(
         id, Kind, Description, Amount, DayOfMonth, WalletId, CreditCardId, TagIds, EndType, EndMonth, OccurrenceLimit, ReferenceMonthRule, FromMonth, Version);
 }
 
+/// <summary>Corpo de <c>POST /recurrences/from-item</c>: o lançamento a repetir (<c>type</c> <c>entry</c> ou <c>card_purchase</c>) e o término.</summary>
+public sealed record RecurrenceFromItemRequest(string? Type, Guid? Id, string? EndType, string? EndMonth, int? OccurrenceLimit)
+{
+    public CreateRecurrenceFromItemCommand ToCommand() => new(Type, Id, EndType, EndMonth, OccurrenceLimit);
+}
+
 /// <summary>Corpo de <c>POST /recurrences/{id}/end</c>.</summary>
 public sealed record RecurrenceEndRequest(string? FromMonth);
 
