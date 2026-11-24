@@ -23,6 +23,11 @@ describe('InvoicesService', () => {
     req.flush({});
   });
 
+  it('filtra a fatura por tags (004 FR-004)', () => {
+    service.get('c1', '2026-03', ['t1', 't2']).subscribe();
+    http.expectOne('/api/v1/credit-cards/c1/invoices/2026-03?tagIds=t1,t2').flush({});
+  });
+
   it('paga com Idempotency-Key e o corpo informado', () => {
     service.pay('c1', '2026-03', { amount: '150,00', date: '2026-03-20' }, 'chave-1').subscribe();
     const req = http.expectOne('/api/v1/credit-cards/c1/invoices/2026-03/payments');

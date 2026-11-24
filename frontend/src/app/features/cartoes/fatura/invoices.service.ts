@@ -14,8 +14,10 @@ import {
 export class InvoicesService {
   private readonly api = inject(ApiClient);
 
-  get(cardId: string, month: string): Observable<Invoice> {
-    return this.api.get<Invoice>(`/credit-cards/${cardId}/invoices/${month}`);
+  /** `tagIds` vazio = sem filtro (004 FR-004). */
+  get(cardId: string, month: string, tagIds: readonly string[] = []): Observable<Invoice> {
+    const query = tagIds.length > 0 ? `?tagIds=${tagIds.map(encodeURIComponent).join(',')}` : '';
+    return this.api.get<Invoice>(`/credit-cards/${cardId}/invoices/${month}${query}`);
   }
 
   /** `idempotencyKey`: uma por tentativa de pagamento (corpo vazio = padrões). */

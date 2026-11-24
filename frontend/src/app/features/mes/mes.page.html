@@ -83,6 +83,7 @@
         Realizadas
       </button>
     </div>
+    <app-tag-filter [ids]="tagsSelecionadas()" (idsChange)="aoMudarTags($event)" />
   </section>
 
   @if (erro(); as mensagem) {
@@ -146,7 +147,28 @@
       <app-pendencias [resumo]="visao()!.pending" [carteiras]="carteiras()" />
     }
 
-    @if (mesVazio()) {
+    @if (comFiltroTags() && totaisFiltro(); as totais) {
+      <dl class="totais-filtro" data-testid="totais-filtro" aria-label="Totais do filtro de tags">
+        <div>
+          <dt>Entradas</dt>
+          <dd data-testid="filtro-entradas">{{ totais.incomeCents | brl }}</dd>
+        </div>
+        <div>
+          <dt>Saídas</dt>
+          <dd data-testid="filtro-saidas">{{ totais.expenseCents | brl }}</dd>
+        </div>
+        <div>
+          <dt>Compras no cartão</dt>
+          <dd data-testid="filtro-compras">{{ totais.purchasesNetCents | brl }}</dd>
+        </div>
+      </dl>
+    }
+
+    @if (mesVazio() && comFiltroTags()) {
+      <p class="vazio" data-testid="filtro-tags-sem-resultado">
+        Nenhum lançamento com estas tags neste mês.
+      </p>
+    } @else if (mesVazio()) {
       <p class="vazio" data-testid="mes-vazio">Nada lançado neste mês. Toque em + para lançar.</p>
     } @else if (semResultadoNoFiltro()) {
       <p class="vazio" data-testid="filtro-vazio">Nenhum lançamento com esta situação.</p>
@@ -332,6 +354,31 @@
           }
         </section>
       }
+    }
+
+    @if (comprasFiltradas().length > 0) {
+      <section class="lista" aria-labelledby="titulo-compras-filtro">
+        <h2 id="titulo-compras-filtro">Compras no cartão</h2>
+        <ul class="itens" data-testid="lista-compras-filtro">
+          @for (c of comprasFiltradas(); track c.id) {
+            <li class="item sem-caixinha" data-testid="compra-filtro">
+              <button type="button" class="linha" (click)="editarCompra(c)">
+                <span class="descricao">{{ c.displayDescription }}</span>
+                <span class="valor-item" [class.negativo]="c.nature === 'credit'">{{
+                  valorCompra(c) | brl
+                }}</span>
+                <span class="meta">
+                  <span class="cor" [style.background]="corCartao(c.creditCardId)"></span>
+                  {{ nomeCartao(c.creditCardId) }} · {{ data(c.date) }}
+                  @if (c.nature === 'credit') {
+                    · crédito
+                  }
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
     }
 
     @if (transferencias().length > 0) {

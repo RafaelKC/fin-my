@@ -27,6 +27,9 @@ export function lerCarteiras(valor: string | null): string[] {
   ];
 }
 
+/** `?tags=a,b` (ids de tags) → lista; mesmo formato de `carteiras`. */
+export const lerTags = lerCarteiras;
+
 /** `?situacao=` só aceita `planned` e `settled`; qualquer outra coisa = todas. */
 export function lerSituacao(valor: string | null): FiltroSituacao {
   return valor === 'planned' || valor === 'settled' ? valor : null;
@@ -36,10 +39,12 @@ export function lerSituacao(valor: string | null): FiltroSituacao {
 export function montarQuery(
   carteiras: readonly string[],
   situacao: FiltroSituacao,
+  tags: readonly string[] = [],
 ): Record<string, string | null> {
   return {
     carteiras: carteiras.length > 0 ? carteiras.join(',') : null,
     situacao,
+    ...(tags.length > 0 ? { tags: tags.join(',') } : {}),
   };
 }
 

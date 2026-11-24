@@ -85,8 +85,23 @@
 
     <section aria-labelledby="titulo-compras">
       <h2 id="titulo-compras">Compras</h2>
+      <app-tag-filter [ids]="tagIds()" (idsChange)="aoMudarTags($event)" />
+      @if (
+        tagIds().length > 0 && f.filteredTotalCents !== null && f.filteredTotalCents !== undefined
+      ) {
+        <p class="total-filtro" data-testid="total-filtrado">
+          Total das compras com estas tags:
+          <strong>{{ f.filteredTotalCents | brl }}</strong>
+        </p>
+      }
       @if (f.purchases.length === 0) {
-        <p class="vazio" data-testid="sem-compras">Nenhuma compra nesta fatura.</p>
+        <p class="vazio" data-testid="sem-compras">
+          {{
+            tagIds().length > 0
+              ? 'Nenhuma compra com estas tags nesta fatura.'
+              : 'Nenhuma compra nesta fatura.'
+          }}
+        </p>
       } @else {
         <ul class="lista" data-testid="lista-compras">
           @for (c of f.purchases; track c.id) {
