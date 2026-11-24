@@ -14,6 +14,8 @@ import { map } from 'rxjs';
 import { problemMessage } from '../../../core/errors/problem-details';
 import { BrlPipe, formatBrl, isYearMonth, monthLabel } from '../../../core/money';
 import { TagFilter } from '../../../shared/tag-picker/tag-filter';
+import { Tag } from '../../../shared/tag-picker/tag.models';
+import { TagsService } from '../../../shared/tag-picker/tags.service';
 import { Wallet } from '../../carteiras/wallet.models';
 import { WalletsService } from '../../carteiras/wallets.service';
 import { CardPurchase } from '../../lancamento/card-purchase.models';
@@ -55,6 +57,7 @@ export class FaturaPage {
   private readonly compras = inject(CardPurchasesService);
   private readonly wallets = inject(WalletsService);
   private readonly exclusao = inject(ExclusaoService);
+  private readonly tags = inject(TagsService);
   private readonly launcher = inject(LancamentoLauncher);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
@@ -82,6 +85,18 @@ export class FaturaPage {
   protected readonly diaEMes = diaEMes;
   protected readonly nomeDoMes = nomeDoMes;
   protected readonly monthLabel = monthLabel;
+
+  private readonly nomesDeTags = signal<Map<string, Tag>>(new Map());
+
+  /** Bloco "Por pessoa" (FR-011): uma linha por Tag de acerto e "Sem tag de acerto". */
+  protected readonly porPessoa = computed(() =>
+    (this.fatura()?.settlementSubtotals ?? []).map((s) => ({
+      rotulo:
+        s.tagId === null ? 'Sem tag de acerto' : (this.nomesDeTags().get(s.tagId)?.name ?? 'Tag'),
+      cor: s.tagId === null ? null : (this.nomesDeTags().get(s.tagId)?.color ?? null),
+      cents: s.cents,
+    })),
+  );
 
   protected readonly situacao = computed(() => {
     const f = this.fatura();
@@ -317,11 +332,21 @@ export class FaturaPage {
         if (id !== this.cardId() || mes !== this.mes()) return;
         this.fatura.set(f);
         this.carregando.set(false);
+        this.carregarNomesDasTags(f);
       },
       error: (error: unknown) => {
         this.carregando.set(false);
         this.erro.set(problemMessage(error));
       },
+    });
+  }
+
+  /** Só pede as tags quando a fatura tem subtotal de alguma Tag de acerto (arquivadas incluídas). */
+  private carregarNomesDasTags(f: Invoice): void {
+    const ids = (f.settlementSubtotals ?? []).flatMap((s) => (s.tagId === null ? [] : [s.tagId]));
+    if (ids.every((id) => this.nomesDeTags().has(id))) return;
+    this.tags.list('all').subscribe({
+      next: (lista) => this.nomesDeTags.set(new Map(lista.map((t) => [t.id, t]))),
     });
   }
 }

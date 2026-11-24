@@ -222,3 +222,39 @@ h2 {
 .total-filtro {
   margin: 8px 0;
 }
+
+.por-pessoa {
+  margin: 8px 0;
+
+  h2 {
+    margin: 0 0 4px;
+    font: var(--mat-sys-title-small);
+  }
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .pessoa {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .cor {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+}

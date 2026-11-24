@@ -81,6 +81,17 @@ export interface LancamentoSheetData {
   entry?: Entry;
   /** Compra no cartão a editar (003 FR-015; tela da fatura). */
   purchase?: CardPurchase;
+  /** Entrada nova já preenchida (004 R4: "Gerar cobrança"); nada é salvo sem "Salvar". */
+  preencher?: EntradaPreenchida;
+}
+
+/** Valores de uma Entrada pré-preenchida; a carteira é sempre a principal (US3.1). */
+export interface EntradaPreenchida {
+  description: string;
+  amountCents: number;
+  date: string;
+  referenceMonth: string;
+  tagIds: string[];
 }
 
 /** Rascunho em `localStorage` (`finmy.draft.lancamento`, research R12). */
@@ -135,6 +146,7 @@ export class LancamentoSheet {
   private readonly exclusao = inject(ExclusaoService);
   private readonly dados = inject<LancamentoSheetData | null>(MAT_DIALOG_DATA, { optional: true });
   private readonly edicao = this.dados?.entry ?? null;
+  private readonly preenchida = this.dados?.preencher ?? null;
   /** Compra no cartão aberta na edição, com a `version` mais recente conhecida. */
   private compraAtual: CardPurchase | null = this.dados?.purchase ?? null;
   /** Lançamento aberto na edição, com a `version` mais recente conhecida. */
@@ -326,6 +338,7 @@ export class LancamentoSheet {
   constructor() {
     if (this.edicao !== null) this.preencherEdicao(this.edicao);
     else if (this.compraAtual !== null) this.preencherEdicaoCompra(this.compraAtual);
+    else if (this.preenchida !== null) this.aplicarPreenchimento(this.preenchida);
     else this.restaurarRascunho();
 
     this.termo$
@@ -359,6 +372,7 @@ export class LancamentoSheet {
           );
           this.carregandoCarteiras.set(false);
           this.resolverCarteira();
+          this.usarCarteiraPrincipalDaCobranca();
         },
         error: (error: unknown) => {
           this.carregandoCarteiras.set(false);
@@ -1198,6 +1212,28 @@ export class LancamentoSheet {
     this.toWalletId.set(ativas.find((w) => w.id !== this.walletId())?.id ?? '');
   }
 
+  /** US3.1: Entrada Prevista com a tag, o mês de referência e a data da cobrança; sem rascunho. */
+  private aplicarPreenchimento(p: EntradaPreenchida): void {
+    this.kind.set('income');
+    this.amount.set(centavosParaExpressao(p.amountCents));
+    this.description.set(p.description);
+    this.date.set(p.date);
+    this.statusManual.set('planned');
+    this.refManual.set(p.referenceMonth);
+    this.tagIds.set([...p.tagIds]);
+    this.tagsManual.set(true);
+    this.maisOpcoes.set(p.referenceMonth !== monthOfDate(p.date));
+  }
+
+  /** A carteira da cobrança é a principal, e não a última usada em Entradas (US3.1). */
+  private usarCarteiraPrincipalDaCobranca(): void {
+    if (this.preenchida === null) return;
+    const principal = this.carteiras().find((w) => w.isPrimary);
+    if (principal === undefined) return;
+    this.walletId.set(principal.id);
+    this.walletManual.set(true);
+  }
+
   private preencherEdicaoCompra(compra: CardPurchase): void {
     this.kind.set('card');
     this.amount.set(
@@ -1264,7 +1300,8 @@ export class LancamentoSheet {
   }
 
   private guardarRascunho(): void {
-    if (this.editando) return;
+    // Edição e cobrança pré-preenchida não mexem no rascunho da pessoa.
+    if (this.editando || this.preenchida !== null) return;
     const rascunho: Rascunho = {
       savedOn: this.hoje(),
       kind: this.kind(),

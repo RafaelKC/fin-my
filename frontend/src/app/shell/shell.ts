@@ -15,7 +15,7 @@ interface ItemDeMenu {
 /**
  * Casca do app logado: nome do Espaço no topo; navegação na barra inferior (celular) ou no menu
  * lateral (≥ 1024 px). Uma única `<nav>`; o CSS muda a disposição. No celular a barra é
- * Mês · Cartões · + · Busca · Mais, e "Mais" abre Carteiras, Tags e Perfil; no menu lateral todos
+ * Mês · Cartões · + · Acertos · Mais, e "Mais" abre Carteiras, Busca, Tags e Perfil; no menu lateral todos
  * aparecem direto (contracts/ui-rotas.md).
  */
 @Component({
@@ -38,11 +38,16 @@ export class Shell {
     { rotulo: 'Cartões', icone: 'credit_card', rota: '/cartoes' },
   ];
 
-  protected readonly busca: ItemDeMenu = { rotulo: 'Busca', icone: 'search', rota: '/busca' };
+  protected readonly acertos: ItemDeMenu = {
+    rotulo: 'Acertos',
+    icone: 'handshake',
+    rota: '/acertos',
+  };
 
   /** Itens de "Mais" no celular; no menu lateral aparecem como os demais. */
   protected readonly mais: readonly ItemDeMenu[] = [
     { rotulo: 'Carteiras', icone: 'account_balance_wallet', rota: '/carteiras' },
+    { rotulo: 'Busca', icone: 'search', rota: '/busca' },
     { rotulo: 'Tags', icone: 'sell', rota: '/tags' },
     { rotulo: 'Perfil', icone: 'person', rota: '/perfil' },
   ];

@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { CardPurchase } from './card-purchase.models';
 import { Entry } from './entry.models';
-import { LancamentoSheet, LancamentoSheetData } from './lancamento.sheet';
+import { EntradaPreenchida, LancamentoSheet, LancamentoSheetData } from './lancamento.sheet';
 
 /** Largura a partir da qual o formulário é diálogo (abaixo disso, tela cheia). */
 const DESKTOP = '(min-width: 1024px)';
@@ -21,6 +21,11 @@ export class LancamentoLauncher {
   /** Abre o formulário editando uma compra no cartão (003 FR-015). */
   abrirCompra(purchase: CardPurchase): MatDialogRef<LancamentoSheet, Entry | undefined> {
     return this.abrirCom({ purchase });
+  }
+
+  /** Abre uma Entrada nova já preenchida, para o "Gerar cobrança" dos acertos (004 R4). */
+  abrirPreenchida(preencher: EntradaPreenchida): MatDialogRef<LancamentoSheet, Entry | undefined> {
+    return this.abrirCom({ preencher });
   }
 
   private abrirCom(data: LancamentoSheetData): MatDialogRef<LancamentoSheet, Entry | undefined> {

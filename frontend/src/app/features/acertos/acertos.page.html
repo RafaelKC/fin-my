@@ -1,0 +1,127 @@
+<div class="pagina">
+  <header class="cabecalho">
+    <button
+      type="button"
+      class="seta"
+      aria-label="Mês anterior"
+      data-testid="acertos-anterior"
+      [disabled]="noMinimo()"
+      (click)="ir(-1)"
+    >
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">chevron_left</mat-icon>
+    </button>
+    <h1 class="titulo" data-testid="acertos-titulo">{{ rotuloMes() }}</h1>
+    <button
+      type="button"
+      class="seta"
+      aria-label="Próximo mês"
+      data-testid="acertos-seguinte"
+      [disabled]="noMaximo()"
+      (click)="ir(1)"
+    >
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">chevron_right</mat-icon>
+    </button>
+  </header>
+
+  @if (erro(); as mensagem) {
+    <p class="erro" role="alert" data-testid="erro-acertos">{{ mensagem }}</p>
+  } @else if (linhas(); as lista) {
+    @if (lista.length === 0) {
+      <p class="vazio" data-testid="sem-acertos">
+        Nenhuma tag de acerto neste mês. Marque uma tag como "de acerto" em
+        <a routerLink="/tags">Tags</a>.
+      </p>
+    }
+    @for (row of lista; track row.tagId) {
+      <section class="cartao" data-testid="acerto" [attr.data-tag]="row.tagName">
+        <h2 class="nome">
+          <span class="cor" [style.background]="row.tagColor" aria-hidden="true"></span>
+          {{ row.tagName }}
+          @if (row.archived) {
+            <span class="selo">arquivada</span>
+          }
+        </h2>
+
+        <dl class="numeros">
+          @for (n of ['spent', 'charged', 'received']; track n) {
+            <div>
+              <dt>{{ rotulo($any(n)) }}</dt>
+              <dd>
+                <button
+                  type="button"
+                  class="numero"
+                  [attr.data-testid]="'numero-' + n"
+                  [attr.aria-expanded]="estaAberto(row, $any(n))"
+                  [attr.aria-label]="'Ver lançamentos de ' + rotulo($any(n))"
+                  (click)="alternar(row, $any(n))"
+                >
+                  {{
+                    (n === 'spent'
+                      ? row.spentCents
+                      : n === 'charged'
+                        ? row.chargedCents
+                        : row.receivedCents
+                    ) | brl
+                  }}
+                </button>
+              </dd>
+            </div>
+          }
+          <div>
+            <dt>A cobrar</dt>
+            <dd data-testid="a-cobrar">{{ row.toChargeCents | brl }}</dd>
+          </div>
+          <div>
+            <dt>A receber</dt>
+            <dd data-testid="a-receber">{{ row.toReceiveCents | brl }}</dd>
+          </div>
+          <div>
+            <dt>Saldo acumulado</dt>
+            @if (ehCredito(row)) {
+              <dd class="credito" data-testid="saldo">
+                Crédito da {{ row.tagName }}: {{ abs(row.accumulatedCents) | brl }}
+              </dd>
+            } @else {
+              <dd data-testid="saldo">{{ row.accumulatedCents | brl }}</dd>
+            }
+          </div>
+        </dl>
+
+        @if (podeGerarCobranca(row)) {
+          <button
+            type="button"
+            class="botao"
+            data-testid="gerar-cobranca"
+            (click)="gerarCobranca(row)"
+          >
+            Gerar cobrança
+          </button>
+        }
+
+        @if (linhaAberta(row)) {
+          <div class="detalhe" data-testid="detalhe">
+            @if (erroItens(); as mensagem) {
+              <p class="erro" role="alert">{{ mensagem }}</p>
+            } @else if (itens() === null) {
+              <p role="status">Carregando…</p>
+            } @else if (itensAbertos().length === 0) {
+              <p class="vazio" data-testid="detalhe-vazio">Nenhum lançamento.</p>
+            } @else {
+              <ul class="itens">
+                @for (i of itensAbertos(); track i.type + i.id) {
+                  <li data-testid="item">
+                    <span class="descricao">{{ i.description }}</span>
+                    <span class="data">{{ formatarData(i.date) }}</span>
+                    <strong class="valor">{{ i.signedCents | brl }}</strong>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      </section>
+    }
+  } @else {
+    <p role="status">Carregando…</p>
+  }
+</div>

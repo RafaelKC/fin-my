@@ -5,7 +5,7 @@ export async function irPara(page: Page, rotulo: string): Promise<void> {
   const nav = page.getByRole('navigation', { name: 'Principal' });
   const mais = nav.getByTestId('mais');
   if (
-    (rotulo === 'Carteiras' || rotulo === 'Tags' || rotulo === 'Perfil') &&
+    (rotulo === 'Carteiras' || rotulo === 'Busca' || rotulo === 'Tags' || rotulo === 'Perfil') &&
     (await mais.isVisible())
   ) {
     await mais.click();
