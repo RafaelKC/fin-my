@@ -17,7 +17,7 @@ research da 002–006.
 - [x] T004 [US3] `GET …/copy-candidates` e `POST …/copy` (research R4); `PlanningCopyTests` (US3.1–US3.4). Depende de T002
 - [x] T005 [US1] Tela `/planejamento/:ano` (research R5): grade com edição inline, totais imediatos, Nova linha, Preencher meses, Transformar em recorrência, lista de lançamentos de célula não editável, versão celular; e2e `planejamento.spec.ts` (US1). Depende de T003
 - [x] T006 [US2] Estimativa na tela da fatura e na linha de fatura do mês; diálogo "Copiar do ano anterior" na grade; e2e (US2.1, US2.3, US3). Depende de T004, T005
-- [ ] T007 Validação: isolamento, quickstart contra a stack real, docs (`docs/modelo-de-dados.md` `estimate_cents`, §14, README). Depende de todas
+- [x] T007 Validação: isolamento, quickstart contra a stack real, docs (`docs/modelo-de-dados.md` `estimate_cents`, §14, README). Depende de todas
 
 ## Dependências (resumo)
 
