@@ -9,6 +9,7 @@ import {
   EntrySuggestion,
   EntryUpdate,
   SearchParams,
+  SplitInput,
   SearchResult,
 } from './entry.models';
 
@@ -50,6 +51,16 @@ export class EntriesService {
   /** Lê um lançamento (recarga depois de um conflito de versão, R11). */
   get(id: string): Observable<Entry> {
     return this.api.get<Entry>(`/entries/${id}`);
+  }
+
+  /** Saída dividida (FR-012/FR-013): uma Saída por parte, na ordem das partes. */
+  createSplit(
+    input: EntryCreate & { split: SplitInput },
+    idempotencyKey: string,
+  ): Observable<Entry[]> {
+    return this.api
+      .post<Entry[]>('/entries/split', input, { 'Idempotency-Key': idempotencyKey })
+      .pipe(tap((entries) => entries.forEach((e) => this.criadosSubject.next(e))));
   }
 
   /** Duplica pedindo só a nova data (FR-024); mês e situação são recalculados no servidor. */

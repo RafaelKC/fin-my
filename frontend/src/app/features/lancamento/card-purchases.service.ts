@@ -8,7 +8,7 @@ import {
   CardPurchaseUpdate,
   EscopoCompra,
 } from './card-purchase.models';
-import { DeletionResult } from './entry.models';
+import { DeletionResult, SplitInput } from './entry.models';
 
 /** Acesso à API de compras no cartão (`/api/v1/card-purchases`, contracts/openapi.yaml). */
 @Injectable({ providedIn: 'root' })
@@ -28,6 +28,18 @@ export class CardPurchasesService {
   create(input: CardPurchaseCreate, idempotencyKey: string): Observable<CardPurchaseResult> {
     return this.api
       .post<CardPurchaseResult>('/card-purchases', input, { 'Idempotency-Key': idempotencyKey })
+      .pipe(tap((resultado) => this.criadasSubject.next(resultado)));
+  }
+
+  /** Compra dividida (FR-012/FR-013): uma compra (ou parcelamento) por parte. */
+  createSplit(
+    input: CardPurchaseCreate & { split: SplitInput },
+    idempotencyKey: string,
+  ): Observable<CardPurchaseResult> {
+    return this.api
+      .post<CardPurchaseResult>('/card-purchases/split', input, {
+        'Idempotency-Key': idempotencyKey,
+      })
       .pipe(tap((resultado) => this.criadasSubject.next(resultado)));
   }
 

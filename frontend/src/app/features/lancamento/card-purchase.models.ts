@@ -49,6 +49,8 @@ export interface CardPurchase {
   version: number;
   tagIds?: string[];
   settlementTagId?: string | null;
+  splitGroupId?: string | null;
+  splitCount?: number;
 }
 
 /** Escopo da edição/exclusão/movimento em parcelas (contracts/openapi.yaml). */
