@@ -10,7 +10,8 @@ public static class ApplicationServiceCollectionExtensions
     /// <summary>Registra os casos de uso (handlers) da camada Application (research R8).</summary>
     public static IServiceCollection AddApplication(this IServiceCollection services)
         => services.AddHandlersFrom(typeof(ApplicationServiceCollectionExtensions).Assembly)
-            .AddScoped<Auth.PasswordResetMailer>();
+            .AddScoped<Auth.PasswordResetMailer>()
+            .AddScoped<Catalog.CatalogResolver>();
 
     /// <summary>
     /// Registra por convenção, como escopo da requisição, toda classe concreta e pública cujo nome termina

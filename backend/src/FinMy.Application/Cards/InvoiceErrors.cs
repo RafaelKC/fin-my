@@ -49,6 +49,9 @@ public static class InvoiceErrors
         return $"{sign}R$ {whole},{abs % 100:00}";
     }
 
+    /// <summary>Erro de validação de um campo (422).</summary>
+    public static DomainError Field(string code, string field, string message) => Invalid(code, field, message);
+
     private static DomainError Invalid(string code, string field, string message) =>
         new(code, message, DomainErrorKind.Validation, new Dictionary<string, string[]> { [field] = [message] });
 }
