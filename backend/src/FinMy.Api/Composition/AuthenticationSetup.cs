@@ -3,19 +3,30 @@ using FinMy.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using OpenIddict.Validation.AspNetCore;
 
 namespace FinMy.Api.Composition;
 
 /// <summary>Configuração do <c>JwtBearer</c> e dos erros 401 (<c>token_expired</c> quando o access token venceu).</summary>
 public static class AuthenticationSetup
 {
+    public const string SelectorScheme = "FinMy";
+    public const string McpPath = "/mcp";
     public const string TokenExpiredCode = "token_expired";
 
     public static IServiceCollection AddFinMyAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions<JwtOptions>().Bind(configuration.GetSection(JwtOptions.SectionName)).ValidateOnStart();
 
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
+        // O app usa o JWT próprio; o conector do Claude (/mcp) usa os tokens do OpenIddict (008). Cada rota só aceita um deles:
+        // um token do conector não alcança a API REST e um JWT do app não alcança o /mcp.
+        services.AddAuthentication(SelectorScheme)
+            .AddPolicyScheme(SelectorScheme, displayName: null, options => options.ForwardDefaultSelector = context =>
+                context.Request.Path.StartsWithSegments(McpPath, StringComparison.OrdinalIgnoreCase)
+                    ? OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme
+                    : JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer();
+        services.AddFinMyOAuth(configuration);
         services.AddSingleton<IConfigureOptions<JwtBearerOptions>, ConfigureJwtBearer>();
         services.AddAuthorization();
 

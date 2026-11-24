@@ -2,6 +2,7 @@ using System.Text.Json;
 using FinMy.Domain.Common;
 using FinMy.Domain.Idempotency;
 using FinMy.Domain.Identity;
+using FinMy.Infrastructure.Auth.OAuth;
 using FinMy.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,10 +24,11 @@ public static class AccountSnapshot
         [typeof(RefreshToken)] = (nameof(RefreshToken.UserId), false),
         [typeof(PasswordResetToken)] = (nameof(PasswordResetToken.UserId), false),
         [typeof(IdempotencyKey)] = (nameof(IdempotencyKey.TenantId), true),
+        [typeof(OAuthConsentTicket)] = (nameof(OAuthConsentTicket.UserId), false),
     };
 
-    /// <summary>Contadores por e-mail/IP: não pertencem a uma conta, e B só os altera com o próprio e-mail.</summary>
-    private static readonly HashSet<Type> Unowned = [typeof(LoginThrottle)];
+    /// <summary>Contadores por e-mail/IP e as tabelas do OpenIddict (aplicativos e autorizações do conector, 008): não têm dono por coluna; o isolamento delas é testado nos testes do OAuth.</summary>
+    private static readonly HashSet<Type> Unowned = [typeof(LoginThrottle), .. OAuthModel.EntityTypes];
 
     public static async Task<string> TakeAsync(FinMyDbContext db, Guid userId, Guid tenantId)
     {
