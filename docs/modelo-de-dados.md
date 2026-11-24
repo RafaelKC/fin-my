@@ -508,8 +508,8 @@ Regras extras: `CHECK (nature = 'debit' OR installment_plan_id IS NULL)` (crédi
 | Coluna | Tipo | Nulo | Regras |
 |---|---|---|---|
 | [padrão] | | | |
-| name / name_normalized | varchar(30) | não | unicidade como `wallets` |
-| color | varchar(7) | não | |
+| name / name_normalized | varchar(30) | não | unicidade como `wallets`: índice único `(tenant_id, name_normalized)` parcial `WHERE deleted_at IS NULL` |
+| color | varchar(7) | não | `CHECK (color ~ '^#[0-9A-Fa-f]{6}$')` |
 | is_settlement | boolean | não | Tag de acerto |
 | archived_at | timestamptz | sim | |
 
@@ -522,7 +522,10 @@ após validar o cenário 5.2.
 ### `entry_tags`, `card_purchase_tags`, `recurrence_tags`
 
 PK `(entry_id | card_purchase_id | recurrence_id, tag_id)`; `tenant_id` (FKs compostas para os dois
-lados); `ITenantEntity` sem auditoria nem soft delete. Índice `(tenant_id, tag_id)`.
+lados); `ITenantLink` (sem auditoria nem soft delete, mas com `tenant_id` e filtro de Espaço). Índice `(tenant_id, tag_id)`.
+Lançamento excluído (soft delete) mantém as ligações: restaurar devolve as tags. Excluir uma tag só é
+permitido sem uso (`tag.in_use_archive_instead`); a junção (004 US5) faz soft delete da tag de origem.
+Os números do acerto (Gasto, Cobrado, Recebido, A cobrar, Saldo acumulado) são calculados, nunca gravados.
 
 ### `recurrences` — Recorrência, 005
 
