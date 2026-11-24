@@ -16,6 +16,7 @@ public static class WebApplicationExtensions
         app.UseStatusCodePages();
         app.UseRouting();
         app.UseRateLimiter();
+        app.UseMiddleware<FinMy.Api.Mcp.McpChallengeMiddleware>();
         app.UseAuthentication();
         app.UseSessionValidation();
         app.UseCurrentContext();
