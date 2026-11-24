@@ -86,6 +86,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/busca/busca.page').then((m) => m.BuscaPage),
       },
       {
+        path: 'tags',
+        loadComponent: () => import('./features/tags/tags.page').then((m) => m.TagsPage),
+      },
+      {
         path: 'perfil',
         loadComponent: () => import('./features/perfil/perfil.page').then((m) => m.PerfilPage),
       },

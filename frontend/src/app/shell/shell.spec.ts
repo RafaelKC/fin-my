@@ -55,6 +55,7 @@ describe('Shell', () => {
     expect(nav.querySelector(':scope > a[href="/carteiras"]')).toBeNull();
     const painel = nav.querySelector('#mais-painel')!;
     expect(painel.querySelector('a[href="/carteiras"]')?.textContent).toContain('Carteiras');
+    expect(painel.querySelector('a[href="/tags"]')?.textContent).toContain('Tags');
     expect(painel.querySelector('a[href="/perfil"]')?.textContent).toContain('Perfil');
 
     const mais = nav.querySelector<HTMLButtonElement>('[data-testid="mais"]')!;

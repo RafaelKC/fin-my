@@ -20,6 +20,22 @@ export interface TagInput {
 
 /** Tags mostradas como botões de um toque (research R2). */
 export const CHIPS_FREQUENTES = 8;
+/** Corpo de `PUT /tags/{id}`. */
+export interface TagUpdate {
+  name: string;
+  color: string;
+  isSettlement: boolean;
+  version: number;
+}
+
+/** Lançamento em conflito (`tag.settlement_conflict`, extensão `conflicts[]`). */
+export interface TagConflito {
+  type: string;
+  id: string;
+  description: string;
+  date: string;
+}
+
 /** Máximo de tags por lançamento (research R1). */
 export const TAGS_MAX = 20;
 /** Tamanho máximo do nome (FR-001). */

@@ -4,7 +4,10 @@ import { expect, type Page } from '@playwright/test';
 export async function irPara(page: Page, rotulo: string): Promise<void> {
   const nav = page.getByRole('navigation', { name: 'Principal' });
   const mais = nav.getByTestId('mais');
-  if ((rotulo === 'Carteiras' || rotulo === 'Perfil') && (await mais.isVisible())) {
+  if (
+    (rotulo === 'Carteiras' || rotulo === 'Tags' || rotulo === 'Perfil') &&
+    (await mais.isVisible())
+  ) {
     await mais.click();
     await expect(mais).toHaveAttribute('aria-expanded', 'true');
   }

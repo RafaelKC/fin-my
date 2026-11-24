@@ -141,7 +141,8 @@ test.describe('aba Cartão — compra à vista (US2) — API simulada', () => {
     await descricao(page).fill('Lanche');
     await salvar(page).click();
 
-    const dialogo = page.getByRole('dialog').filter({ hasText: 'Fatura já paga' });
+    // a folha do formulário também é dialog (e pode conter o texto): a confirmação é a última
+    const dialogo = page.getByRole('dialog').filter({ hasText: 'Fatura já paga' }).last();
     await expect(dialogo).toContainText('Esta fatura já foi paga e voltará a ter valor em aberto');
     await dialogo.getByRole('button', { name: 'Cancelar' }).click();
     expect(envios).toHaveLength(0);
@@ -151,6 +152,7 @@ test.describe('aba Cartão — compra à vista (US2) — API simulada', () => {
     await page
       .getByRole('dialog')
       .filter({ hasText: 'Fatura já paga' })
+      .last()
       .getByRole('button', { name: 'Lançar mesmo assim' })
       .click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
