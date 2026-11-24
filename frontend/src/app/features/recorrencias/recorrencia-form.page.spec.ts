@@ -17,7 +17,7 @@ describe('RecorrenciaFormPage', () => {
   let el: HTMLElement;
   let navegar: ReturnType<typeof vi.spyOn>;
 
-  function abrir(id: string | null) {
+  function abrir(id: string | null, query: Record<string, string> = {}) {
     TestBed.configureTestingModule({
       imports: [RecorrenciaFormPage],
       providers: [
@@ -26,7 +26,12 @@ describe('RecorrenciaFormPage', () => {
         provideRouter([]),
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap(id ? { id } : {}) } },
+          useValue: {
+            snapshot: {
+              paramMap: convertToParamMap(id ? { id } : {}),
+              queryParamMap: convertToParamMap(query),
+            },
+          },
         },
       ],
     });
@@ -142,6 +147,33 @@ describe('RecorrenciaFormPage', () => {
     });
     req.flush(recorrencia(), { status: 201, statusText: 'Created' });
     expect(navegar).toHaveBeenCalledWith('/recorrencias');
+  });
+
+  it('vindo da grade do planejamento (007 US1.9), abre preenchida e salva o que a pessoa revisou', () => {
+    abrir(null, {
+      kind: 'expense',
+      description: 'Tim',
+      dayOfMonth: '10',
+      startMonth: '2027-01',
+      amount: '44,99',
+      walletId: 'w-verde',
+    });
+    expect(el.querySelector<HTMLInputElement>('#descricao')!.value).toBe('Tim');
+    expect(el.querySelector<HTMLInputElement>('#amount-field')!.value).toBe('44,99');
+    expect(el.querySelector<HTMLInputElement>('#dia')!.value).toBe('10');
+    expect(el.querySelector<HTMLInputElement>('#mes-inicial')!.value).toBe('2027-01');
+    salvar();
+
+    const req = http.expectOne('/api/v1/recurrences');
+    expect(req.request.body).toMatchObject({
+      kind: 'expense',
+      description: 'Tim',
+      amount: '44,99',
+      dayOfMonth: 10,
+      walletId: 'w-verde',
+      startMonth: '2027-01',
+    });
+    req.flush(recorrencia(), { status: 201, statusText: 'Created' });
   });
 
   it('Entrada com "mês seguinte" (US2.1)', () => {

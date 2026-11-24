@@ -6,6 +6,7 @@ export async function irPara(page: Page, rotulo: string): Promise<void> {
   const mais = nav.getByTestId('mais');
   if (
     (rotulo === 'Painel' ||
+      rotulo === 'Planejamento' ||
       rotulo === 'Carteiras' ||
       rotulo === 'Recorrências' ||
       rotulo === 'Busca' ||

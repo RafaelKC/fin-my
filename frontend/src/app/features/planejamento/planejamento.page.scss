@@ -1,0 +1,205 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.titulo {
+  margin: 0;
+  font: var(--mat-sys-title-large);
+}
+.seta {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 24px;
+  cursor: pointer;
+  color: inherit;
+}
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.botao {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-primary);
+  background: var(--mat-sys-primary);
+  border: 0;
+  border-radius: 24px;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+.erro {
+  margin: 0;
+  color: var(--mat-sys-error);
+}
+.aviso {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+.tabela-rolavel {
+  overflow-x: auto;
+}
+.tabela {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  th,
+  td {
+    padding: 0 4px;
+    text-align: right;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+    background: var(--mat-sys-surface);
+  }
+  thead th {
+    font: var(--mat-sys-label-medium);
+    color: var(--mat-sys-on-surface-variant);
+    padding: 8px 4px;
+  }
+  .rotulo {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: 9rem;
+    max-width: 12rem;
+    text-align: left;
+    font-weight: normal;
+  }
+  th.rotulo {
+    display: table-cell;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .nome {
+    display: inline-block;
+    max-width: 8.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+  }
+  .nota {
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-label-small);
+  }
+  .secao th {
+    padding: 12px 8px 4px;
+    text-align: left;
+    font: var(--mat-sys-title-small);
+    background: var(--mat-sys-surface-container);
+  }
+  .vazio td {
+    padding: 8px;
+    text-align: left;
+    color: var(--mat-sys-on-surface-variant);
+  }
+  .celula {
+    min-width: 6.5rem;
+    height: 48px;
+    padding: 0;
+  }
+  .hoje {
+    background: var(--mat-sys-secondary-container);
+  }
+  .lista .valor {
+    text-decoration: underline dotted;
+  }
+  tfoot th,
+  tfoot td {
+    padding: 8px 4px;
+    font-weight: 600;
+  }
+  tfoot tr:first-child th,
+  tfoot tr:first-child td {
+    border-top: 2px solid var(--mat-sys-outline);
+  }
+}
+.valor {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0;
+  width: 100%;
+  min-width: 44px;
+  min-height: 48px;
+  padding: 0 8px;
+  color: inherit;
+  font: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.efetivado .valor {
+  color: var(--mat-sys-on-surface-variant);
+}
+.selo-efetivado {
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+}
+.estimativa {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-small);
+}
+.campo {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 6rem;
+  height: 44px;
+  padding: 0 8px;
+  text-align: right;
+  font: inherit;
+  color: inherit;
+  background: var(--mat-sys-surface);
+  border: 2px solid var(--mat-sys-primary);
+  border-radius: 4px;
+}
+.menu-linha {
+  width: 32px;
+  height: 44px;
+  padding: 0;
+  vertical-align: middle;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.negativo {
+  color: var(--mat-sys-error);
+}
+.so-leitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+@media (max-width: 1023.98px) {
+  .tabela .rotulo {
+    min-width: 6rem;
+    max-width: 8rem;
+  }
+  .tabela .nome {
+    max-width: 5rem;
+  }
+}

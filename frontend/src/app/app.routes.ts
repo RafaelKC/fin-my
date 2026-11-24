@@ -89,6 +89,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/painel/painel.page').then((m) => m.PainelPage),
       },
       {
+        path: 'planejamento',
+        pathMatch: 'full',
+        redirectTo: () => `/planejamento/${today().slice(0, 4)}`,
+      },
+      {
+        path: 'planejamento/:ano',
+        loadComponent: () =>
+          import('./features/planejamento/planejamento.page').then((m) => m.PlanejamentoPage),
+      },
+      {
         path: 'mes',
         pathMatch: 'full',
         redirectTo: () => `/mes/${today().slice(0, 7)}`,
