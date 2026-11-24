@@ -31,6 +31,9 @@ public interface IRecurrenceStore
     /// <summary>Exige que a gravação encontre a recorrência ainda nesta versão (senão <c>concurrency_conflict</c>).</summary>
     void ExpectVersion(Recurrence recurrence, long version);
 
+    /// <summary>Entrada/Saída rastreada, ou <c>null</c> se não existe no Espaço.</summary>
+    Task<Entry?> FindEntryAsync(Guid id, CancellationToken cancellationToken);
+
     /// <summary>Todas as Entradas/Saídas não excluídas ligadas à recorrência, rastreadas, por mês da ocorrência.</summary>
     Task<IReadOnlyList<Entry>> ListEntryOccurrencesAsync(Guid recurrenceId, CancellationToken cancellationToken);
 

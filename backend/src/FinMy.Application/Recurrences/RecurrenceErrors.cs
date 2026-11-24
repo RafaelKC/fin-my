@@ -17,6 +17,9 @@ public static class RecurrenceErrors
 
     public static readonly DomainError AlreadyEnded = Field("recurrence.already_ended", "fromMonth", "Esta recorrência já está encerrada");
 
+    public static readonly DomainError ItemNotEligible = Field(
+        "recurrence.item_not_eligible", "id", "Só Entrada, Saída ou Compra à vista que ainda não é recorrência pode se repetir todo mês");
+
     public static DomainError Field(string code, string field, string message) =>
         new(code, message, DomainErrorKind.Validation, new Dictionary<string, string[]> { [field] = [message] });
 }

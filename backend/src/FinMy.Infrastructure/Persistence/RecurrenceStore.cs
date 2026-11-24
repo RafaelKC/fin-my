@@ -77,6 +77,9 @@ public sealed class RecurrenceStore(FinMyDbContext db) : IRecurrenceStore
     public void ExpectVersion(Recurrence recurrence, long version) =>
         db.Entry(recurrence).Property<uint>(VersionColumn).OriginalValue = (uint)version;
 
+    public Task<Entry?> FindEntryAsync(Guid id, CancellationToken cancellationToken) =>
+        db.Set<Entry>().SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
+
     public async Task<IReadOnlyList<Entry>> ListEntryOccurrencesAsync(Guid recurrenceId, CancellationToken cancellationToken) =>
         await db.Set<Entry>().Where(e => e.RecurrenceId == recurrenceId).OrderBy(e => e.RecurrenceMonth).ToListAsync(cancellationToken);
 

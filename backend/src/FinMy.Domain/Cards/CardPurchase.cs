@@ -125,6 +125,21 @@ public sealed class CardPurchase : TenantEntity
             RecurrenceMonth = month.FirstDay,
         };
 
+    /// <summary>
+    /// Torna a compra a ocorrência de <paramref name="month"/> de uma recorrência criada a partir dela (005 research R5); a
+    /// origem passa a <c>recurrence</c> (o CHECK liga os dois). Só compra à vista, débito e manual (<see cref="IsRecurrenceEligible"/>).
+    /// </summary>
+    public void LinkToRecurrence(Guid recurrenceId, YearMonth month)
+    {
+        Origin = PurchaseOrigin.Recurrence;
+        RecurrenceId = recurrenceId;
+        RecurrenceMonth = month.FirstDay;
+    }
+
+    /// <summary>Pode virar a primeira ocorrência de uma recorrência: compra manual, à vista, de débito, fora de qualquer recorrência (005 research R5).</summary>
+    public bool IsRecurrenceEligible =>
+        Origin == PurchaseOrigin.Manual && Nature == PurchaseNature.Debit && InstallmentPlanId is null && RecurrenceId is null;
+
     /// <summary>Descrição exibida: base + " k/N" quando é parcela.</summary>
     public string DisplayDescription =>
         InstallmentNumber is { } k && InstallmentTotal is { } n ? $"{Description} {k}/{n}" : Description;
