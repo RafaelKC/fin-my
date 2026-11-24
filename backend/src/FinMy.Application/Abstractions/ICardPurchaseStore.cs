@@ -4,6 +4,7 @@ using FinMy.Domain.Monetary;
 namespace FinMy.Application.Abstractions;
 
 /// <summary>Compra ou parcela como o cliente a vê (contrato <c>CardPurchase</c>); <see cref="Version"/> é o <c>xmin</c> (research R11).</summary>
+/// <param name="SplitCount">Partes que o grupo de divisão tem hoje (004 FR-014; parcelamento conta como uma); 0 se não foi dividida.</param>
 /// <param name="DueMonth">Mês de vencimento da fatura onde a compra está.</param>
 public sealed record CardPurchaseView(
     Guid Id,
@@ -24,7 +25,9 @@ public sealed record CardPurchaseView(
     DateTimeOffset CreatedAt,
     long Version,
     IReadOnlyList<Guid> TagIds,
-    Guid? SettlementTagId);
+    Guid? SettlementTagId,
+    Guid? SplitGroupId,
+    int SplitCount);
 
 /// <summary>Total (débitos − créditos) e pago de uma fatura (003 FR-005).</summary>
 public readonly record struct InvoiceTotals(long TotalCents, long PaidCents);

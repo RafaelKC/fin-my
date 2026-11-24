@@ -1,13 +1,15 @@
+using FinMy.Api.Endpoints.Splits;
 using FinMy.Api.Endpoints.Transfers;
 using FinMy.Api.Idempotency;
 using FinMy.Application.Entries;
+using FinMy.Application.Splits;
 
 namespace FinMy.Api.Endpoints.Entries;
 
 /// <summary>
 /// Entradas e Saídas (US2, US6.1, US6.2): <c>POST /entries</c>, <c>GET|PUT /entries/{id}</c>,
 /// <c>PATCH /entries/{id}/status</c>, <c>DELETE /entries/{id}</c>, <c>POST /entries/{id}/duplicate</c>, <c>GET /entries/search</c> (US6.3–US6.5),
-/// <c>GET /entries/suggestions</c>, <c>GET /entries/pending</c> e <c>POST /entries/bulk</c> (contracts/openapi.yaml).
+/// <c>GET /entries/suggestions</c>, <c>GET /entries/pending</c>, <c>POST /entries/bulk</c> e <c>POST /entries/split</c> (004 US4) (contracts/openapi.yaml).
 /// </summary>
 public sealed class EntryEndpoints : IEndpointModule
 {
@@ -23,6 +25,12 @@ public sealed class EntryEndpoints : IEndpointModule
                 new CreateEntryCommand(body.Kind, body.Description, body.Amount, body.Date, body.WalletId, body.Status, body.ReferenceMonth, body.Notes, body.TagIds),
                 cancellationToken);
             return Results.Created($"/api/v1/entries/{entry.Id}", EntryResponse.From(entry));
+        }).WithIdempotency();
+
+        group.MapPost("/split", async (EntrySplitRequest body, SplitEntryHandler handler, CancellationToken cancellationToken) =>
+        {
+            var entries = (await handler.HandleAsync(body.ToCommand(), body.Split?.ToCommand(), cancellationToken)).Select(EntryResponse.From).ToList();
+            return Results.Created($"/api/v1/entries/{entries[0].Id}", entries);
         }).WithIdempotency();
 
         // Antes de "/{id}" só por clareza: o literal já vence o parâmetro, e o id exige GUID.

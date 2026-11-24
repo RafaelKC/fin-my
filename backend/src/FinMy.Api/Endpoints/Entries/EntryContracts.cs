@@ -53,7 +53,9 @@ public sealed record EntryResponse(
     DateTimeOffset CreatedAt,
     long Version,
     IReadOnlyList<Guid> TagIds,
-    Guid? SettlementTagId)
+    Guid? SettlementTagId,
+    Guid? SplitGroupId,
+    int SplitCount)
 {
     public static EntryResponse From(EntryView e) => new(
         e.Id,
@@ -68,7 +70,9 @@ public sealed record EntryResponse(
         e.CreatedAt,
         e.Version,
         e.TagIds,
-        e.SettlementTagId);
+        e.SettlementTagId,
+        e.SplitGroupId,
+        e.SplitCount);
 }
 
 /// <summary>Item de <c>GET /entries/suggestions</c>.</summary>

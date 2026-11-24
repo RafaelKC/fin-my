@@ -29,7 +29,9 @@ public sealed record EntryDto(
     DateTimeOffset CreatedAt,
     long Version,
     IReadOnlyList<Guid> TagIds,
-    Guid? SettlementTagId);
+    Guid? SettlementTagId,
+    Guid? SplitGroupId,
+    int SplitCount);
 
 public sealed record TransferDto(
     Guid Id,
@@ -112,7 +114,9 @@ public sealed record MonthViewDto(
         e.CreatedAt,
         e.Version,
         e.TagIds,
-        e.SettlementTagId);
+        e.SettlementTagId,
+        e.SplitGroupId,
+        e.SplitCount);
 
     private static TransferDto From(MonthTransferItem t) => new(
         t.Id, t.FromWalletId, t.ToWalletId, t.AmountCents, t.Date, t.Description, t.Notes, t.CreatedAt, t.Version);

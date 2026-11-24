@@ -205,12 +205,14 @@ public sealed class LedgerSearchStore(FinMyDbContext db, ICardPurchaseStore purc
             .ToListAsync(cancellationToken);
 
         var links = await TagLinks.ForEntriesAsync(db, ids, cancellationToken);
+        var counts = await SplitCounts.ForEntriesAsync(db, loaded.Select(x => x.Entry.SplitGroupId), cancellationToken);
         return loaded.ToDictionary(
             x => x.Entry.Id,
             x => new EntryView(
                 x.Entry.Id, x.Entry.Kind, x.Entry.Description, x.Entry.AmountCents, x.Entry.EntryDate, x.Entry.ReferenceYearMonth,
                 x.Entry.Status, x.Entry.WalletId, x.Entry.Notes, x.Entry.CreatedAt, x.Version,
-                TagLinks.All(x.Entry.SettlementTagId, links, x.Entry.Id), x.Entry.SettlementTagId));
+                TagLinks.All(x.Entry.SettlementTagId, links, x.Entry.Id), x.Entry.SettlementTagId,
+                x.Entry.SplitGroupId, SplitCounts.Of(x.Entry.SplitGroupId, counts)));
     }
 
     private async Task<Dictionary<Guid, CardPurchaseView>> LoadPurchasesAsync(List<Guid> ids, CancellationToken cancellationToken)

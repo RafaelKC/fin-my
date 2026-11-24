@@ -76,7 +76,9 @@ public sealed record CardPurchaseResponse(
     DateTimeOffset CreatedAt,
     long Version,
     IReadOnlyList<Guid> TagIds,
-    Guid? SettlementTagId)
+    Guid? SettlementTagId,
+    Guid? SplitGroupId,
+    int SplitCount)
 {
     public static CardPurchaseResponse From(CardPurchaseView p) => new(
         p.Id,
@@ -97,7 +99,9 @@ public sealed record CardPurchaseResponse(
         p.CreatedAt,
         p.Version,
         p.TagIds,
-        p.SettlementTagId);
+        p.SettlementTagId,
+        p.SplitGroupId,
+        p.SplitCount);
 
     private static string ToText(Domain.Cards.PurchaseNature nature) => nature == Domain.Cards.PurchaseNature.Credit ? "credit" : "debit";
 

@@ -34,7 +34,8 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
         }
 
         var links = await TagLinks.ForEntriesAsync(db, [id], cancellationToken);
-        return ToView(row.Entry, row.Version, TagLinks.All(row.Entry.SettlementTagId, links, id));
+        var counts = await SplitCounts.ForEntriesAsync(db, [row.Entry.SplitGroupId], cancellationToken);
+        return ToView(row.Entry, row.Version, TagLinks.All(row.Entry.SettlementTagId, links, id), SplitCounts.Of(row.Entry.SplitGroupId, counts));
     }
 
     public async Task<EntryView> AddAsync(Entry entry, IReadOnlyCollection<Guid> commonTagIds, CancellationToken cancellationToken)
@@ -42,7 +43,20 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
         db.Set<Entry>().Add(entry);
         db.AddRange(commonTagIds.Select(t => new EntryTag(entry.Id, t)));
         await db.SaveChangesAsync(cancellationToken);
-        return ToView(entry, VersionOf(entry), TagLinks.All(entry.SettlementTagId, commonTagIds));
+        return ToView(entry, VersionOf(entry), TagLinks.All(entry.SettlementTagId, commonTagIds), 0);
+    }
+
+    public async Task<IReadOnlyList<EntryView>> AddManyAsync(
+        IReadOnlyList<(Entry Entry, IReadOnlyCollection<Guid> CommonTagIds)> items, CancellationToken cancellationToken)
+    {
+        foreach (var (entry, commonTagIds) in items)
+        {
+            db.Set<Entry>().Add(entry);
+            db.AddRange(commonTagIds.Select(t => new EntryTag(entry.Id, t)));
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        return items.Select(i => ToView(i.Entry, VersionOf(i.Entry), TagLinks.All(i.Entry.SettlementTagId, i.CommonTagIds), items.Count)).ToList();
     }
 
     public async Task<EntryView?> UpdateAsync(
@@ -86,7 +100,8 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
             throw new DomainException(EntryErrors.ConcurrencyConflict);
         }
 
-        return ToView(entry, VersionOf(entry), TagLinks.All(entry.SettlementTagId, current));
+        var counts = await SplitCounts.ForEntriesAsync(db, [entry.SplitGroupId], cancellationToken);
+        return ToView(entry, VersionOf(entry), TagLinks.All(entry.SettlementTagId, current), SplitCounts.Of(entry.SplitGroupId, counts));
     }
 
     public async Task<IReadOnlyList<EntryView>> ListPendingAsync(YearMonth currentMonth, CancellationToken cancellationToken)
@@ -99,7 +114,8 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
             .ToListAsync(cancellationToken);
 
         var links = await TagLinks.ForEntriesAsync(db, rows.Select(r => r.Entry.Id).ToList(), cancellationToken);
-        return rows.ConvertAll(r => ToView(r.Entry, r.Version, TagLinks.All(r.Entry.SettlementTagId, links, r.Entry.Id)));
+        var counts = await SplitCounts.ForEntriesAsync(db, rows.Select(r => r.Entry.SplitGroupId), cancellationToken);
+        return rows.ConvertAll(r => ToView(r.Entry, r.Version, TagLinks.All(r.Entry.SettlementTagId, links, r.Entry.Id), SplitCounts.Of(r.Entry.SplitGroupId, counts)));
     }
 
     public async Task<bool> UpdateManyAsync(IReadOnlyCollection<Guid> ids, Action<Entry> change, CancellationToken cancellationToken)
@@ -274,7 +290,7 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
 
     private uint VersionOf(Entry entry) => db.Entry(entry).Property<uint>(VersionColumn).CurrentValue;
 
-    private static EntryView ToView(Entry e, uint version, IReadOnlyList<Guid> tagIds) => new(
+    private static EntryView ToView(Entry e, uint version, IReadOnlyList<Guid> tagIds, int splitCount) => new(
         e.Id,
         e.Kind,
         e.Description,
@@ -287,7 +303,9 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
         e.CreatedAt,
         version,
         tagIds,
-        e.SettlementTagId);
+        e.SettlementTagId,
+        e.SplitGroupId,
+        splitCount);
 
     internal static string EscapeLike(string text) =>
         text.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("%", "\\%", StringComparison.Ordinal).Replace("_", "\\_", StringComparison.Ordinal);

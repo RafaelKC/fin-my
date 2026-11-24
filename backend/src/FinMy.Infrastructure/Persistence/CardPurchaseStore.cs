@@ -59,7 +59,9 @@ public sealed class CardPurchaseStore(FinMyDbContext db) : ICardPurchaseStore
             .ToListAsync(cancellationToken);
 
         var links = await TagLinks.ForPurchasesAsync(db, rows.Select(r => r.Purchase.Id).ToList(), cancellationToken);
-        return rows.ConvertAll(r => ToView(r.Purchase, YearMonth.From(r.DueMonth), r.Version, TagLinks.All(r.Purchase.SettlementTagId, links, r.Purchase.Id)));
+        var counts = await SplitCounts.ForPurchasesAsync(db, rows.Select(r => r.Purchase.SplitGroupId), cancellationToken);
+        return rows.ConvertAll(r => ToView(
+            r.Purchase, YearMonth.From(r.DueMonth), r.Version, TagLinks.All(r.Purchase.SettlementTagId, links, r.Purchase.Id), SplitCounts.Of(r.Purchase.SplitGroupId, counts)));
     }
 
     public async Task<IReadOnlyList<Guid>> GetTagIdsAsync(CardPurchase purchase, CancellationToken cancellationToken)
@@ -114,7 +116,7 @@ public sealed class CardPurchaseStore(FinMyDbContext db) : ICardPurchaseStore
     public async Task<ICardTransaction> BeginTransactionAsync(CancellationToken cancellationToken) =>
         new CardTransaction(await db.Database.BeginTransactionAsync(cancellationToken));
 
-    internal static CardPurchaseView ToView(CardPurchase p, YearMonth dueMonth, uint version, IReadOnlyList<Guid> tagIds) => new(
+    internal static CardPurchaseView ToView(CardPurchase p, YearMonth dueMonth, uint version, IReadOnlyList<Guid> tagIds, int splitCount) => new(
         p.Id,
         p.CreditCardId,
         dueMonth,
@@ -133,7 +135,9 @@ public sealed class CardPurchaseStore(FinMyDbContext db) : ICardPurchaseStore
         p.CreatedAt,
         version,
         tagIds,
-        p.SettlementTagId);
+        p.SettlementTagId,
+        p.SplitGroupId,
+        splitCount);
 
     private sealed class CardTransaction(IDbContextTransaction transaction) : ICardTransaction
     {
