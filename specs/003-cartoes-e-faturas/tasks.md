@@ -40,7 +40,7 @@ decisões da 002 (`specs/002-carteiras-e-lancamentos/research.md`).
 
 ## Phase 6: Polish
 
-- [ ] T012 Validação: isolamento cobre as rotas novas; quickstart.md roteiro manual contra a stack real nos dois viewports (registrar no PR); atualizar `docs/modelo-de-dados.md` (único de `invoices` com `tenant_id`), `docs/arquitetura.md` §14 e README. Depende de todas
+- [x] T012 Validação: isolamento cobre as rotas novas; quickstart.md roteiro manual contra a stack real nos dois viewports (registrar no PR); atualizar `docs/modelo-de-dados.md` (único de `invoices` com `tenant_id`), `docs/arquitetura.md` §14 e README. Depende de todas
 
 ## Dependências (resumo)
 
