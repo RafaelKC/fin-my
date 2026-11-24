@@ -27,6 +27,7 @@ public sealed record EntryDto(
     Guid WalletId,
     string? Notes,
     DateTimeOffset CreatedAt,
+    string CreatedVia,
     long Version,
     IReadOnlyList<Guid> TagIds,
     Guid? SettlementTagId,
@@ -42,6 +43,7 @@ public sealed record TransferDto(
     string Description,
     string? Notes,
     DateTimeOffset CreatedAt,
+    string CreatedVia,
     long Version);
 
 /// <summary>Item de <c>MonthView.invoices</c> (<c>MonthInvoiceLine</c>).</summary>
@@ -112,6 +114,7 @@ public sealed record MonthViewDto(
         e.WalletId,
         e.Notes,
         e.CreatedAt,
+        ChannelText.Of(e.CreatedVia),
         e.Version,
         e.TagIds,
         e.SettlementTagId,
@@ -119,7 +122,7 @@ public sealed record MonthViewDto(
         e.SplitCount);
 
     private static TransferDto From(MonthTransferItem t) => new(
-        t.Id, t.FromWalletId, t.ToWalletId, t.AmountCents, t.Date, t.Description, t.Notes, t.CreatedAt, t.Version);
+        t.Id, t.FromWalletId, t.ToWalletId, t.AmountCents, t.Date, t.Description, t.Notes, t.CreatedAt, ChannelText.Of(t.CreatedVia), t.Version);
 
     private static MonthInvoiceDto From(MonthInvoiceItem i) => new(
         i.CreditCardId,

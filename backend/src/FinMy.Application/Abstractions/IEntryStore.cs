@@ -1,3 +1,4 @@
+using FinMy.Domain.Common;
 using FinMy.Domain.Entries;
 using FinMy.Domain.Monetary;
 
@@ -16,6 +17,7 @@ public sealed record EntryView(
     Guid WalletId,
     string? Notes,
     DateTimeOffset CreatedAt,
+    Channel CreatedVia,
     long Version,
     IReadOnlyList<Guid> TagIds,
     Guid? SettlementTagId,

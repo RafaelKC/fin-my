@@ -71,7 +71,7 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
         var entryItems = entryRows
             .Select(r => new MonthEntryItem(
                 r.Entry.Id, r.Entry.Kind, r.Entry.Description, r.Entry.AmountCents, r.Entry.EntryDate, r.Entry.ReferenceMonth, r.Entry.Status,
-                r.Entry.WalletId, r.Entry.Notes, r.Entry.CreatedAt, r.Version,
+                r.Entry.WalletId, r.Entry.Notes, r.Entry.CreatedAt, r.Entry.CreatedVia, r.Version,
                 TagLinks.All(r.Entry.SettlementTagId, entryLinks, r.Entry.Id), r.Entry.SettlementTagId,
                 r.Entry.SplitGroupId, SplitCounts.Of(r.Entry.SplitGroupId, entryCounts)))
             .ToList();
@@ -84,7 +84,7 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
                 .OrderBy(t => t.TransferDate).ThenBy(t => t.CreatedAt).ThenBy(t => t.Id)
                 .Select(t => new MonthTransferItem(
                     t.Id, t.FromWalletId, t.ToWalletId, t.AmountCents, t.TransferDate, t.Description, t.Notes,
-                    t.CreatedAt, EF.Property<uint>(t, "xmin")))
+                    t.CreatedAt, t.CreatedVia, EF.Property<uint>(t, "xmin")))
                 .ToListAsync(cancellationToken);
 
         var purchaseItems = tagIds.Count > 0 ? await ReadPurchasesAsync(month, tagIds, cancellationToken) : [];

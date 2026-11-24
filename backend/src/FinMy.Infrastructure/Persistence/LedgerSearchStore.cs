@@ -210,7 +210,7 @@ public sealed class LedgerSearchStore(FinMyDbContext db, ICardPurchaseStore purc
             x => x.Entry.Id,
             x => new EntryView(
                 x.Entry.Id, x.Entry.Kind, x.Entry.Description, x.Entry.AmountCents, x.Entry.EntryDate, x.Entry.ReferenceYearMonth,
-                x.Entry.Status, x.Entry.WalletId, x.Entry.Notes, x.Entry.CreatedAt, x.Version,
+                x.Entry.Status, x.Entry.WalletId, x.Entry.Notes, x.Entry.CreatedAt, x.Entry.CreatedVia, x.Version,
                 TagLinks.All(x.Entry.SettlementTagId, links, x.Entry.Id), x.Entry.SettlementTagId,
                 x.Entry.SplitGroupId, SplitCounts.Of(x.Entry.SplitGroupId, counts)));
     }
@@ -244,7 +244,7 @@ public sealed class LedgerSearchStore(FinMyDbContext db, ICardPurchaseStore purc
             x => x.Transfer.Id,
             x => new TransferView(
                 x.Transfer.Id, x.Transfer.FromWalletId, x.Transfer.ToWalletId, x.Transfer.AmountCents, x.Transfer.TransferDate,
-                x.Transfer.Description, x.Transfer.Notes, x.Transfer.CreatedAt, x.Version));
+                x.Transfer.Description, x.Transfer.Notes, x.Transfer.CreatedAt, x.Transfer.CreatedVia, x.Version));
     }
 
     /// <summary>Formato comum de Entrada/Saída e Transferência para a união (só o necessário para filtrar, ordenar e somar).</summary>
