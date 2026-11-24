@@ -54,7 +54,8 @@ test.describe('exportar CSV (US4) — stack real', () => {
     await api.entrada('expense', 'Almoço; "Léo"', '45,90', '2026-03-10', [bruna.id]);
     await api.entrada('income', 'Freela fora do período', '800,00', '2026-05-02');
     const cartao = await api.cartao('Verde', 18, 25);
-    await api.compra(cartao.id, 'Mercado', '150,00', '2026-03-05');
+    await api.compra(cartao.id, 'Padaria', '150,00', '2026-03-05');
+    await api.compra(cartao.id, 'Mercado', '90,00', '2026-03-20');
 
     await page.goto('/perfil');
     await page.getByLabel('Mês inicial').fill('2026-03');
@@ -71,7 +72,8 @@ test.describe('exportar CSV (US4) — stack real', () => {
     expect(linhas).toContain(
       'Saída;"Almoço; ""Léo""";10/03/2026;03/2026;-45,90;Paga;Azul;;;;Bruna',
     );
-    // A compra entra pelo mês de vencimento da fatura (abril), não por março
+    // Compra pelo mês de vencimento da fatura: fecha dia 18, então 05/03 vence em março e 20/03 em abril
+    expect(linhas).toContain('Compra;Padaria;05/03/2026;;-150,00;;Azul;Verde;03/2026;;');
     expect(texto).not.toContain('Mercado');
     expect(texto).not.toContain('Freela fora do período');
   });
