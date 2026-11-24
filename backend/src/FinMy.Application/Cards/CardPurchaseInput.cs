@@ -52,6 +52,7 @@ internal static class CardPurchaseInput
     {
         PurchaseOrigin.Installment => "installment",
         PurchaseOrigin.CarryOver => "carry_over",
+        PurchaseOrigin.Recurrence => "recurrence",
         _ => "manual",
     };
 

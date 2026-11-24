@@ -73,6 +73,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ISettlementReader, SettlementReader>();
         services.AddScoped<IIdempotencyStore, IdempotencyStore>();
         services.AddScoped<IEntryStore, EntryStore>();
+        services.AddScoped<IRecurrenceStore, RecurrenceStore>();
         services.AddScoped<ICreationDefaultsStore, CreationDefaultsStore>();
         services.AddScoped<IUndoStore, UndoStore>();
         services.AddScoped<ILedgerSearchStore, LedgerSearchStore>();

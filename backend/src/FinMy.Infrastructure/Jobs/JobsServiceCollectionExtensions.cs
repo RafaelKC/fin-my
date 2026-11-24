@@ -20,6 +20,10 @@ public static class JobsServiceCollectionExtensions
     public static IServiceCollection AddFinMyDeletionPurge(this IServiceCollection services)
         => services.AddTransient<DeletionPurgeJob>();
 
+    /// <summary>Registra o job diário que estende o horizonte das recorrências.</summary>
+    public static IServiceCollection AddFinMyRecurrenceHorizon(this IServiceCollection services)
+        => services.AddTransient<RecurrenceHorizonJob>();
+
     /// <summary>Registra o job de expurgo das chaves de idempotência.</summary>
     public static IServiceCollection AddFinMyIdempotencyPurge(this IServiceCollection services)
         => services.AddTransient<IdempotencyPurgeJob>();
@@ -31,6 +35,8 @@ public static class JobsServiceCollectionExtensions
             manager.AddOrUpdate<TokenCleanupJob>(id, job => job.RunAsync(CancellationToken.None), cron, new RecurringJobOptions { TimeZone = zone ?? TimeZoneInfo.Utc }));
         DeletionPurgeJob.Describe((id, cron, zone) =>
             manager.AddOrUpdate<DeletionPurgeJob>(id, job => job.RunAsync(CancellationToken.None), cron, new RecurringJobOptions { TimeZone = zone ?? TimeZoneInfo.Utc }));
+        RecurrenceHorizonJob.Describe((id, cron, zone) =>
+            manager.AddOrUpdate<RecurrenceHorizonJob>(id, job => job.RunAsync(CancellationToken.None), cron, new RecurringJobOptions { TimeZone = zone ?? TimeZoneInfo.Utc }));
         IdempotencyPurgeJob.Describe((id, cron, zone) =>
             manager.AddOrUpdate<IdempotencyPurgeJob>(id, job => job.RunAsync(CancellationToken.None), cron, new RecurringJobOptions { TimeZone = zone ?? TimeZoneInfo.Utc }));
     }
@@ -42,6 +48,7 @@ public static class JobsServiceCollectionExtensions
         services.AddFinMyTokenCleanup();
         services.AddFinMyDeletionPurge();
         services.AddFinMyIdempotencyPurge();
+        services.AddFinMyRecurrenceHorizon();
         services.AddScoped<ITenantIdSource, EfTenantIdSource>();
         services.AddTransient<PasswordResetEmailJob>();
         services.Replace(ServiceDescriptor.Scoped<IPasswordResetDispatcher, HangfirePasswordResetDispatcher>());

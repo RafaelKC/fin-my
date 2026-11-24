@@ -12,7 +12,10 @@ public static class ApplicationServiceCollectionExtensions
         => services.AddHandlersFrom(typeof(ApplicationServiceCollectionExtensions).Assembly)
             .AddScoped<Auth.PasswordResetMailer>()
             .AddScoped<Catalog.CatalogResolver>()
-            .AddScoped<Catalog.CreationDefaults>();
+            .AddScoped<Catalog.CreationDefaults>()
+            .AddScoped<Recurrences.RecurrenceReviewer>()
+            .AddScoped<Recurrences.RecurrenceViewBuilder>()
+            .AddScoped<Recurrences.RecurrenceGenerator>();
 
     /// <summary>
     /// Registra por convenção, como escopo da requisição, toda classe concreta e pública cujo nome termina
