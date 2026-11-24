@@ -73,7 +73,8 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
                 r.Entry.Id, r.Entry.Kind, r.Entry.Description, r.Entry.AmountCents, r.Entry.EntryDate, r.Entry.ReferenceMonth, r.Entry.Status,
                 r.Entry.WalletId, r.Entry.Notes, r.Entry.CreatedAt, r.Entry.CreatedVia, r.Version,
                 TagLinks.All(r.Entry.SettlementTagId, entryLinks, r.Entry.Id), r.Entry.SettlementTagId,
-                r.Entry.SplitGroupId, SplitCounts.Of(r.Entry.SplitGroupId, entryCounts)))
+                r.Entry.SplitGroupId, SplitCounts.Of(r.Entry.SplitGroupId, entryCounts),
+                r.Entry.RecurrenceId, r.Entry.RecurrenceMonth, r.Entry.RecurrenceModified))
             .ToList();
 
         // Com filtro de tags, a visão mostra só itens com tag: sem transferências, e com as compras das faturas do mês.

@@ -115,6 +115,20 @@ public class RecurrenceEndpointsTests(PostgresFixture postgres) : ApiTestBase(po
     }
 
     [Fact]
+    public async Task Visao_do_mes_devolve_o_vinculo_da_ocorrencia_com_a_recorrencia()
+    {
+        var s = await NewSpaceAsync();
+        var id = (await OkAsync(await PostAsync(s, Saida(s, "Tim", "44,99", 10, "2026-03")), HttpStatusCode.Created)).GetProperty("id").GetGuid();
+
+        var month = await OkAsync(await s.Http.GetAsync("/api/v1/months/2026-04"));
+
+        var tim = month.GetProperty("entries").EnumerateArray().Single(e => e.GetProperty("description").GetString() == "Tim");
+        tim.GetProperty("recurrenceId").GetGuid().ShouldBe(id);
+        tim.GetProperty("recurrenceMonth").GetString().ShouldBe("2026-04");
+        tim.GetProperty("recurrenceModified").GetBoolean().ShouldBeFalse();
+    }
+
+    [Fact]
     public async Task Compra_recorrente_gera_compras_a_vista_na_fatura_do_ciclo_do_cartao()
     {
         var s = await NewSpaceAsync();

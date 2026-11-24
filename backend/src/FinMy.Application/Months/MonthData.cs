@@ -24,7 +24,10 @@ public sealed record MonthEntryItem(
     IReadOnlyList<Guid> TagIds,
     Guid? SettlementTagId,
     Guid? SplitGroupId,
-    int SplitCount);
+    int SplitCount,
+    Guid? RecurrenceId,
+    DateOnly? RecurrenceMonth,
+    bool RecurrenceModified);
 
 /// <summary>Transferência da lista do mês (contracts/openapi.yaml <c>Transfer</c>).</summary>
 public sealed record MonthTransferItem(
