@@ -44,10 +44,13 @@ public sealed record InvoiceSummaryResponse(
     string Status,
     long TotalCents,
     long PaidCents,
-    long RemainingCents)
+    long RemainingCents,
+    long? EstimateCents,
+    bool EstimateActive)
 {
     public static InvoiceSummaryResponse From(InvoiceSummaryView i) => new(
-        i.CreditCardId, i.DueMonth.ToString(), i.ClosingDate, i.DueDate, i.Id, i.Status.ToCode(), i.TotalCents, i.PaidCents, i.RemainingCents);
+        i.CreditCardId, i.DueMonth.ToString(), i.ClosingDate, i.DueDate, i.Id, i.Status.ToCode(), i.TotalCents, i.PaidCents, i.RemainingCents,
+        i.EstimateCents, i.EstimateActive);
 }
 
 /// <summary>Resposta <c>CreditCardOverview</c> do contrato (<see cref="CreditCardResponse"/> mais o resumo das faturas e o limite).</summary>

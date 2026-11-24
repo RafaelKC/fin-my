@@ -45,6 +45,33 @@ public sealed class GetInvoiceHandler(ICreditCardStore cards, IInvoiceStore invo
 }
 
 /// <summary>
+/// Define ou remove a Estimativa da fatura (007 FR-009, research R1). Definir cria a linha da fatura se faltar (003 R2);
+/// remover não cria nada. A estimativa não mexe em total, restante, situação, limite nem acertos (FR-012).
+/// </summary>
+public sealed class SetInvoiceEstimateHandler(ICreditCardStore cards, IInvoiceStore invoices, IInvoiceRepository invoiceRepository, IClock clock)
+{
+    public async Task<InvoiceDetailView> HandleAsync(SetInvoiceEstimateCommand command, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var card = await cards.FindAsync(command.CreditCardId, cancellationToken) ?? throw new DomainException(CreditCardErrors.NotFound);
+        var month = InvoiceInput.ParseMonth(command.Month);
+        var estimate = string.IsNullOrWhiteSpace(command.Amount) ? (Money?)null : CardPurchaseInput.ParsePositiveAmount(command.Amount);
+
+        var invoice = estimate is null
+            ? await invoiceRepository.FindAsync(card.Id, month, cancellationToken)
+            : await invoiceRepository.GetOrCreateAsync(card.Id, month, cancellationToken);
+        if (invoice is not null)
+        {
+            invoice.SetEstimate(estimate);
+            await invoices.SaveAsync(cancellationToken);
+        }
+
+        return await invoices.GetDetailAsync(card, month, clock.Today, [], cancellationToken);
+    }
+}
+
+/// <summary>
 /// Registra um pagamento (FR-017, research R4). Com a linha da fatura bloqueada, recalcula o Restante e recusa valor acima dele.
 /// Corpo vazio = padrões: valor = Restante, data = hoje, carteira = a de pagamento do cartão (caixinha da visão do mês, FR-019).
 /// </summary>

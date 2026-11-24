@@ -20,6 +20,9 @@ public sealed class InvoiceEndpoints : IEndpointModule
         invoices.MapGet("/", async (Guid id, string month, string? tagIds, GetInvoiceHandler handler, CancellationToken cancellationToken) =>
             Results.Ok(InvoiceResponse.From(await handler.HandleAsync(id, month, tagIds, cancellationToken))));
 
+        invoices.MapPut("/estimate", async (Guid id, string month, InvoiceEstimateRequest? body, SetInvoiceEstimateHandler handler, CancellationToken cancellationToken) =>
+            Results.Ok(InvoiceResponse.From(await handler.HandleAsync((body ?? new InvoiceEstimateRequest(null)).ToCommand(id, month), cancellationToken))));
+
         invoices.MapPost("/payments", async (Guid id, string month, InvoicePaymentCreateRequest? body, RegisterInvoicePaymentHandler handler, CancellationToken cancellationToken) =>
         {
             var invoice = await handler.HandleAsync((body ?? new InvoicePaymentCreateRequest(null, null, null)).ToCommand(id, month), cancellationToken);

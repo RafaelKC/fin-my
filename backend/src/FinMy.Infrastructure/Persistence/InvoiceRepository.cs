@@ -45,7 +45,7 @@ public sealed class InvoiceRepository(FinMyDbContext db, IClock clock) : IInvoic
             ?? throw new InvalidOperationException("A fatura não foi encontrada depois de criada.");
     }
 
-    private Task<Invoice?> FindAsync(Guid creditCardId, YearMonth dueMonth, CancellationToken cancellationToken)
+    public Task<Invoice?> FindAsync(Guid creditCardId, YearMonth dueMonth, CancellationToken cancellationToken)
     {
         var month = dueMonth.FirstDay;
         return db.Set<Invoice>().SingleOrDefaultAsync(

@@ -16,6 +16,7 @@ internal sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
                 "extract(day from due_month) = 1 AND due_month BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
             t.HasCheckConstraint("ck_invoices_closing_date", "closing_date BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
             t.HasCheckConstraint("ck_invoices_due_date", "due_date BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
+            t.HasCheckConstraint("ck_invoices_estimate_cents", "estimate_cents IS NULL OR (estimate_cents > 0 AND estimate_cents <= 999999999)");
         });
 
         builder.HasKey(i => i.Id);
@@ -24,6 +25,7 @@ internal sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(i => i.DueMonth).IsRequired();
         builder.Property(i => i.ClosingDate).IsRequired();
         builder.Property(i => i.DueDate).IsRequired();
+        builder.Property(i => i.EstimateCents);
         builder.Ignore(i => i.DueYearMonth);
 
         builder.HasOne<Tenant>().WithMany().HasForeignKey(i => i.TenantId).OnDelete(DeleteBehavior.Restrict);

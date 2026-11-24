@@ -1,6 +1,7 @@
 export * from './brl';
 export * from './installment-generator';
 export * from './invoice-cycle';
+export * from './invoice-forecast';
 export * from './money-split';
 export * from './month';
 export * from './text-normalize';

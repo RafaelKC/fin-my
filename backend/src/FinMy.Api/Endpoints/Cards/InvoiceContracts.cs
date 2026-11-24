@@ -9,6 +9,12 @@ public sealed record InvoicePaymentCreateRequest(string? Amount, DateOnly? Date,
     internal RegisterInvoicePaymentCommand ToCommand(Guid creditCardId, string? month) => new(creditCardId, month, Amount, Date, WalletId);
 }
 
+/// <summary>Corpo de <c>PUT /credit-cards/{id}/invoices/{month}/estimate</c>; <c>amount</c> nulo ou vazio remove a estimativa (007).</summary>
+public sealed record InvoiceEstimateRequest(string? Amount)
+{
+    internal SetInvoiceEstimateCommand ToCommand(Guid creditCardId, string? month) => new(creditCardId, month, Amount);
+}
+
 /// <summary>Corpo de <c>PUT /invoice-payments/{id}</c>.</summary>
 public sealed record InvoicePaymentUpdateRequest(string? Amount, DateOnly? Date, Guid? WalletId, long? Version)
 {
@@ -37,6 +43,8 @@ public sealed record InvoiceResponse(
     long TotalCents,
     long PaidCents,
     long RemainingCents,
+    long? EstimateCents,
+    bool EstimateActive,
     long ReconciledCents,
     bool CanCarryOver,
     IReadOnlyList<CardPurchaseResponse> Purchases,
@@ -51,6 +59,7 @@ public sealed record InvoiceResponse(
         var s = InvoiceSummaryResponse.From(v.Summary);
         return new InvoiceResponse(
             s.CreditCardId, s.DueMonth, s.ClosingDate, s.DueDate, s.Id, s.Status, s.TotalCents, s.PaidCents, s.RemainingCents,
+            s.EstimateCents, s.EstimateActive,
             v.ReconciledCents,
             v.CanCarryOver,
             v.Purchases.Select(CardPurchaseResponse.From).ToList(),

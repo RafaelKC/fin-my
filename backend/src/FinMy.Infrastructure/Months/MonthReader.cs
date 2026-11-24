@@ -184,7 +184,12 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
             .GroupBy(r => r.InvoiceId)
             .ToDictionary(g => g.Key, g => (IReadOnlyDictionary<Guid, long>)g.ToDictionary(r => r.WalletId, r => r.Cents));
 
-        var ids = totals.Where(t => t.Value != 0).Select(t => t.Key).Concat(paid.Keys).Distinct().ToList();
+        // Faturas só com estimativa também entram (007 R1): o Previsto delas é a estimativa.
+        var estimated = await db.Set<Invoice>().AsNoTracking()
+            .Where(i => i.DueMonth <= first && i.EstimateCents != null)
+            .Select(i => i.Id)
+            .ToListAsync(cancellationToken);
+        var ids = totals.Where(t => t.Value != 0).Select(t => t.Key).Concat(paid.Keys).Concat(estimated).Distinct().ToList();
         var rows = await db.Set<Invoice>().AsNoTracking()
             .Where(i => ids.Contains(i.Id))
             .Join(db.Set<CreditCard>().AsNoTracking(), i => i.CreditCardId, c => c.Id, (i, c) => new { Invoice = i, c.Name, c.PaymentWalletId })
@@ -201,7 +206,8 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
                 invoice.DueYearMonth,
                 totals.GetValueOrDefault(invoice.Id),
                 row.PaymentWalletId,
-                paid.GetValueOrDefault(invoice.Id) ?? none);
+                paid.GetValueOrDefault(invoice.Id) ?? none,
+                InvoiceForecast.EstimateActive(invoice.EstimateCents, today, invoice.ClosingDate) ? invoice.EstimateCents : null);
             figures.Add(figure);
 
             var touchesSelection = !filtered || set.Contains(row.PaymentWalletId) || figure.Actual(set) != 0;
@@ -219,7 +225,9 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
                     figure.PaidCents,
                     figure.RemainingCents,
                     figure.Planned(set),
-                    figure.Actual(set)));
+                    figure.Actual(set),
+                    invoice.EstimateCents,
+                    figure.ActiveEstimateCents is not null));
             }
         }
 
