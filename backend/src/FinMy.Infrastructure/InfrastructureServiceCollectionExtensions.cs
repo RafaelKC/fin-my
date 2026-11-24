@@ -1,5 +1,6 @@
 using FinMy.Application.Abstractions;
 using FinMy.Infrastructure.Auth;
+using FinMy.Infrastructure.Auth.OAuth;
 using FinMy.Infrastructure.Context;
 using FinMy.Infrastructure.Email;
 using FinMy.Infrastructure.Jobs;
@@ -27,7 +28,7 @@ public static class InfrastructureServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(connectionString);
 
-        services.TryAddSingleton<IClock, SystemClock>();
+        services.TryAddSingleton<IClock>(_ => new SystemClock(TimeProvider.System));
 
         // Um único CurrentContext por escopo, visível como interface (EF, handlers) e como tipo concreto (middleware).
         services.AddScoped<CurrentContext>();
@@ -51,6 +52,14 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ILoginThrottleStore, LoginThrottleStore>();
         services.AddScoped<IPasswordResetStore, PasswordResetStore>();
         services.AddScoped<IProfileStore, ProfileStore>();
+        // OAuth 2.1 do conector do Claude (008): núcleo do OpenIddict com as tabelas no mesmo banco; o servidor e a
+        // validação são ligados pela Api (AddFinMyOAuth).
+        // O OpenIddict calcula validades pelo relógio do app (registrado antes dele), o que também o torna controlável nos testes.
+        services.TryAddSingleton<TimeProvider>(sp => new ClockTimeProvider(sp.GetRequiredService<IClock>()));
+        services.AddOpenIddict().AddCore(core => core.UseEntityFrameworkCore().UseDbContext<FinMyDbContext>());
+        services.AddScoped<IOAuthAuthorizationRevoker, OAuthAuthorizationRevoker>();
+        services.AddScoped<IConsentTicketService, ConsentTicketService>();
+        services.AddScoped<IClientRegistrationService, ClientRegistrationService>();
         services.AddScoped<IDeletionStore, DeletionStore>();
         services.AddScoped<IWalletStore, WalletStore>();
         services.AddScoped<ITagStore, TagStore>();

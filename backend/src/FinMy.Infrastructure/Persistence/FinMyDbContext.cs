@@ -1,4 +1,5 @@
 using FinMy.Application.Abstractions;
+using FinMy.Infrastructure.Auth.OAuth;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinMy.Infrastructure.Persistence;
@@ -34,6 +35,7 @@ public class FinMyDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FinMyDbContext).Assembly);
+        modelBuilder.UseFinMyOpenIddict();
         modelBuilder.ApplyFinMyConventions(this);
     }
 }

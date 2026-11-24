@@ -8,4 +8,7 @@ public static class TokenClaims
     public const string Session = "sid";
     public const string Name = "name";
     public const string Channel = "channel";
+
+    /// <summary>Id da autorização OAuth (claim privada do OpenIddict); só tokens do conector a trazem (008).</summary>
+    public const string OAuthAuthorization = "oi_au_id";
 }

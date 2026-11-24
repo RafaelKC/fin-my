@@ -10,9 +10,9 @@ public sealed record ConfirmPasswordResetCommand(string? Token, string? NewPassw
 
 /// <summary>
 /// Conclui a recuperação (US4, FR-011/FR-012): troca a senha, renova o <c>security_stamp</c>, marca o token como usado
-/// e encerra todas as sessões da pessoa (<c>revoked_reason = password_reset</c>).
+/// encerra todas as sessões da pessoa (<c>revoked_reason = password_reset</c>) e revoga as autorizações OAuth (008 FR-003).
 /// </summary>
-public sealed class ConfirmPasswordResetHandler(IPasswordResetStore store, IPasswordHasher hasher, IRefreshTokenStore sessions, IClock clock)
+public sealed class ConfirmPasswordResetHandler(IPasswordResetStore store, IPasswordHasher hasher, IRefreshTokenStore sessions, IOAuthAuthorizationRevoker oauth, IClock clock)
 {
     public const int PasswordMinLength = 8;
     public const int PasswordMaxLength = 128;
@@ -47,5 +47,6 @@ public sealed class ConfirmPasswordResetHandler(IPasswordResetStore store, IPass
         }
 
         await sessions.RevokeUserSessionsAsync(userId.Value, RefreshTokenRevocationReason.PasswordReset, cancellationToken);
+        await oauth.RevokeAllAsync(userId.Value, cancellationToken);
     }
 }

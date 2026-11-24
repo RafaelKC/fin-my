@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace FinMy.Infrastructure.Jobs;
 
 /// <summary>
-/// Job diário (docs/arquitetura.md §8): remove refresh tokens e tokens de redefinição de senha vencidos há mais de
+/// Job diário (docs/arquitetura.md §8): remove refresh tokens, tokens de redefinição de senha e tickets de consentimento OAuth vencidos há mais de
 /// 24 h. Roda por Espaço via <see cref="ITenantJobRunner"/>; as tabelas de tokens são globais, então a limpeza é
 /// idempotente (a primeira passada apaga, as seguintes não encontram mais nada).
 /// </summary>
@@ -32,5 +32,6 @@ public sealed class TokenCleanupJob(ITenantJobRunner runner, IClock clock)
 
         await db.Set<RefreshToken>().Where(t => t.ExpiresAt < limit).ExecuteDeleteAsync(cancellationToken);
         await db.Set<PasswordResetToken>().Where(t => t.ExpiresAt < limit).ExecuteDeleteAsync(cancellationToken);
+        await db.Set<OAuthConsentTicket>().Where(t => t.ExpiresAt < limit).ExecuteDeleteAsync(cancellationToken);
     }
 }

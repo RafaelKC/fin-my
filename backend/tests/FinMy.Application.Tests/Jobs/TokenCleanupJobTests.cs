@@ -93,6 +93,29 @@ public class TokenCleanupJobTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Remove_tickets_de_consentimento_OAuth_vencidos_ha_mais_de_24h()
+    {
+        var (_, user) = await SeedSpaceAsync("a");
+        var old = new OAuthConsentTicket(Guid.NewGuid().ToByteArray(), user, Guid.NewGuid(), "cliente", "https://claude.ai/api/mcp/auth_callback", "desafio", Now.AddDays(-3));
+        var recent = new OAuthConsentTicket(Guid.NewGuid().ToByteArray(), user, Guid.NewGuid(), "cliente", "https://claude.ai/api/mcp/auth_callback", "desafio", Now.AddHours(-1));
+
+        await using var provider = BuildServices();
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var seed = scope.ServiceProvider.GetRequiredService<TestFinMyDbContext>();
+            seed.AddRange(old, recent);
+            await seed.SaveChangesAsync();
+        }
+
+        await provider.GetRequiredService<TokenCleanupJob>().RunAsync();
+
+        await using var read = provider.CreateAsyncScope();
+        var ids = await read.ServiceProvider.GetRequiredService<TestFinMyDbContext>().Set<OAuthConsentTicket>().Select(t => t.Id).ToListAsync();
+        ids.ShouldNotContain(old.Id);
+        ids.ShouldContain(recent.Id);
+    }
+
+    [Fact]
     public async Task Executa_sob_escopo_de_sistema_uma_vez_por_Espaco_e_e_idempotente()
     {
         var (tenantA, _) = await SeedSpaceAsync("a");

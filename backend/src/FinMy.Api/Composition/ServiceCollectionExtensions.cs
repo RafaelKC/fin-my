@@ -30,7 +30,8 @@ public static class ServiceCollectionExtensions
         services.AddFinMyAuthentication(configuration);
 
         // URL pública do app (links dos e-mails); APP_URL vem do compose.
-        services.AddSingleton(new AppUrl(configuration["APP_URL"] is { Length: > 0 } appUrl ? appUrl : "http://localhost:8080"));
+        // Lida na primeira vez que alguém precisa dela (a configuração dos testes só fica completa na construção do host).
+        services.AddSingleton(sp => new AppUrl(sp.GetRequiredService<IConfiguration>()["APP_URL"] is { Length: > 0 } appUrl ? appUrl : "http://localhost:8080"));
 
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>

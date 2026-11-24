@@ -21,7 +21,8 @@ public sealed class SessionValidationMiddleware(RequestDelegate next)
         ArgumentNullException.ThrowIfNull(sessions);
 
         var user = httpContext.User;
-        if (user.Identity?.IsAuthenticated == true)
+        // Token do conector (OAuth, 008): a autorização é conferida a cada chamada pelo OpenIddict, não há sessão `sid`.
+        if (user.Identity?.IsAuthenticated == true && !user.HasClaim(c => c.Type == TokenClaims.OAuthAuthorization))
         {
             // Sem `sid` válido o token não é um access token nosso: trata como sessão inválida.
             var active = Guid.TryParse(user.FindFirst(TokenClaims.Session)?.Value, out var sessionId)
