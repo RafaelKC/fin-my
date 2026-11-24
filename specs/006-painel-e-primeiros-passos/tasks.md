@@ -11,7 +11,7 @@ research da 002–005.
 **Testes**: obrigatórios, no mesmo PR. **Unidade**: 1 tarefa = 1 card = 1 PR. Agentes não editam este arquivo.
 **Pré-requisito**: 005 concluída na `main`. Dados fictícios.
 
-- [ ] T001 [US1] `GET /years/{yyyy}/panel` (research R1) com `PanelParityTests` e `PanelPerformanceTests`
+- [x] T001 [US1] `GET /years/{yyyy}/panel` (research R1) com `PanelParityTests` e `PanelPerformanceTests`
 - [ ] T002 [P] [US2] `GET /now` (research R2); testes HTTP de US2.1–US2.4 e carteiras arquivadas
 - [ ] T003 [P] [US3] Estado do guia: colunas e migração `Onboarding`, `GET /onboarding`, `PUT /onboarding/steps/{step}`, `POST /onboarding/dismiss` (research R3); testes
 - [ ] T004 [P] [US4] `GET /exports/entries.csv` (research R4); `CsvExportTests`
