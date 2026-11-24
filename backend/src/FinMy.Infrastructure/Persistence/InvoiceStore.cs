@@ -44,6 +44,7 @@ public sealed class InvoiceStore(FinMyDbContext db) : IInvoiceStore
             .ToListAsync(cancellationToken);
 
         var links = await TagLinks.ForPurchasesAsync(db, purchases.Select(p => p.Purchase.Id).ToList(), cancellationToken);
+        var counts = await SplitCounts.ForPurchasesAsync(db, purchases.Select(p => p.Purchase.SplitGroupId), cancellationToken);
         var shown = tagIds.Count == 0
             ? purchases
             : purchases.Where(p => TagLinks.All(p.Purchase.SettlementTagId, links, p.Purchase.Id).Any(id => tagIds.Contains(id))).ToList();
@@ -60,7 +61,8 @@ public sealed class InvoiceStore(FinMyDbContext db) : IInvoiceStore
             new InvoiceSummaryView(card.Id, dueMonth, row.ClosingDate, row.DueDate, row.Id, status, total, paid, remaining),
             reconciled,
             today >= row.ClosingDate && remaining != 0, // FR-020
-            shown.ConvertAll(p => CardPurchaseStore.ToView(p.Purchase, dueMonth, p.Version, TagLinks.All(p.Purchase.SettlementTagId, links, p.Purchase.Id))),
+            shown.ConvertAll(p => CardPurchaseStore.ToView(
+                p.Purchase, dueMonth, p.Version, TagLinks.All(p.Purchase.SettlementTagId, links, p.Purchase.Id), SplitCounts.Of(p.Purchase.SplitGroupId, counts))),
             payments.ConvertAll(p => ToView(p.Payment, dueMonth, card.Id, p.Version)),
             dueMonth.Previous(),
             dueMonth.Next(),

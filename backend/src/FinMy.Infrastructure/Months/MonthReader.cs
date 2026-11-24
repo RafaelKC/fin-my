@@ -67,11 +67,13 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
             .Select(e => new { Entry = e, Version = EF.Property<uint>(e, "xmin") })
             .ToListAsync(cancellationToken);
         var entryLinks = await TagLinks.ForEntriesAsync(db, entryRows.Select(r => r.Entry.Id).ToList(), cancellationToken);
+        var entryCounts = await SplitCounts.ForEntriesAsync(db, entryRows.Select(r => r.Entry.SplitGroupId), cancellationToken);
         var entryItems = entryRows
             .Select(r => new MonthEntryItem(
                 r.Entry.Id, r.Entry.Kind, r.Entry.Description, r.Entry.AmountCents, r.Entry.EntryDate, r.Entry.ReferenceMonth, r.Entry.Status,
                 r.Entry.WalletId, r.Entry.Notes, r.Entry.CreatedAt, r.Version,
-                TagLinks.All(r.Entry.SettlementTagId, entryLinks, r.Entry.Id), r.Entry.SettlementTagId))
+                TagLinks.All(r.Entry.SettlementTagId, entryLinks, r.Entry.Id), r.Entry.SettlementTagId,
+                r.Entry.SplitGroupId, SplitCounts.Of(r.Entry.SplitGroupId, entryCounts)))
             .ToList();
 
         // Com filtro de tags, a visão mostra só itens com tag: sem transferências, e com as compras das faturas do mês.
@@ -121,8 +123,10 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
             .Select(p => new { Purchase = p, Version = EF.Property<uint>(p, "xmin") })
             .ToListAsync(cancellationToken);
         var links = await TagLinks.ForPurchasesAsync(db, rows.Select(r => r.Purchase.Id).ToList(), cancellationToken);
+        var counts = await SplitCounts.ForPurchasesAsync(db, rows.Select(r => r.Purchase.SplitGroupId), cancellationToken);
         return rows
-            .Select(r => CardPurchaseStore.ToView(r.Purchase, month, r.Version, TagLinks.All(r.Purchase.SettlementTagId, links, r.Purchase.Id)))
+            .Select(r => CardPurchaseStore.ToView(
+                r.Purchase, month, r.Version, TagLinks.All(r.Purchase.SettlementTagId, links, r.Purchase.Id), SplitCounts.Of(r.Purchase.SplitGroupId, counts)))
             .ToList();
     }
 

@@ -20,7 +20,9 @@ public sealed record MonthEntryItem(
     DateTimeOffset CreatedAt,
     uint Version,
     IReadOnlyList<Guid> TagIds,
-    Guid? SettlementTagId);
+    Guid? SettlementTagId,
+    Guid? SplitGroupId,
+    int SplitCount);
 
 /// <summary>Transferência da lista do mês (contracts/openapi.yaml <c>Transfer</c>).</summary>
 public sealed record MonthTransferItem(

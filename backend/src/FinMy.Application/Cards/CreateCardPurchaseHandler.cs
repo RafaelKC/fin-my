@@ -13,15 +13,44 @@ namespace FinMy.Application.Cards;
 /// </summary>
 public sealed class CreateCardPurchaseHandler(ICreditCardStore cards, ICardPurchaseStore purchases, IInvoiceRepository invoices, ITagStore tags, IClock clock)
 {
-    private sealed record Target(int Number, Money Amount, YearMonth Month);
+    internal sealed record Target(int Number, Money Amount, YearMonth Month);
+
+    /// <summary>Compra já validada e calculada, pronta para gravar (as faturas só são criadas em <see cref="StageAsync"/>).</summary>
+    internal sealed record Prepared(
+        CreditCard Card,
+        string Description,
+        PurchaseNature Nature,
+        DateOnly Date,
+        string? Notes,
+        InstallmentPlan? Plan,
+        IReadOnlyList<Target> Targets,
+        TagSelection Selection,
+        IReadOnlyList<string> Warnings);
 
     public async Task<CardPurchaseCreateResult> HandleAsync(CreateCardPurchaseCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
 
+        var prepared = await PrepareAsync(command, null, cancellationToken);
+        var created = new List<CardPurchase>();
+        await using var transaction = await purchases.BeginTransactionAsync(cancellationToken);
+        await StageAsync(prepared, null, created, cancellationToken);
+        await purchases.SaveAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        return new CardPurchaseCreateResult(await purchases.GetViewsAsync(created.Select(p => p.Id).ToList(), cancellationToken), prepared.Warnings);
+    }
+
+    /// <summary>
+    /// Valida e calcula a compra. <paramref name="signedAmount"/> é o valor já lido (e se é negativo); <c>null</c> lê
+    /// <c>Amount</c> do comando, na ordem de sempre. <paramref name="selection"/> fixa as tags (divisão); <c>null</c> lê <c>tagIds</c> do comando.
+    /// </summary>
+    internal async Task<Prepared> PrepareAsync(
+        CreateCardPurchaseCommand command, (Money Amount, bool Negative)? signedAmount, CancellationToken cancellationToken, TagSelection? selection = null)
+    {
         var card = await CardPurchaseInput.RequireCardAsync(cards, CardPurchaseInput.RequireCardId(command.CreditCardId), mustBeActive: true, cancellationToken);
         var date = CardPurchaseInput.RequireDate(command.Date);
-        var (amount, negative) = CardPurchaseInput.ParseSignedAmount(command.Amount);
+        var (amount, negative) = signedAmount ?? CardPurchaseInput.ParseSignedAmount(command.Amount);
         var nature = negative ? PurchaseNature.Credit : CardPurchaseInput.ParseNature(command.Nature) ?? PurchaseNature.Debit;
         var warnings = negative ? new[] { CardPurchaseInput.RecordedAsCredit } : [];
 
@@ -57,30 +86,35 @@ public sealed class CreateCardPurchaseHandler(ICreditCardStore cards, ICardPurch
             throw new DomainException(CardPurchaseErrors.InvoicePaidConfirmationRequired);
         }
 
-        var selection = await TagSelector.ResolveAsync(tags, command.TagIds, [], cancellationToken);
-        var created = new List<CardPurchase>();
-        await using var transaction = await purchases.BeginTransactionAsync(cancellationToken);
-        if (plan is not null)
+        selection ??= await TagSelector.ResolveAsync(tags, command.TagIds, [], cancellationToken);
+        return new Prepared(card, description, nature, date, command.Notes, plan, targets, selection, warnings);
+    }
+
+    /// <summary>Acrescenta ao contexto a compra (ou o parcelamento) preparada; quem chama abre a transação e grava.</summary>
+    internal async Task StageAsync(
+        Prepared prepared, (Guid? SettlementTagId, Guid GroupId)? split, List<CardPurchase> created, CancellationToken cancellationToken)
+    {
+        if (prepared.Plan is { } plan)
         {
             purchases.Add(plan);
         }
 
-        foreach (var target in targets)
+        foreach (var target in prepared.Targets)
         {
-            var invoice = await invoices.GetOrCreateAsync(card.Id, target.Month, cancellationToken);
-            var purchase = plan is null
-                ? CardPurchase.CreateManual(card.Id, invoice.Id, description, target.Amount, nature, date, command.Notes)
-                : CardPurchase.CreateInstallment(card.Id, invoice.Id, plan, target.Number, target.Amount, command.Notes);
-            purchase.ChangeSettlementTag(selection.SettlementTagId);
+            var invoice = await invoices.GetOrCreateAsync(prepared.Card.Id, target.Month, cancellationToken);
+            var purchase = prepared.Plan is null
+                ? CardPurchase.CreateManual(prepared.Card.Id, invoice.Id, prepared.Description, target.Amount, prepared.Nature, prepared.Date, prepared.Notes)
+                : CardPurchase.CreateInstallment(prepared.Card.Id, invoice.Id, prepared.Plan, target.Number, target.Amount, prepared.Notes);
+            purchase.ChangeSettlementTag(split is { } s ? s.SettlementTagId : prepared.Selection.SettlementTagId);
+            if (split is { } groupSplit)
+            {
+                purchase.ChangeSplitGroup(groupSplit.GroupId);
+            }
+
             purchases.Add(purchase);
-            purchases.AddTags(purchase, selection.CommonTagIds);
+            purchases.AddTags(purchase, prepared.Selection.CommonTagIds);
             created.Add(purchase);
         }
-
-        await purchases.SaveAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-
-        return new CardPurchaseCreateResult(await purchases.GetViewsAsync(created.Select(p => p.Id).ToList(), cancellationToken), warnings);
     }
 
     private InstallmentPlan BuildPlan(CreditCard card, string description, InstallmentsCommand installments, Money amount, DateOnly date)

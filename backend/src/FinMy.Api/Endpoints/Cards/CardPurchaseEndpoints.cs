@@ -1,6 +1,8 @@
+using FinMy.Api.Endpoints.Splits;
 using FinMy.Api.Endpoints.Transfers;
 using FinMy.Api.Idempotency;
 using FinMy.Application.Cards;
+using FinMy.Application.Splits;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinMy.Api.Endpoints.Cards;
@@ -20,6 +22,13 @@ public sealed class CardPurchaseEndpoints : IEndpointModule
         group.MapPost("/", async (CardPurchaseCreateRequest body, CreateCardPurchaseHandler handler, CancellationToken cancellationToken) =>
         {
             var result = await handler.HandleAsync(body.ToCommand(), cancellationToken);
+            var purchases = result.Purchases.Select(CardPurchaseResponse.From).ToList();
+            return Results.Created($"/api/v1/card-purchases/{purchases[0].Id}", new CardPurchaseCreateResponse(purchases, result.Warnings));
+        }).WithIdempotency();
+
+        group.MapPost("/split", async (CardPurchaseSplitRequest body, SplitCardPurchaseHandler handler, CancellationToken cancellationToken) =>
+        {
+            var result = await handler.HandleAsync(body.ToCommand(), body.Split?.ToCommand(), cancellationToken);
             var purchases = result.Purchases.Select(CardPurchaseResponse.From).ToList();
             return Results.Created($"/api/v1/card-purchases/{purchases[0].Id}", new CardPurchaseCreateResponse(purchases, result.Warnings));
         }).WithIdempotency();

@@ -4,6 +4,7 @@ using FinMy.Domain.Monetary;
 namespace FinMy.Application.Abstractions;
 
 /// <summary>Entrada ou Saída como o cliente a vê: <see cref="Version"/> é o token de concorrência (<c>xmin</c>, research R11).</summary>
+/// <param name="SplitCount">Partes que o grupo de divisão tem hoje (004 FR-014); 0 se não foi dividida.</param>
 public sealed record EntryView(
     Guid Id,
     EntryKind Kind,
@@ -17,7 +18,9 @@ public sealed record EntryView(
     DateTimeOffset CreatedAt,
     long Version,
     IReadOnlyList<Guid> TagIds,
-    Guid? SettlementTagId);
+    Guid? SettlementTagId,
+    Guid? SplitGroupId,
+    int SplitCount);
 
 /// <summary>Carteira do Espaço do contexto, só com o que os lançamentos precisam saber.</summary>
 public sealed record WalletRef(Guid Id, bool IsArchived);
@@ -39,6 +42,10 @@ public interface IEntryStore
 
     /// <summary>Grava o lançamento (com a Tag de acerto já definida nele) e as ligações com as <paramref name="commonTagIds"/>.</summary>
     Task<EntryView> AddAsync(Entry entry, IReadOnlyCollection<Guid> commonTagIds, CancellationToken cancellationToken);
+
+    /// <summary>Grava todos os lançamentos (cada um com Tag de acerto e grupo de divisão já definidos) numa única gravação: tudo ou nada.</summary>
+    Task<IReadOnlyList<EntryView>> AddManyAsync(
+        IReadOnlyList<(Entry Entry, IReadOnlyCollection<Guid> CommonTagIds)> items, CancellationToken cancellationToken);
 
     /// <summary>
     /// Aplica <paramref name="change"/> ao lançamento e grava. <paramref name="expectedVersion"/> divergente da atual
