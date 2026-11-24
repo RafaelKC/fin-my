@@ -6,13 +6,16 @@ import { BehaviorSubject } from 'rxjs';
 import { PainelPage } from './painel.page';
 import { agora, painel2026 } from './testing';
 
+const ESTADO_COMPLETO = { steps: {}, dismissed: true, autoStart: false };
+
 describe('PainelPage', () => {
   let http: HttpTestingController;
   const params = new BehaviorSubject(convertToParamMap({ ano: '2026' }));
 
-  async function abrir(now = agora()) {
+  async function abrir(now = agora(), guia: object = ESTADO_COMPLETO) {
     const fixture = TestBed.createComponent(PainelPage);
     fixture.detectChanges();
+    http.expectOne('/api/v1/onboarding').flush(guia);
     http.expectOne('/api/v1/now').flush(now);
     http.expectOne('/api/v1/years/2026/panel').flush(painel2026());
     await fixture.whenStable();
@@ -176,6 +179,7 @@ describe('PainelPage', () => {
     const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     const fixture = TestBed.createComponent(PainelPage);
     fixture.detectChanges();
+    http.expectOne('/api/v1/onboarding').flush(ESTADO_COMPLETO);
     http.expectOne('/api/v1/now').flush(agora());
     expect(navegar).toHaveBeenCalledOnce();
     expect(navegar.mock.calls[0][0][0]).toBe('/painel');
@@ -185,6 +189,7 @@ describe('PainelPage', () => {
   it('erro do painel mostra a mensagem sem derrubar o Agora', async () => {
     const fixture = TestBed.createComponent(PainelPage);
     fixture.detectChanges();
+    http.expectOne('/api/v1/onboarding').flush(ESTADO_COMPLETO);
     http.expectOne('/api/v1/now').flush(agora());
     http
       .expectOne('/api/v1/years/2026/panel')
@@ -197,5 +202,21 @@ describe('PainelPage', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('[data-testid="erro-painel"]')).not.toBeNull();
     expect(el.querySelector('[data-testid="agora-carteira"]')).not.toBeNull();
+  });
+
+  it('US3.3: com etapa pendente e guia não dispensado mostra "Continuar configuração"', async () => {
+    const { el } = await abrir(agora(), {
+      steps: { wallets: 'done', cards: 'skipped' },
+      dismissed: false,
+      autoStart: false,
+    });
+    const cartao = el.querySelector('[data-testid="continuar-configuracao"]') as HTMLAnchorElement;
+    expect(cartao.textContent).toContain('Continuar configuração');
+    expect(cartao.getAttribute('href')).toBe('/primeiros-passos/pessoas');
+  });
+
+  it('US3.3: guia dispensado ou sem pendência não mostra o cartão', async () => {
+    const { el } = await abrir();
+    expect(el.querySelector('[data-testid="continuar-configuracao"]')).toBeNull();
   });
 });

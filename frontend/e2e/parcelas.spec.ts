@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { dispensarGuiaSeAberto } from './espaco-novo';
 import { simularCompras } from './compras-api';
 
 // 003 T007 — compra parcelada nos dois modos (US3.1–US3.3) e parcelamento em andamento (US4).
@@ -167,7 +168,7 @@ test.describe('aba Cartão — parcelas (US3, US4) — stack real', () => {
     await page.getByLabel('E-mail').fill(email);
     await page.getByLabel('Senha', { exact: true }).fill('senha-teste-123');
     await page.getByRole('button', { name: 'Criar conta' }).click();
-    await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
+    await dispensarGuiaSeAberto(page);
 
     await page.goto('/carteiras/nova');
     await page.getByLabel('Nome', { exact: true }).fill('Azul');

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { dispensarGuiaSeAberto } from './espaco-novo';
 import { irPara } from './navegacao';
 
 const sessao = {
@@ -134,7 +135,7 @@ test('troca de senha em um aparelho derruba o outro na próxima ação', async (
   await a.getByLabel('E-mail').fill(email);
   await a.getByLabel('Senha', { exact: true }).fill(senhaAntiga);
   await a.getByRole('button', { name: 'Criar conta' }).click();
-  await expect(a).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
+  await dispensarGuiaSeAberto(a);
 
   await b.goto('/entrar');
   await b.getByLabel('E-mail').fill(email);

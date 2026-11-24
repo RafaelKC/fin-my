@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -31,6 +31,10 @@ export class CartaoFormPage {
   private readonly dialog = inject(MatDialog);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id');
+
+  /** No guia de primeiros passos (006 US3) o formulário é embutido: ao salvar, avisa em vez de navegar. */
+  readonly embutido = input(false);
+  readonly salvou = output<void>();
 
   protected readonly cores = CARD_COLORS;
   protected readonly nomeMax = NOME_CARTAO_MAX;
@@ -161,7 +165,12 @@ export class CartaoFormPage {
       atual && this.id
         ? this.cards.update(this.id, input, atual.version)
         : this.cards.create(input);
-    this.executar(chamada, () => void this.router.navigateByUrl('/cartoes'));
+    this.executar(chamada, () => this.concluir());
+  }
+
+  private concluir(): void {
+    if (this.embutido()) this.salvou.emit();
+    else void this.router.navigateByUrl('/cartoes');
   }
 
   protected arquivar(): void {

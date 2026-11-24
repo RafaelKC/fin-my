@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { dispensarGuiaSeAberto } from './espaco-novo';
 
 // 003 T009 — tela `/cartoes/:id/faturas/:mes`: totais e situação, conferida (US7.1), mover (US7.2,
 // US7.3), excluir com escopo e Desfazer, pagamentos (US5.2, US5.5), levar restante (US5.4) e
@@ -525,7 +526,7 @@ test.describe('fatura (US5, US7) — stack real', () => {
     await page.getByLabel('E-mail').fill(email);
     await page.getByLabel('Senha', { exact: true }).fill('senha-teste-123');
     await page.getByRole('button', { name: 'Criar conta' }).click();
-    await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
+    await dispensarGuiaSeAberto(page);
 
     for (const nome of ['Azul', 'Verde']) {
       await page.goto('/carteiras/nova');

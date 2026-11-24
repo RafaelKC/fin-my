@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -45,6 +45,10 @@ export class CarteiraFormPage {
   private readonly dialog = inject(MatDialog);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id');
+
+  /** No guia de primeiros passos (006 US3) o formulário é embutido: ao salvar, avisa em vez de navegar. */
+  readonly embutido = input(false);
+  readonly salvou = output<void>();
 
   protected readonly tipos = WALLET_TYPES;
   protected readonly cores = WALLET_COLORS;
@@ -143,7 +147,12 @@ export class CarteiraFormPage {
       atual && this.id
         ? this.wallets.update(this.id, input, atual.version)
         : this.wallets.create(input);
-    this.executar(chamada, () => void this.router.navigateByUrl('/carteiras'));
+    this.executar(chamada, () => this.concluir());
+  }
+
+  private concluir(): void {
+    if (this.embutido()) this.salvou.emit();
+    else void this.router.navigateByUrl('/carteiras');
   }
 
   protected tornarPrincipal(): void {

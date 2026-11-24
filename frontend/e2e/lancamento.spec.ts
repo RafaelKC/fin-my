@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { dispensarGuiaSeAberto } from './espaco-novo';
 import { comecarEmSaida } from './navegacao';
 
 const sessao = {
@@ -488,7 +489,7 @@ test.describe('formulário rápido de lançamento (US2) — stack real', () => {
     await page.getByLabel('E-mail').fill(email);
     await page.getByLabel('Senha', { exact: true }).fill('senha-teste-123');
     await page.getByRole('button', { name: 'Criar conta' }).click();
-    await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
+    await dispensarGuiaSeAberto(page);
   }
 
   const criacao = (page: Page) =>

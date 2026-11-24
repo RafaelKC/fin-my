@@ -1,5 +1,7 @@
-<main class="pagina">
-  <h1>{{ edicao ? 'Recorrência' : 'Nova recorrência' }}</h1>
+<main class="pagina" [class.embutido]="embutido()">
+  @if (!embutido()) {
+    <h1>{{ edicao ? 'Recorrência' : 'Nova recorrência' }}</h1>
+  }
 
   @if (erro(); as mensagem) {
     <div class="aviso" role="alert" data-testid="erro-recorrencia">{{ mensagem }}</div>
@@ -186,7 +188,9 @@
       <button type="submit" class="enviar" [disabled]="ocupado()">
         {{ ocupado() ? 'Salvando…' : 'Salvar' }}
       </button>
-      <a class="voltar" routerLink="/recorrencias">Voltar</a>
+      @if (!embutido()) {
+        <a class="voltar" routerLink="/recorrencias">Voltar</a>
+      }
     </form>
 
     @if (recorrencia(); as r) {

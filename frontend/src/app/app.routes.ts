@@ -1,8 +1,11 @@
 import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
+import { catchError, map, of } from 'rxjs';
 import { DevicePrefsService } from './core/prefs/device-prefs.service';
 import { today } from './core/money';
 import { authGuard, publicGuard } from './core/auth/auth.guards';
+import { etapaInicial, rotaDaEtapa } from './features/primeiros-passos/onboarding-logic';
+import { OnboardingService } from './features/primeiros-passos/onboarding.service';
 
 export const routes: Routes = [
   {
@@ -42,13 +45,39 @@ export const routes: Routes = [
     loadComponent: () => import('./shell/shell').then((m) => m.Shell),
     children: [
       {
-        // Tela inicial do aparelho (006 FR-006): Mês (padrão) ou Painel.
+        // Tela inicial do aparelho (006 FR-006): Mês (padrão) ou Painel; um Espaço novo abre o guia (FR-007).
         path: '',
         pathMatch: 'full',
+        redirectTo: () => {
+          const inicial =
+            inject(DevicePrefsService).homeScreen() === 'painel'
+              ? `/painel/${today().slice(0, 4)}`
+              : `/mes/${today().slice(0, 7)}`;
+          return inject(OnboardingService)
+            .get()
+            .pipe(
+              map((estado) => (estado.autoStart ? rotaDaEtapa(etapaInicial(estado)) : inicial)),
+              catchError(() => of(inicial)),
+            );
+        },
+      },
+      {
+        path: 'primeiros-passos',
+        pathMatch: 'full',
         redirectTo: () =>
-          inject(DevicePrefsService).homeScreen() === 'painel'
-            ? `/painel/${today().slice(0, 4)}`
-            : `/mes/${today().slice(0, 7)}`,
+          inject(OnboardingService)
+            .get()
+            .pipe(
+              map((estado) => rotaDaEtapa(etapaInicial(estado))),
+              catchError(() => of('/primeiros-passos/carteiras')),
+            ),
+      },
+      {
+        path: 'primeiros-passos/:etapa',
+        loadComponent: () =>
+          import('./features/primeiros-passos/primeiros-passos.page').then(
+            (m) => m.PrimeirosPassosPage,
+          ),
       },
       {
         path: 'painel',

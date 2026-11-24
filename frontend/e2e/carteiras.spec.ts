@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { dispensarGuiaSeAberto } from './espaco-novo';
 import { irPara } from './navegacao';
 
 const sessao = {
@@ -275,7 +276,7 @@ test.describe('carteiras (US1) — stack real', () => {
     await page.getByLabel('E-mail').fill(email);
     await page.getByLabel('Senha', { exact: true }).fill('senha-teste-123');
     await page.getByRole('button', { name: 'Criar conta' }).click();
-    await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
+    await dispensarGuiaSeAberto(page);
   }
 
   async function nova(page: Page, nome: string, saldo: string) {

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { dispensarGuiaSeAberto } from './espaco-novo';
 
 async function semSessao(page: Page) {
   await page.route('**/api/v1/auth/refresh', (route) =>
@@ -133,7 +134,7 @@ test('fluxo completo com o e-mail lido no Mailpit', async ({ page, request }) =>
   await page.getByLabel('E-mail').fill(email);
   await page.getByLabel('Senha', { exact: true }).fill(senhaAntiga);
   await page.getByRole('button', { name: 'Criar conta' }).click();
-  await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
+  await dispensarGuiaSeAberto(page);
 
   await page.context().clearCookies(); // encerra a sessão do refresh token
   await page.goto('/esqueci-senha');

@@ -1,5 +1,7 @@
-<main class="pagina">
-  <h1>{{ edicao ? 'Editar cartão' : 'Novo cartão' }}</h1>
+<main class="pagina" [class.embutido]="embutido()">
+  @if (!embutido()) {
+    <h1>{{ edicao ? 'Editar cartão' : 'Novo cartão' }}</h1>
+  }
 
   @if (erro(); as mensagem) {
     <div class="aviso" role="alert" data-testid="erro-cartao">{{ mensagem }}</div>
@@ -10,7 +12,9 @@
   } @else if (carteiras().length === 0) {
     <p class="vazio" data-testid="sem-carteiras">
       Cadastre uma carteira antes de criar um cartão: é dela que a fatura costuma ser paga.
-      <a routerLink="/carteiras/nova">Nova carteira</a>
+      @if (!embutido()) {
+        <a routerLink="/carteiras/nova">Nova carteira</a>
+      }
     </p>
   } @else if (!edicao || cartao()) {
     @if (cartao(); as c) {
@@ -130,7 +134,9 @@
       <button type="submit" class="enviar" [disabled]="ocupado()">
         {{ ocupado() ? 'Salvando…' : 'Salvar' }}
       </button>
-      <a class="voltar" routerLink="/cartoes">Voltar</a>
+      @if (!embutido()) {
+        <a class="voltar" routerLink="/cartoes">Voltar</a>
+      }
     </form>
 
     @if (cartao(); as c) {

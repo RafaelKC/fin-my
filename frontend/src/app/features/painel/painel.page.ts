@@ -7,6 +7,9 @@ import { problemMessage } from '../../core/errors/problem-details';
 import { BrlPipe, today } from '../../core/money';
 import { ChartAnual } from '../../shared/chart-anual/chart-anual';
 import { formatarData } from '../mes/mes-logic';
+import { etapaInicial, rotaDaEtapa, temGuiaPendente } from '../primeiros-passos/onboarding-logic';
+import { OnboardingState } from '../primeiros-passos/onboarding.models';
+import { OnboardingService } from '../primeiros-passos/onboarding.service';
 import {
   ANO_MAXIMO,
   ANO_MINIMO,
@@ -37,6 +40,7 @@ export class PainelPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly service = inject(PanelService);
+  private readonly onboarding = inject(OnboardingService);
 
   protected readonly ano = signal(0);
   protected readonly leitura = signal<Leitura>('planned');
@@ -44,6 +48,12 @@ export class PainelPage {
   protected readonly erro = signal<string | null>(null);
   protected readonly agora = signal<NowView | null>(null);
   protected readonly erroAgora = signal<string | null>(null);
+  private readonly guia = signal<OnboardingState | null>(null);
+  /** Rota do cartão "Continuar configuração" (006 US3.3); `null` sem guia pendente. */
+  protected readonly rotaDoGuia = computed(() => {
+    const g = this.guia();
+    return g !== null && temGuiaPendente(g) ? rotaDaEtapa(etapaInicial(g)) : null;
+  });
 
   protected readonly noMinimo = computed(() => this.ano() <= ANO_MINIMO);
   protected readonly noMaximo = computed(() => this.ano() >= ANO_MAXIMO);
@@ -68,6 +78,11 @@ export class PainelPage {
   protected readonly abs = Math.abs;
 
   constructor() {
+    this.onboarding
+      .get()
+      .pipe(takeUntilDestroyed())
+      .subscribe({ next: (g) => this.guia.set(g), error: () => undefined });
+
     this.service
       .now()
       .pipe(takeUntilDestroyed())

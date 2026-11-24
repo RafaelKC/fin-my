@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { dispensarGuiaSeAberto } from './espaco-novo';
 import { comecarEmSaida } from './navegacao';
 
 // US6.1–US6.5 contra a stack real: editar (RT-04), excluir com Desfazer (RT-09), duplicar (FR-024)
@@ -26,7 +27,7 @@ async function criarConta(page: Page): Promise<string> {
   await page.getByLabel('E-mail').fill(email);
   await page.getByLabel('Senha', { exact: true }).fill('segredo123');
   await page.getByRole('button', { name: 'Criar conta' }).click();
-  await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
+  await dispensarGuiaSeAberto(page);
   const resposta = await page.request.post('/api/v1/auth/refresh');
   return (await resposta.json()).accessToken as string;
 }

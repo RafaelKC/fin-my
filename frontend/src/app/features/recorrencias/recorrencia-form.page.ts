@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -61,6 +61,10 @@ export class RecorrenciaFormPage {
   private readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id');
   /** Uma chave por formulário, reaproveitada em reenvios (a criação é idempotente). */
   private readonly chaveIdempotencia = crypto.randomUUID();
+
+  /** No guia de primeiros passos (006 US3) o formulário é embutido: ao salvar, avisa em vez de navegar. */
+  readonly embutido = input(false);
+  readonly salvou = output<void>();
 
   protected readonly tipos = RECURRENCE_KINDS;
   protected readonly terminos = RECURRENCE_END_TYPES;
@@ -149,9 +153,8 @@ export class RecorrenciaFormPage {
 
     const atual = this.recorrencia();
     if (!atual || !this.id) {
-      this.executar(
-        this.recurrences.create(entrada, this.chaveIdempotencia),
-        () => void this.router.navigateByUrl('/recorrencias'),
+      this.executar(this.recurrences.create(entrada, this.chaveIdempotencia), () =>
+        this.concluirCriacao(),
       );
       return;
     }
@@ -218,6 +221,11 @@ export class RecorrenciaFormPage {
           () => void this.router.navigateByUrl('/recorrencias'),
         );
       });
+  }
+
+  private concluirCriacao(): void {
+    if (this.embutido()) this.salvou.emit();
+    else void this.router.navigateByUrl('/recorrencias');
   }
 
   private perguntarMes(data: APartirDeData, aoConfirmar: (mes: string) => void): void {

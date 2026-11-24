@@ -91,7 +91,7 @@ export async function conectarClaude(
   return (await trocarCodigo(request, clientId, code!, verifier)).access_token;
 }
 
-/** Cria uma conta pela API (Lia) e devolve o e-mail, a senha e o token do app. */
+/** Cria uma conta pela API (Lia), dispensa o guia de primeiros passos e devolve o e-mail, a senha e o token do app. */
 export async function criarConta(
   request: APIRequestContext,
   nome = 'Lia',
@@ -102,7 +102,13 @@ export async function criarConta(
     data: { name: nome, email, password: senha },
   });
   expect(resposta.status()).toBe(201);
-  return { email, senha, token: ((await resposta.json()) as { accessToken: string }).accessToken };
+  const token = ((await resposta.json()) as { accessToken: string }).accessToken;
+  // Espaço sem carteiras abriria o guia de primeiros passos (006 FR-007) depois do login pela tela.
+  const dispensa = await request.post('/api/v1/onboarding/dismiss', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  expect(dispensa.ok()).toBe(true);
+  return { email, senha, token };
 }
 
 /** Chamada ao `/mcp` com o token do conector: 401 quando a autorização foi desconectada. */

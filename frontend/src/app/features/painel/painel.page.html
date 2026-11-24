@@ -1,4 +1,14 @@
 <div class="pagina">
+  @if (rotaDoGuia(); as rota) {
+    <a class="continuar-config" [routerLink]="rota" data-testid="continuar-configuracao">
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">checklist</mat-icon>
+      <span>
+        <strong>Continuar configuração</strong>
+        <span class="nota">Faltam etapas dos primeiros passos.</span>
+      </span>
+    </a>
+  }
+
   <section class="agora" aria-labelledby="titulo-agora" data-testid="agora">
     <h2 id="titulo-agora">Agora</h2>
     @if (erroAgora(); as mensagem) {
