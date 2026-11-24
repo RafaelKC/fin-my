@@ -2,6 +2,7 @@ using FinMy.Application.Tests.Infrastructure;
 using FinMy.Domain.Cards;
 using FinMy.Domain.Entries;
 using FinMy.Domain.Monetary;
+using FinMy.Domain.Recurrences;
 using FinMy.Domain.Tags;
 using FinMy.Domain.Transfers;
 using FinMy.Domain.Wallets;
@@ -12,7 +13,7 @@ namespace FinMy.Api.Tests.Isolation;
 /// Fábricas de dados por tipo <c>ITenantEntity</c> (docs/arquitetura.md §3.7). A suíte descobre por reflexão
 /// todos os tipos de Espaço mapeados e <b>falha</b> se algum não tiver fábrica aqui — quem criar uma entidade
 /// de Espaço nas próximas features acrescenta a fábrica dela neste dicionário.
-/// Além das sondas do contexto de teste (research R1), há as entidades da 002 (carteiras, lançamentos e transferências) da 003 (cartões, faturas, planos, compras e pagamentos) e da 004 (tags).
+/// Além das sondas do contexto de teste (research R1), há as entidades da 002 (carteiras, lançamentos e transferências) da 003 (cartões, faturas, planos, compras e pagamentos) da 004 (tags) e da 005 (recorrências).
 /// </summary>
 public static class TenantDataFactories
 {
@@ -37,6 +38,17 @@ public static class TenantDataFactories
                 return [wallet, Entry.Create(EntryKind.Expense, label, Money.FromCents(4499), Today, wallet.Id, null, null, null, Today)];
             },
             [typeof(Tag)] = label => [Tag.Create(label, "#E53935", isSettlement: true)],
+            [typeof(Recurrence)] = label =>
+            {
+                var wallet = NewWallet(label, primary: false);
+                return
+                [
+                    wallet,
+                    Recurrence.Create(
+                        RecurrenceKind.Expense, label, Money.FromCents(150_000), 5, wallet.Id, null, null,
+                        YearMonth.Of(2026, 3), RecurrenceEndType.None, null, null, ReferenceMonthRule.SameMonth),
+                ];
+            },
             [typeof(Transfer)] = label =>
             {
                 var from = NewWallet($"{label} origem", primary: false);

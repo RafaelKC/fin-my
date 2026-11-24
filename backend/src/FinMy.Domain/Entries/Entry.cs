@@ -56,7 +56,22 @@ public sealed class Entry : TenantEntity
     /// <summary>Mesmo valor nas partes de uma divisão (004 FR-014).</summary>
     public Guid? SplitGroupId { get; private set; }
 
+    /// <summary>Recorrência de origem (005); nula em lançamentos comuns.</summary>
+    public Guid? RecurrenceId { get; private set; }
+
+    /// <summary>Mês da ocorrência na recorrência (dia 1); nulo se <see cref="RecurrenceId"/> é nulo.</summary>
+    public DateOnly? RecurrenceMonth { get; private set; }
+
+    /// <summary>Ocorrência alterada à mão (005 FR-005): a recorrência não a sobrescreve.</summary>
+    public bool RecurrenceModified { get; private set; }
+
     public Money Amount => new(AmountCents);
+
+    public void LinkToRecurrence(Guid recurrenceId, YearMonth month)
+    {
+        RecurrenceId = recurrenceId;
+        RecurrenceMonth = month.FirstDay;
+    }
 
     public YearMonth ReferenceYearMonth => YearMonth.From(ReferenceMonth);
 
