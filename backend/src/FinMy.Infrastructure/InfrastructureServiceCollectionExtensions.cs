@@ -7,6 +7,7 @@ using FinMy.Infrastructure.Jobs;
 using FinMy.Infrastructure.Months;
 using FinMy.Infrastructure.Persistence;
 using FinMy.Infrastructure.Persistence.Interceptors;
+using FinMy.Infrastructure.Planning;
 using FinMy.Infrastructure.Settlements;
 using FinMy.Infrastructure.Time;
 using Microsoft.Extensions.DependencyInjection;
@@ -70,6 +71,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IInvoiceStore, InvoiceStore>();
         services.AddScoped<ICardPurchaseStore, CardPurchaseStore>();
         services.AddScoped<IMonthReader, MonthReader>();
+        services.AddScoped<IPlanningReader, PlanningReader>();
         services.AddScoped<INowReader, NowReader>();
         services.AddScoped<IEntryExportReader, EntryExportReader>();
         services.AddScoped<IOnboardingStore, OnboardingStore>();
