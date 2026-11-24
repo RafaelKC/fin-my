@@ -390,6 +390,19 @@ Mesma regra: quando uma feature futura mexer em um destes pontos, atualize a lis
 | 28 | Filtro por tag no mês | Com `tagIds`, `GET /months/{mes}` filtra as listas, acrescenta `purchases[]` (compras das faturas do mês) e traz `filterTotals`; faturas e transferências somem da lista e o resumo Previsto/Realizado **não muda**. | O resumo continua sendo o mês inteiro; o filtro só recorta a lista (research R6). |
 | 29 | Subtotais da fatura | A fatura sempre devolve `settlementSubtotals` ("Por pessoa", `tagId` nulo = sem tag de acerto) e a soma deles é o Total (SC-004, `InvoiceSettlementSubtotalsTests`). | Dá a cobrança por pessoa sem tela nova (004 FR-011). |
 
+### Feature 005 (recorrências)
+
+Mesma regra: quando uma feature futura mexer em um destes pontos, atualize a lista. A numeração segue a ordem de registro (a 008 foi registrada antes).
+
+| # | Tema | O que foi feito | Por quê |
+|---|---|---|---|
+| 36 | Horizonte (§8) | O horizonte (até dezembro do ano seguinte ao de hoje) é estendido ao criar/alterar a recorrência e pelo `RecurrenceHorizonJob` diário (03:00 de Brasília, `ITenantJobRunner`, todo Espaço). **Não** há extensão sob demanda ao abrir um mês além do horizonte, como o §8 sugeria. | A virada do ano é coberta pelo job (FR-003) e abrir mês não deve escrever dados; o job é idempotente. |
+| 37 | Ocorrência excluída não volta | O gerador só cria meses maiores que `generated_until_month`; índice único parcial `(tenant_id, recurrence_id, recurrence_month) WHERE deleted_at IS NULL` em `entries` e `card_purchases` barra duplicata em corrida. | Excluir uma ocorrência isolada é decisão da pessoa (US3.3); o job não pode recriá-la. |
+| 38 | Item arquivado | Carteira, cartão ou tag arquivados: o gerador não cria nada e não avança `generated_until_month`; a API devolve `needsReview: true` e `reviewReason` (`wallet_archived`, `card_archived`, `tag_archived`). Ao desarquivar, a próxima execução cria os meses pendentes. | Não gerar lançamentos em carteira/cartão arquivado (Edge Case) sem perder meses. |
+| 39 | "Alterada" | `PUT` de lançamento ou compra marca `recurrence_modified` quando muda qualquer campo além de situação e conferida; `PATCH` de situação/conferida nunca marca. "Alterar a partir de" e "encerrar" só mexem em ocorrências não alteradas, e (entrada/saída) previstas ou (compra) em fatura ainda não fechada. | A edição à mão vale mais que o modelo (FR-005/FR-006), mas pagar uma conta não a torna "diferente". |
+| 40 | Encerrar e excluir | `POST /recurrences/{id}/end` faz soft delete das ocorrências elegíveis em um lote (`deletionBatchId`), sem "Desfazer" na interface (a tela confirma). `DELETE /recurrences/{id}` encerra a partir de hoje e **desvincula** as ocorrências restantes (viram lançamentos comuns). Compra parcelada ou de crédito, ou lançamento que já é ocorrência, não vira recorrência (422 `recurrence.item_not_eligible`). | Dinheiro já lançado não pode sumir sem a pessoa confirmar (R4/R5). |
+| 41 | Isolamento nas rotas de recorrência | `ApiIsolationTests` cria em A uma recorrência de saída (com tag) e uma de compra no cartão (ids e ocorrências entram na varredura) e a lista esperada inclui as 7 rotas de `recurrences`. Carteira, cartão e tag de A em corpo de B e `from-item` com lançamento de A têm teste próprio. | Sem dados em A, o 404 por id de A só provava "id inexistente" (como nos itens 12, 20 e 24). |
+
 ### Feature 008 (assistente no Claude)
 
 Mesma regra: quando uma feature futura mexer em um destes pontos, atualize a lista.

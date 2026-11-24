@@ -25,7 +25,7 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
 
     private sealed record Caller(HttpClient Http, string AccessToken, string RefreshToken, string Email, string Password);
 
-    private sealed record ContaDeA(TestAccount Account, string SecondAccessToken, Guid SessionId, IReadOnlyList<string> Secrets, IReadOnlyList<Guid> Ids, Guid WalletA, Guid WalletA2, Guid CardA, Guid BrunaA, Guid IfoodA);
+    private sealed record ContaDeA(TestAccount Account, string SecondAccessToken, Guid SessionId, IReadOnlyList<string> Secrets, IReadOnlyList<Guid> Ids, Guid WalletA, Guid WalletA2, Guid CardA, Guid BrunaA, Guid IfoodA, Guid EntryA);
 
     private async Task<string> OpenApiJsonAsync()
     {
@@ -100,12 +100,20 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
             split = new { mode = "equal", parts = new object[] { new { settlementTagId = (Guid?)null }, new { settlementTagId = (Guid?)brunaId } } },
         });
 
+        // Recorrências de A (005): uma de saída (com tag) e uma de compra no cartão, com as ocorrências geradas. Ids de
+        // recorrência e de ocorrência de A em rotas e em `from-item` de B batem em linhas reais.
+        var recSaida = await CreateJsonAsync(asA, "/api/v1/recurrences", new { kind = "expense", description = "Academia Segredo da Alice", amount = "89,90", dayOfMonth = 10, walletId = azulId, tagIds = new[] { ifoodId }, startMonth = "2026-03", endType = "none" });
+        var recCompra = await CreateJsonAsync(asA, "/api/v1/recurrences", new { kind = "card_purchase", description = "Streaming Segredo da Alice", amount = "39,90", dayOfMonth = 5, creditCardId = cartaoId, startMonth = "2026-03", endType = "none" });
+        var recSaidaId = recSaida.GetProperty("id").GetGuid();
+        var recCompraId = recCompra.GetProperty("id").GetGuid();
+
         var secrets = new[]
         {
             a.Email, "Alice Isolada Segredo", "Espaço Secreto da Alice", a.AccessToken, second.AccessToken,
             "Azul Segredo da Alice", "Verde Segredo da Alice", "Tim Segredo da Alice", "Nota Secreta da Alice", "Salário Segredo da Alice", "Reserva Segredo da Alice",
             "Cartão Segredo da Alice", "Casa Segredo da Alice", "Nota do Cartão da Alice",
             "Bruna Segredo da Alice", "Ifood Segredo da Alice", "Jantar Segredo da Alice", "Mercado Segredo da Alice", "Dividida Segredo da Alice",
+            "Academia Segredo da Alice", "Streaming Segredo da Alice",
         };
         var ids = new[]
         {
@@ -113,9 +121,10 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
             azulId, verdeId, entry.GetProperty("id").GetGuid(), outra.GetProperty("id").GetGuid(), transfer.GetProperty("id").GetGuid(), batchId,
             cartaoId, compraId, planoId, pagamentoId,
             brunaId, ifoodId, comTags.GetProperty("id").GetGuid(), compraComTags.GetProperty("purchases")[0].GetProperty("id").GetGuid(),
+            recSaidaId, recCompraId,
         };
         _ = dividida;
-        return new ContaDeA(a, second.AccessToken, sessionId, secrets, ids, azulId, verdeId, cartaoId, brunaId, ifoodId);
+        return new ContaDeA(a, second.AccessToken, sessionId, secrets, ids, azulId, verdeId, cartaoId, brunaId, ifoodId, entry.GetProperty("id").GetGuid());
     }
 
     private static async Task<JsonElement> CreateJsonAsync(HttpClient http, string path, object body)
@@ -203,6 +212,13 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
             "GET /api/v1/settlements/{month}/tags/{tagId}/items",
             "POST /api/v1/entries/split",
             "POST /api/v1/card-purchases/split",
+            "GET /api/v1/recurrences",
+            "POST /api/v1/recurrences",
+            "POST /api/v1/recurrences/from-item",
+            "GET /api/v1/recurrences/{id}",
+            "PUT /api/v1/recurrences/{id}",
+            "POST /api/v1/recurrences/{id}/end",
+            "DELETE /api/v1/recurrences/{id}",
         ];
         esperadas.ShouldBeSubsetOf(operations.Select(o => o.Key));
     }
@@ -308,6 +324,10 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
             ["POST /card-purchases (cartão de A)"] = await b.Http.PostAsJsonAsync("/api/v1/card-purchases", new { description = "Uber", amount = "12,95", date = "2026-03-10", creditCardId = a.CardA }),
             ["POST /credit-cards (carteira de A)"] = await b.Http.PostAsJsonAsync("/api/v1/credit-cards", new { name = "Cartão do Beto", closingDay = 18, dueDay = 25, paymentWalletId = a.WalletA, color = "#1E88E5" }),
             ["POST /invoices/payments (carteira de A)"] = await b.Http.PostAsJsonAsync($"/api/v1/credit-cards/{ownCardId}/invoices/2026-03/payments", new { amount = "1", date = "2026-03-25", walletId = a.WalletA }),
+            ["POST /recurrences (carteira de A)"] = await b.Http.PostAsJsonAsync("/api/v1/recurrences", new { kind = "expense", description = "Academia", amount = "10,00", dayOfMonth = 10, walletId = a.WalletA, startMonth = "2026-03", endType = "none" }),
+            ["POST /recurrences (cartão de A)"] = await b.Http.PostAsJsonAsync("/api/v1/recurrences", new { kind = "card_purchase", description = "Streaming", amount = "10,00", dayOfMonth = 10, creditCardId = a.CardA, startMonth = "2026-03", endType = "none" }),
+            ["POST /recurrences (tagIds de A)"] = await b.Http.PostAsJsonAsync("/api/v1/recurrences", new { kind = "expense", description = "Academia", amount = "10,00", dayOfMonth = 10, walletId = ownId, tagIds = new[] { a.IfoodA }, startMonth = "2026-03", endType = "none" }),
+            ["POST /recurrences/from-item (entrada de A)"] = await b.Http.PostAsJsonAsync("/api/v1/recurrences/from-item", new { type = "entry", id = a.EntryA }),
             ["GET /months (filtro)"] = await b.Http.GetAsync($"/api/v1/months/2026-03?walletIds={a.WalletA}"),
         };
 
