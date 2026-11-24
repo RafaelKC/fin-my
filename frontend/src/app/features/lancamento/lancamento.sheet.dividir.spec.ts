@@ -358,6 +358,18 @@ describe('LancamentoSheet — selo "Dividida em N" (004 FR-014)', () => {
     expect(el.querySelector('[data-testid="selo-divisao"]')).toBeNull();
   });
 
+  it('008 FR-008: o formulário de edição mostra "via Claude" só se o lançamento foi criado pelo Claude', async () => {
+    await abrir({ entry: entrada({ createdVia: 'claude' }) });
+    expect(el.querySelector('[data-testid="selo-via-claude"]')?.textContent).toContain(
+      'via Claude',
+    );
+  });
+
+  it('008 FR-008: lançamento do app não tem o selo "via Claude" no formulário', async () => {
+    await abrir({ entry: entrada({ createdVia: 'app' }) });
+    expect(el.querySelector('[data-testid="selo-via-claude"]')).toBeNull();
+  });
+
   it('Saída dividida: selo e, ao tocar, as outras partes', async () => {
     const parte = entrada({ splitCount: 2, splitGroupId: 'g1' });
     await abrir({ entry: parte });

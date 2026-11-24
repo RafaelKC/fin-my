@@ -1,4 +1,5 @@
 using FinMy.Domain.Cards;
+using FinMy.Domain.Common;
 using FinMy.Domain.Monetary;
 
 namespace FinMy.Application.Abstractions;
@@ -23,6 +24,7 @@ public sealed record CardPurchaseView(
     int? InstallmentNumber,
     int? InstallmentTotal,
     DateTimeOffset CreatedAt,
+    Channel CreatedVia,
     long Version,
     IReadOnlyList<Guid> TagIds,
     Guid? SettlementTagId,

@@ -1,5 +1,6 @@
 using FinMy.Application.Abstractions;
 using FinMy.Domain.Cards;
+using FinMy.Domain.Common;
 using FinMy.Domain.Entries;
 using FinMy.Domain.Monetary;
 using FinMy.Domain.Months;
@@ -18,6 +19,7 @@ public sealed record MonthEntryItem(
     Guid WalletId,
     string? Notes,
     DateTimeOffset CreatedAt,
+    Channel CreatedVia,
     uint Version,
     IReadOnlyList<Guid> TagIds,
     Guid? SettlementTagId,
@@ -34,6 +36,7 @@ public sealed record MonthTransferItem(
     string Description,
     string? Notes,
     DateTimeOffset CreatedAt,
+    Channel CreatedVia,
     uint Version);
 
 /// <summary>Aviso de pendências (FR-019): Prevista com Mês de referência anterior ao mês de hoje.</summary>

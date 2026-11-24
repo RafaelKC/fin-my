@@ -1,3 +1,4 @@
+import type { CriadoVia } from '../../shared/selo-via-claude/selo-via-claude';
 import type { Transfer } from '../mes/month.models';
 import type { CardPurchase } from './card-purchase.models';
 
@@ -38,6 +39,8 @@ export interface Entry {
   walletId: string;
   notes?: string | null;
   createdAt: string;
+  /** Canal que criou o lançamento (008 FR-008); ausente = app. */
+  createdVia?: CriadoVia;
   version: number;
   /** Todas as tags do lançamento (a de acerto inclusive); `settlementTagId` é a de acerto. */
   tagIds?: string[];

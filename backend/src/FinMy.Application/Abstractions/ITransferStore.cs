@@ -1,3 +1,4 @@
+using FinMy.Domain.Common;
 using FinMy.Domain.Transfers;
 
 namespace FinMy.Application.Abstractions;
@@ -35,6 +36,7 @@ public sealed record TransferView(
     string Description,
     string? Notes,
     DateTimeOffset CreatedAt,
+    Channel CreatedVia,
     long Version);
 
 /// <summary>Persistência das transferências (US5, FR-021..FR-023), sempre dentro do Espaço do contexto.</summary>

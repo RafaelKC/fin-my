@@ -88,7 +88,7 @@ public sealed class TransferStore(FinMyDbContext db) : ITransferStore
     private TransferView ToView(Transfer transfer) => ToView(transfer, VersionOf(transfer));
 
     private static TransferView ToView(Transfer t, long version) => new(
-        t.Id, t.FromWalletId, t.ToWalletId, t.AmountCents, t.TransferDate, t.Description, t.Notes, ToMicroseconds(t.CreatedAt), version);
+        t.Id, t.FromWalletId, t.ToWalletId, t.AmountCents, t.TransferDate, t.Description, t.Notes, ToMicroseconds(t.CreatedAt), t.CreatedVia, version);
 
     // O PostgreSQL guarda microssegundos: sem truncar, o POST devolveria mais casas do que um GET depois.
     private static DateTimeOffset ToMicroseconds(DateTimeOffset value) => value.AddTicks(-(value.Ticks % 10));

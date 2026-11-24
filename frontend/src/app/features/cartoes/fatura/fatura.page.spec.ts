@@ -107,6 +107,21 @@ describe('FaturaPage (US5.2–US5.5, US6.2, US7)', () => {
     expect(linhas).toEqual(['Bruna R$ 150,00', 'Sem tag de acerto R$ 50,00']);
   });
 
+  it('008 FR-008: compra criada pelo Claude mostra o selo "via Claude"; as do app não', async () => {
+    const f = faturaDetalhada();
+    await abrir({
+      ...f,
+      purchases: [
+        compra({ id: 'p1', displayDescription: 'Cinema do Léo', createdVia: 'claude' }),
+        compra({ id: 'p2', displayDescription: 'Mercado', createdVia: 'app' }),
+      ],
+    });
+    expect(el.querySelectorAll('[data-testid="selo-via-claude"]')).toHaveLength(1);
+    expect(
+      el.querySelector('[data-testid="selo-via-claude"]')?.closest('li')?.textContent,
+    ).toContain('Cinema do Léo');
+  });
+
   it('sem subtotais o bloco "Por pessoa" não aparece', async () => {
     await abrir();
     expect(el.querySelector('[data-testid="por-pessoa"]')).toBeNull();

@@ -38,10 +38,11 @@ public sealed record TransferResponse(
     string Description,
     string? Notes,
     DateTimeOffset CreatedAt,
+    string CreatedVia,
     long Version)
 {
     internal static TransferResponse From(TransferView v) =>
-        new(v.Id, v.FromWalletId, v.ToWalletId, v.AmountCents, v.Date, v.Description, v.Notes, v.CreatedAt, v.Version);
+        new(v.Id, v.FromWalletId, v.ToWalletId, v.AmountCents, v.Date, v.Description, v.Notes, v.CreatedAt, ChannelText.Of(v.CreatedVia), v.Version);
 }
 
 /// <summary>Resposta de uma exclusão (<c>DeletionResult</c>): o lote para desfazer.</summary>

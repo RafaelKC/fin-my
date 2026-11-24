@@ -301,6 +301,7 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
         e.WalletId,
         e.Notes,
         e.CreatedAt,
+        e.CreatedVia,
         version,
         tagIds,
         e.SettlementTagId,

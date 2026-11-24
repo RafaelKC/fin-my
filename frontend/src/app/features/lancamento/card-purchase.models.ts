@@ -1,3 +1,4 @@
+import type { CriadoVia } from '../../shared/selo-via-claude/selo-via-claude';
 import type { InstallmentMode } from '../../core/money';
 
 /** Códigos de erro da API de compras (contracts/openapi.yaml). */
@@ -46,6 +47,8 @@ export interface CardPurchase {
   installmentNumber?: number | null;
   installmentTotal?: number | null;
   createdAt: string;
+  /** Canal que criou o lançamento (008 FR-008); ausente = app. */
+  createdVia?: CriadoVia;
   version: number;
   tagIds?: string[];
   settlementTagId?: string | null;

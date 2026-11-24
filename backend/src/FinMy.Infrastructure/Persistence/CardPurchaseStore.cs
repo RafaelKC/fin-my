@@ -133,6 +133,7 @@ public sealed class CardPurchaseStore(FinMyDbContext db) : ICardPurchaseStore
         p.InstallmentNumber,
         p.InstallmentTotal,
         p.CreatedAt,
+        p.CreatedVia,
         version,
         tagIds,
         p.SettlementTagId,
