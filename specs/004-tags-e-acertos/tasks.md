@@ -25,7 +25,7 @@ description: "Tarefas da feature 004 — Tags e acerto de contas"
 ## Phase 3: US2/US3 — Acertos
 
 - [x] T006 [US2] API `/settlements/{month}` e `/settlements/{month}/tags/{tagId}/items` (research R3) com teste HTTP do exemplo da US2 (inclui compras de fatura e crédito) e parcela contando no mês da fatura. Depende de T003
-- [ ] T007 [US2] Tela `/acertos/:mes` (contracts/ui-rotas.md) com detalhamento dos números, "Gerar cobrança" pré-preenchendo o formulário rápido (research R4, US3.1–US3.4), bloco "Por pessoa" na fatura (FR-011), casca com "Acertos" na barra inferior; e2e `acertos.spec.ts`. Depende de T004, T006
+- [x] T007 [US2] Tela `/acertos/:mes` (contracts/ui-rotas.md) com detalhamento dos números, "Gerar cobrança" pré-preenchendo o formulário rápido (research R4, US3.1–US3.4), bloco "Por pessoa" na fatura (FR-011), casca com "Acertos" na barra inferior; e2e `acertos.spec.ts`. Depende de T004, T006
 
 ## Phase 4: US4 — Dividir
 
