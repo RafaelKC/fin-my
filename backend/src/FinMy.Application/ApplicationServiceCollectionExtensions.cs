@@ -11,7 +11,8 @@ public static class ApplicationServiceCollectionExtensions
     public static IServiceCollection AddApplication(this IServiceCollection services)
         => services.AddHandlersFrom(typeof(ApplicationServiceCollectionExtensions).Assembly)
             .AddScoped<Auth.PasswordResetMailer>()
-            .AddScoped<Catalog.CatalogResolver>();
+            .AddScoped<Catalog.CatalogResolver>()
+            .AddScoped<Catalog.CreationDefaults>();
 
     /// <summary>
     /// Registra por convenção, como escopo da requisição, toda classe concreta e pública cujo nome termina

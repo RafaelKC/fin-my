@@ -1,4 +1,5 @@
 using FinMy.Application.Abstractions;
+using FinMy.Application.Tags;
 using FinMy.Domain.Common;
 using FinMy.Domain.Monetary;
 
@@ -33,7 +34,7 @@ public sealed class CatalogNames(
 /// <see cref="TextNormalizer"/> (sem busca por trecho). Zero ou mais de um resultado vira <c>ambiguous_or_not_found</c> com as
 /// opções ativas daquele tipo, para o Claude perguntar em vez de escolher.
 /// </summary>
-public sealed class CatalogResolver(IWalletStore wallets, ICreditCardStore cards, ITagStore tags, IClock clock)
+public sealed class CatalogResolver(IWalletStore wallets, ICreditCardStore cards, ITagStore tags, CreateTagHandler createTag, IClock clock)
 {
     public const string ErrorCode = "ambiguous_or_not_found";
 
@@ -100,6 +101,46 @@ public sealed class CatalogResolver(IWalletStore wallets, ICreditCardStore cards
 
         var items = (await ActiveTagsAsync(false, cancellationToken)).ToList();
         return names.Select(n => Pick(items, n, field, Noun.Tag)).Distinct().ToList();
+    }
+
+    /// <summary>
+    /// Tags de um lançamento por nome (004 US1.2): a ativa de mesmo nome é usada e a que não existe é criada como tag comum
+    /// (nunca de acerto). Se o nome é de uma tag arquivada, não cria nem reativa: devolve <c>ambiguous_or_not_found</c>.
+    /// </summary>
+    public async Task<IReadOnlyList<Guid>> ResolveOrCreateTagsAsync(IEnumerable<string>? names, string field, CancellationToken cancellationToken)
+    {
+        var ids = new List<Guid>();
+        foreach (var name in (names ?? []).Where(n => !string.IsNullOrWhiteSpace(n)))
+        {
+            var active = (await ActiveTagsAsync(false, cancellationToken)).ToList();
+            var wanted = TextNormalizer.Normalize(name);
+            var existing = active.Where(t => TextNormalizer.Normalize(t.Name) == wanted).Select(t => (Guid?)t.Id).FirstOrDefault();
+            if (existing is { } existingId)
+            {
+                ids.Add(existingId);
+                continue;
+            }
+
+            try
+            {
+                ids.Add((await createTag.HandleAsync(new TagInput(name.Trim(), null, false), cancellationToken)).Id);
+            }
+            catch (DomainException ex) when (ex.Error.Code == TagErrors.NameTaken(null).Code)
+            {
+                // Há uma tag arquivada com esse nome: a pessoa decide (desarquivar no app ou usar outra).
+                throw new DomainException(new DomainError(
+                    ErrorCode,
+                    $"A tag \"{name}\" existe, mas está arquivada. Escolha uma das opções ou desarquive a tag no app.",
+                    DomainErrorKind.Validation,
+                    Extensions: new Dictionary<string, object?>
+                    {
+                        ["field"] = field,
+                        ["options"] = active.Select(t => t.Name).Order(StringComparer.CurrentCultureIgnoreCase).ToArray(),
+                    }));
+            }
+        }
+
+        return ids.Distinct().ToList();
     }
 
     private async Task<IEnumerable<(Guid Id, string Name)>> ActiveTagsAsync(bool settlementOnly, CancellationToken cancellationToken)
