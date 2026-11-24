@@ -293,7 +293,7 @@ test.describe('recorrências (005) — stack real', () => {
 
     await page.goto(`/mes/${m0}`);
     await expect(seguro().getByTestId('selo-recorrencia')).toHaveCount(0);
-    await seguro().click();
+    await page.getByRole('button', { name: 'Seguro Vida' }).first().click();
     await expect(page.getByRole('heading', { name: 'Editar lançamento' })).toBeVisible();
     await page.getByTestId('repetir').click();
     await page.getByTestId('repetir-fim').selectOption('until_month');
@@ -319,7 +319,7 @@ test.describe('recorrências (005) — stack real', () => {
       'Dia 10',
     );
     await page.goto(`/mes/${m1}`);
-    await seguro().click();
+    await page.getByRole('button', { name: 'Seguro Vida' }).first().click();
     await expect(page.getByRole('heading', { name: 'Editar lançamento' })).toBeVisible();
     await expect(page.getByTestId('repetir')).toHaveCount(0);
   });
