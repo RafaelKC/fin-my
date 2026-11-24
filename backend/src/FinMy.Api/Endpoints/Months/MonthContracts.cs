@@ -32,7 +32,10 @@ public sealed record EntryDto(
     IReadOnlyList<Guid> TagIds,
     Guid? SettlementTagId,
     Guid? SplitGroupId,
-    int SplitCount);
+    int SplitCount,
+    Guid? RecurrenceId,
+    string? RecurrenceMonth,
+    bool RecurrenceModified);
 
 public sealed record TransferDto(
     Guid Id,
@@ -119,7 +122,10 @@ public sealed record MonthViewDto(
         e.TagIds,
         e.SettlementTagId,
         e.SplitGroupId,
-        e.SplitCount);
+        e.SplitCount,
+        e.RecurrenceId,
+        e.RecurrenceMonth?.ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture),
+        e.RecurrenceModified);
 
     private static TransferDto From(MonthTransferItem t) => new(
         t.Id, t.FromWalletId, t.ToWalletId, t.AmountCents, t.Date, t.Description, t.Notes, t.CreatedAt, ChannelText.Of(t.CreatedVia), t.Version);

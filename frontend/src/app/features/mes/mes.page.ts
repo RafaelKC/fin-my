@@ -1,3 +1,4 @@
+import { SeloRecorrencia } from '../../shared/selo-recorrencia/selo-recorrencia';
 import { SeloViaClaude } from '../../shared/selo-via-claude/selo-via-claude';
 import {
   ChangeDetectionStrategy,
@@ -86,7 +87,7 @@ interface LinhaResumo {
 @Component({
   selector: 'app-mes-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BrlPipe, MatIconModule, PendenciasComponent, TagFilter, SeloViaClaude],
+  imports: [BrlPipe, MatIconModule, PendenciasComponent, TagFilter, SeloViaClaude, SeloRecorrencia],
   templateUrl: './mes.page.html',
   styleUrl: './mes.page.scss',
 })

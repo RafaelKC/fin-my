@@ -48,6 +48,10 @@ export interface Entry {
   /** Divisão (004 FR-014): grupo das partes e quantas são; `splitCount` ausente/≤ 1 = não dividida. */
   splitGroupId?: string | null;
   splitCount?: number;
+  /** Recorrência (005): vínculo, mês da ocorrência e se foi editada à mão (FR-005). */
+  recurrenceId?: string | null;
+  recurrenceMonth?: string | null;
+  recurrenceModified?: boolean;
 }
 
 /** Item de `GET /entries/suggestions` (FR-011, research R8). */

@@ -122,6 +122,28 @@ describe('FaturaPage (US5.2–US5.5, US6.2, US7)', () => {
     ).toContain('Cinema do Léo');
   });
 
+  it('005: compra de recorrência mostra o ícone, e "alterada" quando editada à mão', async () => {
+    const f = faturaDetalhada();
+    await abrir({
+      ...f,
+      purchases: [
+        compra({ id: 'p1', displayDescription: 'Prime Video', recurrenceId: 'r-prime' }),
+        compra({
+          id: 'p2',
+          displayDescription: 'Academia',
+          recurrenceId: 'r-academia',
+          recurrenceModified: true,
+        }),
+        compra({ id: 'p3', displayDescription: 'Mercado' }),
+      ],
+    });
+    const linhas = [...el.querySelectorAll('[data-testid="compra"]')];
+    expect(linhas[0].querySelector('[data-testid="selo-recorrencia"]')).not.toBeNull();
+    expect(linhas[0].querySelector('[data-testid="selo-alterada"]')).toBeNull();
+    expect(linhas[1].querySelector('[data-testid="selo-alterada"]')).not.toBeNull();
+    expect(linhas[2].querySelector('[data-testid="selo-recorrencia"]')).toBeNull();
+  });
+
   it('sem subtotais o bloco "Por pessoa" não aparece', async () => {
     await abrir();
     expect(el.querySelector('[data-testid="por-pessoa"]')).toBeNull();

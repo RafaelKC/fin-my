@@ -150,6 +150,24 @@ describe('MesPage', () => {
     ).toContain('R$ 1.955,01');
   });
 
+  it('005: ocorrência de recorrência mostra o ícone e "alterada" só quando editada à mão', async () => {
+    await abrir(
+      '/mes/2026-03',
+      visao({
+        entries: [
+          entry({ id: '1', description: 'Tim', recurrenceId: 'r-tim', recurrenceModified: false }),
+          entry({ id: '2', description: 'Aluguel', recurrenceId: 'r-a', recurrenceModified: true }),
+          entry({ id: '3', description: 'Padaria da Carla' }),
+        ],
+      }),
+    );
+    const linhas = [...el.querySelectorAll('[data-testid="lancamento"]')];
+    expect(linhas[0].querySelector('[data-testid="selo-recorrencia"]')).not.toBeNull();
+    expect(linhas[0].querySelector('[data-testid="selo-alterada"]')).toBeNull();
+    expect(linhas[1].querySelector('[data-testid="selo-alterada"]')).not.toBeNull();
+    expect(linhas[2].querySelector('[data-testid="selo-recorrencia"]')).toBeNull();
+  });
+
   it('008 FR-008: mostra o selo "via Claude" só nos lançamentos e transferências criados pelo Claude', async () => {
     await abrir(
       '/mes/2026-03',
