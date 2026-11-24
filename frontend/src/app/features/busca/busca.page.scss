@@ -150,3 +150,11 @@ select:focus-visible {
   outline: 2px solid var(--mat-sys-primary);
   outline-offset: 2px;
 }
+
+.selo-divisao {
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-secondary-container);
+  background: var(--mat-sys-secondary-container);
+  padding: 2px 8px;
+  border-radius: 10px;
+}

@@ -42,6 +42,9 @@ export interface Entry {
   /** Todas as tags do lançamento (a de acerto inclusive); `settlementTagId` é a de acerto. */
   tagIds?: string[];
   settlementTagId?: string | null;
+  /** Divisão (004 FR-014): grupo das partes e quantas são; `splitCount` ausente/≤ 1 = não dividida. */
+  splitGroupId?: string | null;
+  splitCount?: number;
 }
 
 /** Item de `GET /entries/suggestions` (FR-011, research R8). */
@@ -69,6 +72,19 @@ export interface TransferCreate {
 }
 
 export const DESCRICAO_TRANSFERENCIA = 'Transferência';
+
+/** Uma parte de `Split` (contracts/openapi.yaml); `null` = "Eu (sem tag de acerto)". */
+export interface SplitPartInput {
+  settlementTagId: string | null;
+  /** Obrigatório em `mode = amounts`. */
+  amount?: string;
+}
+
+/** `Split` do contrato: 2 a 10 partes, sem repetir tag de acerto. */
+export interface SplitInput {
+  mode: 'equal' | 'amounts';
+  parts: SplitPartInput[];
+}
 
 /** Tipos que a busca devolve (`LedgerItem.type`). */
 export type LedgerKind = EntryKind | 'transfer' | 'card_purchase';

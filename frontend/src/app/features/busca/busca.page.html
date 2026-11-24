@@ -122,6 +122,11 @@
         <li class="item" data-testid="resultado">
           <button type="button" class="linha" (click)="abrir(e)">
             <span class="descricao">{{ e.description }}</span>
+            @if ((e.splitCount ?? 0) > 1) {
+              <span class="selo-divisao" data-testid="selo-divisao"
+                >Dividida em {{ e.splitCount }}</span
+              >
+            }
             <span class="valor-item" [class.negativo]="e.kind === 'expense'">{{
               valorComSinal(e) | brl
             }}</span>
@@ -135,6 +140,11 @@
         <li class="item" data-testid="resultado-compra">
           <button type="button" class="linha" (click)="abrirCompra(c)">
             <span class="descricao">{{ c.displayDescription }}</span>
+            @if ((c.splitCount ?? 0) > 1) {
+              <span class="selo-divisao" data-testid="selo-divisao"
+                >Dividida em {{ c.splitCount }}</span
+              >
+            }
             <span class="valor-item" [class.negativo]="c.nature === 'debit'">{{
               valorCompra(c) | brl
             }}</span>
