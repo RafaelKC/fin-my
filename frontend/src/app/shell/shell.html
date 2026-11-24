@@ -21,12 +21,12 @@
   </button>
   <a
     class="item"
-    [routerLink]="busca.rota"
+    [routerLink]="acertos.rota"
     routerLinkActive="ativo"
     [routerLinkActiveOptions]="{ exact: false }"
   >
-    <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{ busca.icone }}</mat-icon>
-    <span>{{ busca.rotulo }}</span>
+    <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{ acertos.icone }}</mat-icon>
+    <span>{{ acertos.rotulo }}</span>
   </a>
 
   <div class="mais" [class.aberto]="maisAberto()" routerLinkActive="mais-ativo">

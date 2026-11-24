@@ -48,6 +48,15 @@ export const routes: Routes = [
         loadComponent: () => import('./features/mes/mes.page').then((m) => m.MesPage),
       },
       {
+        path: 'acertos',
+        pathMatch: 'full',
+        redirectTo: () => `/acertos/${today().slice(0, 7)}`,
+      },
+      {
+        path: 'acertos/:mes',
+        loadComponent: () => import('./features/acertos/acertos.page').then((m) => m.AcertosPage),
+      },
+      {
         path: 'carteiras',
         loadComponent: () =>
           import('./features/carteiras/carteiras.page').then((m) => m.CarteirasPage),

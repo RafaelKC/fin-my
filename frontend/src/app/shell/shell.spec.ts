@@ -55,6 +55,7 @@ describe('Shell', () => {
     expect(nav.querySelector(':scope > a[href="/carteiras"]')).toBeNull();
     const painel = nav.querySelector('#mais-painel')!;
     expect(painel.querySelector('a[href="/carteiras"]')?.textContent).toContain('Carteiras');
+    expect(painel.querySelector('a[href="/busca"]')?.textContent).toContain('Busca');
     expect(painel.querySelector('a[href="/tags"]')?.textContent).toContain('Tags');
     expect(painel.querySelector('a[href="/perfil"]')?.textContent).toContain('Perfil');
 
@@ -67,16 +68,16 @@ describe('Shell', () => {
     expect(nav.querySelector('.mais.aberto')).not.toBeNull();
   });
 
-  it('a barra segue Mês · Cartões · + · Busca · Mais', () => {
+  it('a barra segue Mês · Cartões · + · Acertos · Mais', () => {
     const fixture = TestBed.createComponent(Shell);
     fixture.detectChanges();
     const nav = (fixture.nativeElement as HTMLElement).querySelector(
       'nav[aria-label="Principal"]',
     )!;
     const ordem = Array.from(nav.children).map((c) =>
-      ['Mês', 'Cartões', 'Lançar', 'Busca', 'Mais'].find((t) => c.textContent?.includes(t)),
+      ['Mês', 'Cartões', 'Lançar', 'Acertos', 'Mais'].find((t) => c.textContent?.includes(t)),
     );
-    expect(ordem).toEqual(['Mês', 'Cartões', 'Lançar', 'Busca', 'Mais']);
+    expect(ordem).toEqual(['Mês', 'Cartões', 'Lançar', 'Acertos', 'Mais']);
   });
 
   it('tem o "+" Lançar na barra, que abre o formulário rápido (FR-008)', () => {
@@ -93,17 +94,17 @@ describe('Shell', () => {
     expect(abrir).toHaveBeenCalledOnce();
   });
 
-  it('tem o item "Busca" levando a /busca, depois do "+"', () => {
+  it('tem o item "Acertos" levando a /acertos, depois do "+"', () => {
     const fixture = TestBed.createComponent(Shell);
     fixture.detectChanges();
     const nav = (fixture.nativeElement as HTMLElement).querySelector(
       'nav[aria-label="Principal"]',
     )!;
-    const link = nav.querySelector('a[href="/busca"]');
-    expect(link?.textContent).toContain('Busca');
+    const link = nav.querySelector(':scope > a[href="/acertos"]');
+    expect(link?.textContent).toContain('Acertos');
     const itens = Array.from(nav.children).map((c) => c.textContent?.trim());
     expect(itens.findIndex((t) => t?.includes('Lançar'))).toBeLessThan(
-      itens.findIndex((t) => t?.includes('Busca')),
+      itens.findIndex((t) => t?.includes('Acertos')),
     );
   });
 });

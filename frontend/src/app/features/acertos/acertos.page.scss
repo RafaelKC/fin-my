@@ -1,0 +1,115 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.titulo {
+  margin: 0;
+  font: var(--mat-sys-title-large);
+}
+.seta {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 24px;
+  cursor: pointer;
+  color: inherit;
+}
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+}
+.nome {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+}
+.cor {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+.selo {
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+.numeros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 12px;
+  margin: 0;
+
+  dt {
+    font: var(--mat-sys-label-medium);
+    color: var(--mat-sys-on-surface-variant);
+  }
+  dd {
+    margin: 0;
+    font: var(--mat-sys-title-medium);
+  }
+}
+.credito {
+  color: var(--mat-sys-primary);
+}
+.numero {
+  min-height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px dashed currentColor;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.botao {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 22px;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font: var(--mat-sys-label-large);
+  cursor: pointer;
+}
+.itens {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0 12px;
+  }
+  .data {
+    grid-row: 2;
+    font: var(--mat-sys-label-medium);
+    color: var(--mat-sys-on-surface-variant);
+  }
+  .valor {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+    align-self: center;
+  }
+}
+.erro {
+  color: var(--mat-sys-error);
+}
