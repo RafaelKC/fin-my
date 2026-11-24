@@ -31,7 +31,7 @@ public sealed class PlanningReader(FinMyDbContext db) : IPlanningReader
         var entries = rows
             .Select(e => new PlanningEntry(
                 e.Id, e.Kind, e.Description, e.DescriptionNormalized, e.AmountCents, e.EntryDate, e.ReferenceYearMonth, e.Status,
-                e.WalletId, e.CreatedAt, TagLinks.All(e.SettlementTagId, links, e.Id)))
+                e.WalletId, e.CreatedAt, TagLinks.All(e.SettlementTagId, links, e.Id), e.SettlementTagId, e.RecurrenceId))
             .ToList();
 
         var cards = await db.Set<CreditCard>().AsNoTracking()
