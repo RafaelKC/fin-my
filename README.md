@@ -10,7 +10,7 @@ Stack: .NET 10 · PostgreSQL 17 · Angular (PWA) · Docker Compose.
 
 | O quê | Onde |
 |---|---|
-| Specs por feature (spec-kit): `spec.md`, `plan.md`, `tasks.md`, `quickstart.md`, `contracts/` | [`specs/`](specs/README.md) (001 a 004 e 008 prontas; a próxima é a [`005-recorrencias`](specs/005-recorrencias/)) |
+| Specs por feature (spec-kit): `spec.md`, `plan.md`, `tasks.md`, `quickstart.md`, `contracts/` | [`specs/`](specs/README.md) (001 a 005 e 008 prontas; a próxima é a [`006-painel-e-primeiros-passos`](specs/006-painel-e-primeiros-passos/)) |
 | Constituição: princípios, glossário, regras transversais | [`.specify/memory/constitution.md`](.specify/memory/constitution.md) |
 | Arquitetura técnica (normativa) e desvios registrados | [`docs/arquitetura.md`](docs/arquitetura.md) |
 | Modelo de dados | [`docs/modelo-de-dados.md`](docs/modelo-de-dados.md) |
