@@ -55,4 +55,17 @@ describe('InvoicesService', () => {
     service.deletePayment('pg1').subscribe();
     expect(http.match('/api/v1/invoice-payments/pg1').pop()!.request.method).toBe('DELETE');
   });
+
+  it('define e remove a estimativa da fatura (007 FR-009)', () => {
+    service.setEstimate('c1', '2026-03', '800').subscribe();
+    const req = http.expectOne('/api/v1/credit-cards/c1/invoices/2026-03/estimate');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ amount: '800' });
+    req.flush({});
+
+    service.setEstimate('c1', '2026-03', null).subscribe();
+    const remover = http.expectOne('/api/v1/credit-cards/c1/invoices/2026-03/estimate');
+    expect(remover.request.body).toEqual({ amount: null });
+    remover.flush({});
+  });
 });

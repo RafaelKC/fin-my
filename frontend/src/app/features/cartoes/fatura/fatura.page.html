@@ -60,6 +60,47 @@
       Conferido {{ f.reconciledCents | brl }} de {{ f.totalCents | brl }}
     </p>
 
+    <section class="estimativa" aria-labelledby="titulo-estimativa" data-testid="estimativa">
+      <h2 id="titulo-estimativa">Estimativa</h2>
+      @if (f.estimateCents) {
+        <p data-testid="estimativa-texto">
+          Estimado {{ f.estimateCents | brl }}
+          @if (!f.estimateActive) {
+            <span class="ajuda">· já fechou: vale só como referência</span>
+          }
+        </p>
+        @if (f.estimateActive) {
+          <p class="ajuda" data-testid="estimativa-previsto">
+            Previsto {{ previsto() | brl }} — lançado {{ f.totalCents | brl }}
+          </p>
+        }
+      } @else {
+        <p class="ajuda">Sem estimativa para esta fatura.</p>
+      }
+      <div class="botoes">
+        <button
+          type="button"
+          class="botao pequeno"
+          data-testid="estimativa-editar"
+          [disabled]="ocupado()"
+          (click)="editarEstimativa()"
+        >
+          {{ f.estimateCents ? 'Alterar estimativa' : 'Definir estimativa' }}
+        </button>
+        @if (f.estimateCents) {
+          <button
+            type="button"
+            class="botao pequeno perigo"
+            data-testid="estimativa-remover"
+            [disabled]="ocupado()"
+            (click)="removerEstimativa()"
+          >
+            Remover estimativa
+          </button>
+        }
+      </div>
+    </section>
+
     @if (porPessoa().length > 0) {
       <section class="por-pessoa" aria-labelledby="titulo-por-pessoa" data-testid="por-pessoa">
         <h2 id="titulo-por-pessoa">Por pessoa</h2>

@@ -375,6 +375,67 @@ describe('FaturaPage (US5.2–US5.5, US6.2, US7)', () => {
     expect(el.querySelector('[data-testid="levar-restante"]')).toBeNull();
   });
 
+  describe('estimativa (007 US2.1, US2.3, FR-009)', () => {
+    it('sem estimativa: "Definir estimativa" abre o diálogo e envia o valor (RT-05)', async () => {
+      await abrir(faturaDetalhada());
+      expect(texto('estimativa-editar')).toBe('Definir estimativa');
+      expect(el.querySelector('[data-testid="estimativa-remover"]')).toBeNull();
+      respondeDialogo('800');
+      await clicar('estimativa-editar');
+      expect(dialog.mock.calls.at(-1)?.[1]).toMatchObject({
+        data: { valorInicial: '' },
+      });
+      const req = http.expectOne(`${BASE}/estimate`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual({ amount: '800' });
+      req.flush(faturaDetalhada({ estimateCents: 80000, estimateActive: true }));
+      http.expectOne(BASE).flush(faturaDetalhada({ estimateCents: 80000, estimateActive: true }));
+      await atualizar();
+      expect(texto('estimativa-texto')).toContain('Estimado R$ 800,00');
+    });
+
+    it('estimativa válida mostra "Previsto … — lançado …" e é pré-preenchida ao alterar', async () => {
+      await abrir(
+        faturaDetalhada({
+          totalCents: 20553,
+          estimateCents: 80000,
+          estimateActive: true,
+          status: 'open',
+        }),
+      );
+      expect(texto('estimativa-previsto')).toBe('Previsto R$ 800,00 — lançado R$ 205,53');
+      respondeDialogo(null);
+      await clicar('estimativa-editar');
+      expect(dialog.mock.calls.at(-1)?.[1]).toMatchObject({ data: { valorInicial: '800,00' } });
+    });
+
+    it('compras acima da estimativa: o Previsto é o Total lançado', async () => {
+      await abrir(
+        faturaDetalhada({ totalCents: 91240, estimateCents: 80000, estimateActive: true }),
+      );
+      expect(texto('estimativa-previsto')).toBe('Previsto R$ 912,40 — lançado R$ 912,40');
+    });
+
+    it('depois do fechamento a estimativa fica só como referência', async () => {
+      await abrir(
+        faturaDetalhada({ totalCents: 64000, estimateCents: 80000, estimateActive: false }),
+      );
+      expect(texto('estimativa-texto')).toContain('Estimado R$ 800,00');
+      expect(el.querySelector('[data-testid="estimativa-previsto"]')).toBeNull();
+    });
+
+    it('"Remover estimativa" envia amount nulo', async () => {
+      await abrir(faturaDetalhada({ estimateCents: 80000, estimateActive: true }));
+      await clicar('estimativa-remover');
+      const req = http.expectOne(`${BASE}/estimate`);
+      expect(req.request.body).toEqual({ amount: null });
+      req.flush(faturaDetalhada());
+      http.expectOne(BASE).flush(faturaDetalhada());
+      await atualizar();
+      expect(el.querySelector('[data-testid="estimativa-remover"]')).toBeNull();
+    });
+  });
+
   it('erro da API na ação aparece no aviso da tela', async () => {
     await abrir(faturaDetalhada({ purchases: [compra()] }));
     await clicar('mover-anterior');

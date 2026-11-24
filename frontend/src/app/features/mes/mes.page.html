@@ -273,6 +273,11 @@
                           Total {{ f.totalCents | brl }} · Pago {{ f.paidCents | brl }} · Restante
                           {{ f.remainingCents | brl }}
                         </span>
+                        @if (f.estimateCents) {
+                          <span class="meta" data-testid="fatura-estimativa">{{
+                            textoEstimativa(f)
+                          }}</span>
+                        }
                       </td>
                       <td>{{ data(f.dueDate) }}</td>
                       <td class="num">{{ f.plannedCents | brl }}</td>
@@ -365,6 +370,9 @@
                         <span data-testid="fatura-total">{{ f.totalCents | brl }}</span> · Pago
                         <span data-testid="fatura-pago">{{ f.paidCents | brl }}</span> · Restante
                         <span data-testid="fatura-restante">{{ f.remainingCents | brl }}</span>
+                        @if (f.estimateCents) {
+                          · <span data-testid="fatura-estimativa">{{ textoEstimativa(f) }}</span>
+                        }
                       </span>
                     </button>
                   </li>

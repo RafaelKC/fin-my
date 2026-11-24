@@ -15,6 +15,7 @@ import { EMPTY, Subject, catchError, combineLatest, merge, of, switchMap, tap } 
 import { problemMessage } from '../../core/errors/problem-details';
 import {
   BrlPipe,
+  formatBrl,
   isYearMonth,
   monthLabel,
   nextMonth,
@@ -322,6 +323,13 @@ export class MesPage {
   /** Sem pagamentos e sem restante não há o que marcar. */
   protected faturaSemAcao(f: MonthInvoiceLine): boolean {
     return !this.faturaPaga(f) && f.remainingCents <= 0;
+  }
+
+  /** 007 US2.1/US2.3: "Previsto R$ 800,00 — lançado R$ 205,53" enquanto vale; depois "Estimado R$ 800,00". */
+  protected textoEstimativa(f: MonthInvoiceLine): string {
+    return f.estimateActive
+      ? `Previsto ${formatBrl(f.plannedCents)} — lançado ${formatBrl(f.totalCents)}`
+      : `Estimado ${formatBrl(f.estimateCents ?? 0)}`;
   }
 
   protected abrirFatura(f: MonthInvoiceLine): void {

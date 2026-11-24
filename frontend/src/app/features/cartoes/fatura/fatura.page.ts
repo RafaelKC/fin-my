@@ -18,9 +18,11 @@ import { BrlPipe, formatBrl, isYearMonth, monthLabel } from '../../../core/money
 import { TagFilter } from '../../../shared/tag-picker/tag-filter';
 import { Tag } from '../../../shared/tag-picker/tag.models';
 import { TagsService } from '../../../shared/tag-picker/tags.service';
+import { centavosParaCampo } from '../../carteiras/carteira-form.page';
 import { Wallet } from '../../carteiras/wallet.models';
 import { WalletsService } from '../../carteiras/wallets.service';
 import { CardPurchase } from '../../lancamento/card-purchase.models';
+import { CelulaData, CelulaDialog, CelulaResultado } from '../../planejamento/celula.dialog';
 import { CardPurchasesService } from '../../lancamento/card-purchases.service';
 import { ExclusaoService } from '../../lancamento/exclusao.service';
 import { LancamentoLauncher } from '../../lancamento/lancamento.launcher';
@@ -106,6 +108,16 @@ export class FaturaPage {
     return f.status === 'no_amount_due' && f.totalCents < 0
       ? `Sem valor a pagar — crédito de ${formatBrl(-f.totalCents)}`
       : ROTULO_SITUACAO[f.status];
+  });
+
+  /** Previsto da fatura (007 FR-010); o servidor diz se a estimativa ainda vale (`estimateActive`). */
+  protected readonly previsto = computed(() => {
+    const f = this.fatura();
+    if (f === null) return 0;
+    const semEstimativa = Math.max(f.totalCents, f.paidCents, 0);
+    return f.estimateActive && f.estimateCents
+      ? Math.max(semEstimativa, f.estimateCents)
+      : semEstimativa;
   });
 
   protected aoMudarTags(ids: string[]): void {
@@ -223,6 +235,33 @@ export class FaturaPage {
       },
       error: (error: unknown) => this.falhar(error),
     });
+  }
+
+  /** 007 FR-009: define ou altera a estimativa (valor segue RT-05; vazio remove). */
+  protected editarEstimativa(): void {
+    const f = this.fatura();
+    if (f === null) return;
+    const data: CelulaData = {
+      titulo: `Estimativa — ${nomeDoMes(f.dueMonth)}`,
+      valorInicial: f.estimateCents ? centavosParaCampo(f.estimateCents) : '',
+    };
+    this.dialog
+      .open<CelulaDialog, CelulaData, CelulaResultado>(CelulaDialog, { data })
+      .afterClosed()
+      .subscribe((texto) => {
+        if (texto === null || texto === undefined) return;
+        this.salvarEstimativa(texto.trim() === '' ? null : texto.trim());
+      });
+  }
+
+  protected removerEstimativa(): void {
+    this.salvarEstimativa(null);
+  }
+
+  private salvarEstimativa(valor: string | null): void {
+    const f = this.fatura();
+    if (f === null) return;
+    this.executar(this.invoices.setEstimate(f.creditCardId, f.dueMonth, valor));
   }
 
   protected levarRestante(): void {

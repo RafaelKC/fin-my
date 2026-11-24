@@ -34,6 +34,18 @@
       <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">add</mat-icon>
       Nova linha
     </button>
+    @if (desktop()) {
+      <button
+        type="button"
+        class="botao"
+        data-testid="copiar-ano-anterior"
+        [disabled]="grade() === null"
+        (click)="copiarDoAnoAnterior()"
+      >
+        <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">content_copy</mat-icon>
+        Copiar do ano anterior
+      </button>
+    }
   </div>
 
   @if (erro(); as mensagem) {
