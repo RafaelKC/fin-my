@@ -22,7 +22,10 @@ public sealed record EntryView(
     IReadOnlyList<Guid> TagIds,
     Guid? SettlementTagId,
     Guid? SplitGroupId,
-    int SplitCount);
+    int SplitCount,
+    Guid? RecurrenceId = null,
+    YearMonth? RecurrenceMonth = null,
+    bool RecurrenceModified = false);
 
 /// <summary>Carteira do Espaço do contexto, só com o que os lançamentos precisam saber.</summary>
 public sealed record WalletRef(Guid Id, bool IsArchived);

@@ -138,7 +138,10 @@ public sealed class CardPurchaseStore(FinMyDbContext db) : ICardPurchaseStore
         tagIds,
         p.SettlementTagId,
         p.SplitGroupId,
-        splitCount);
+        splitCount,
+        p.RecurrenceId,
+        p.RecurrenceMonth is { } month ? YearMonth.From(month) : null,
+        p.RecurrenceModified);
 
     private sealed class CardTransaction(IDbContextTransaction transaction) : ICardTransaction
     {

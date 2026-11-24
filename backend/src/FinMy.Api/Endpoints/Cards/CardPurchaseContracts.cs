@@ -79,7 +79,10 @@ public sealed record CardPurchaseResponse(
     IReadOnlyList<Guid> TagIds,
     Guid? SettlementTagId,
     Guid? SplitGroupId,
-    int SplitCount)
+    int SplitCount,
+    Guid? RecurrenceId,
+    string? RecurrenceMonth,
+    bool RecurrenceModified)
 {
     public static CardPurchaseResponse From(CardPurchaseView p) => new(
         p.Id,
@@ -103,7 +106,10 @@ public sealed record CardPurchaseResponse(
         p.TagIds,
         p.SettlementTagId,
         p.SplitGroupId,
-        p.SplitCount);
+        p.SplitCount,
+        p.RecurrenceId,
+        p.RecurrenceMonth?.ToString(),
+        p.RecurrenceModified);
 
     private static string ToText(Domain.Cards.PurchaseNature nature) => nature == Domain.Cards.PurchaseNature.Credit ? "credit" : "debit";
 
@@ -111,6 +117,7 @@ public sealed record CardPurchaseResponse(
     {
         Domain.Cards.PurchaseOrigin.Installment => "installment",
         Domain.Cards.PurchaseOrigin.CarryOver => "carry_over",
+        Domain.Cards.PurchaseOrigin.Recurrence => "recurrence",
         _ => "manual",
     };
 }

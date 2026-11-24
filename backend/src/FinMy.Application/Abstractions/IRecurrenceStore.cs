@@ -1,3 +1,4 @@
+using FinMy.Domain.Cards;
 using FinMy.Domain.Entries;
 using FinMy.Domain.Monetary;
 using FinMy.Domain.Recurrences;
@@ -26,6 +27,27 @@ public interface IRecurrenceStore
     Task<IReadOnlyDictionary<Guid, DateOnly>> GetNextOccurrenceDatesAsync(IReadOnlyCollection<Guid> ids, DateOnly today, CancellationToken cancellationToken);
 
     long VersionOf(Recurrence recurrence);
+
+    /// <summary>Exige que a gravação encontre a recorrência ainda nesta versão (senão <c>concurrency_conflict</c>).</summary>
+    void ExpectVersion(Recurrence recurrence, long version);
+
+    /// <summary>Todas as Entradas/Saídas não excluídas ligadas à recorrência, rastreadas, por mês da ocorrência.</summary>
+    Task<IReadOnlyList<Entry>> ListEntryOccurrencesAsync(Guid recurrenceId, CancellationToken cancellationToken);
+
+    /// <summary>Todas as compras não excluídas ligadas à recorrência, rastreadas, por mês da ocorrência.</summary>
+    Task<IReadOnlyList<CardPurchase>> ListPurchaseOccurrencesAsync(Guid recurrenceId, CancellationToken cancellationToken);
+
+    /// <summary>Faz as ligações da recorrência serem exatamente as <paramref name="commonTagIds"/> (grava em <see cref="SaveAsync"/>).</summary>
+    Task ReplaceTagsAsync(Recurrence recurrence, IReadOnlyCollection<Guid> commonTagIds, CancellationToken cancellationToken);
+
+    /// <summary>Faz as ligações da ocorrência de Entrada/Saída serem exatamente as <paramref name="commonTagIds"/> (grava em <see cref="SaveAsync"/>).</summary>
+    Task ReplaceOccurrenceTagsAsync(Entry entry, IReadOnlyCollection<Guid> commonTagIds, CancellationToken cancellationToken);
+
+    /// <summary>Exclusão lógica no lote corrente do contexto (grava em <see cref="SaveAsync"/>).</summary>
+    void Remove(Recurrence recurrence);
+
+    /// <summary>Exclusão lógica no lote corrente do contexto (grava em <see cref="SaveAsync"/>).</summary>
+    void Remove(Entry entry);
 
     /// <summary>Liga a recorrência nova às <paramref name="commonTagIds"/> (grava em <see cref="SaveAsync"/>).</summary>
     void Add(Recurrence recurrence, IReadOnlyCollection<Guid> commonTagIds);

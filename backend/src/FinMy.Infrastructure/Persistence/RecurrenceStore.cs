@@ -1,5 +1,7 @@
 using FinMy.Application.Abstractions;
+using FinMy.Application.Recurrences;
 using FinMy.Domain.Cards;
+using FinMy.Domain.Common;
 using FinMy.Domain.Entries;
 using FinMy.Domain.Monetary;
 using FinMy.Domain.Recurrences;
@@ -72,6 +74,35 @@ public sealed class RecurrenceStore(FinMyDbContext db) : IRecurrenceStore
 
     public long VersionOf(Recurrence recurrence) => db.Entry(recurrence).Property<uint>(VersionColumn).CurrentValue;
 
+    public void ExpectVersion(Recurrence recurrence, long version) =>
+        db.Entry(recurrence).Property<uint>(VersionColumn).OriginalValue = (uint)version;
+
+    public async Task<IReadOnlyList<Entry>> ListEntryOccurrencesAsync(Guid recurrenceId, CancellationToken cancellationToken) =>
+        await db.Set<Entry>().Where(e => e.RecurrenceId == recurrenceId).OrderBy(e => e.RecurrenceMonth).ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<CardPurchase>> ListPurchaseOccurrencesAsync(Guid recurrenceId, CancellationToken cancellationToken) =>
+        await db.Set<CardPurchase>().Where(p => p.RecurrenceId == recurrenceId).OrderBy(p => p.RecurrenceMonth).ToListAsync(cancellationToken);
+
+    public async Task ReplaceTagsAsync(Recurrence recurrence, IReadOnlyCollection<Guid> commonTagIds, CancellationToken cancellationToken)
+    {
+        var wanted = commonTagIds.ToHashSet();
+        var current = await db.Set<RecurrenceTag>().Where(l => l.RecurrenceId == recurrence.Id).ToListAsync(cancellationToken);
+        db.RemoveRange(current.Where(l => !wanted.Contains(l.TagId)));
+        db.AddRange(wanted.Except(current.Select(l => l.TagId)).Select(t => new RecurrenceTag(recurrence.Id, t)));
+    }
+
+    public async Task ReplaceOccurrenceTagsAsync(Entry entry, IReadOnlyCollection<Guid> commonTagIds, CancellationToken cancellationToken)
+    {
+        var wanted = commonTagIds.ToHashSet();
+        var current = await db.Set<EntryTag>().Where(l => l.EntryId == entry.Id).ToListAsync(cancellationToken);
+        db.RemoveRange(current.Where(l => !wanted.Contains(l.TagId)));
+        db.AddRange(wanted.Except(current.Select(l => l.TagId)).Select(t => new EntryTag(entry.Id, t)));
+    }
+
+    public void Remove(Recurrence recurrence) => db.Set<Recurrence>().Remove(recurrence);
+
+    public void Remove(Entry entry) => db.Set<Entry>().Remove(entry);
+
     public void Add(Recurrence recurrence, IReadOnlyCollection<Guid> commonTagIds)
     {
         db.Set<Recurrence>().Add(recurrence);
@@ -84,7 +115,17 @@ public sealed class RecurrenceStore(FinMyDbContext db) : IRecurrenceStore
         db.AddRange(commonTagIds.Select(t => new EntryTag(entry.Id, t)));
     }
 
-    public async Task SaveAsync(CancellationToken cancellationToken) => await db.SaveChangesAsync(cancellationToken);
+    public async Task SaveAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new DomainException(RecurrenceErrors.ConcurrencyConflict);
+        }
+    }
 
     public async Task<ICardTransaction> BeginTransactionAsync(CancellationToken cancellationToken) =>
         new RecurrenceTransaction(await db.Database.BeginTransactionAsync(cancellationToken));

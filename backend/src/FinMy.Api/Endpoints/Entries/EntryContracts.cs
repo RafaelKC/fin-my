@@ -56,7 +56,10 @@ public sealed record EntryResponse(
     IReadOnlyList<Guid> TagIds,
     Guid? SettlementTagId,
     Guid? SplitGroupId,
-    int SplitCount)
+    int SplitCount,
+    Guid? RecurrenceId,
+    string? RecurrenceMonth,
+    bool RecurrenceModified)
 {
     public static EntryResponse From(EntryView e) => new(
         e.Id,
@@ -74,7 +77,10 @@ public sealed record EntryResponse(
         e.TagIds,
         e.SettlementTagId,
         e.SplitGroupId,
-        e.SplitCount);
+        e.SplitCount,
+        e.RecurrenceId,
+        e.RecurrenceMonth?.ToString(),
+        e.RecurrenceModified);
 }
 
 /// <summary>Item de <c>GET /entries/suggestions</c>.</summary>
