@@ -156,4 +156,18 @@ describe('EntriesService (duplicar e buscar)', () => {
     service.search({}).subscribe();
     http.expectOne('/api/v1/entries/search').flush({ items: [], totalCents: 0, totalCount: 0 });
   });
+
+  it('a busca leva tagIds e devolve compras no cartão (004 FR-004)', () => {
+    let tipo: string | undefined;
+    service
+      .search({ tagIds: ['t1', 't2'], kinds: ['card_purchase'] })
+      .subscribe((r) => (tipo = r.items[0].type));
+    const req = http.expectOne('/api/v1/entries/search?kinds=card_purchase&tagIds=t1%2Ct2');
+    req.flush({
+      items: [{ type: 'card_purchase', purchase: { id: 'p1' } }],
+      totalCents: 0,
+      totalCount: 1,
+    });
+    expect(tipo).toBe('card_purchase');
+  });
 });

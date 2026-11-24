@@ -44,6 +44,7 @@ describe('LancamentoSheet — editar compra no cartão (003 T009, FR-015)', () =
     el = fixture.nativeElement;
     fixture.detectChanges();
     http.expectOne('/api/v1/wallets?archived=all').flush([carteira()]);
+    http.match('/api/v1/tags?archived=all').forEach((req) => req.flush([]));
     http.expectOne('/api/v1/credit-cards?archived=all').flush([verde, azul]);
     await atualizar();
   }
@@ -94,6 +95,7 @@ describe('LancamentoSheet — editar compra no cartão (003 T009, FR-015)', () =
       notes: 'Corrida',
       scope: 'this',
       version: 1,
+      tagIds: [],
     });
     req.flush(compra());
     expect(fechar).toHaveBeenCalled();

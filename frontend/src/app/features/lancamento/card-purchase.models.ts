@@ -22,6 +22,8 @@ export interface CardPurchaseCreate {
   notes?: string | null;
   installments?: CardPurchaseInstallments;
   confirmPaidInvoice?: boolean;
+  /** Todas as tags, de acerto ou não (004 research R1). */
+  tagIds?: string[];
 }
 
 export type PurchaseOrigin = 'manual' | 'installment' | 'carry_over';
@@ -45,6 +47,8 @@ export interface CardPurchase {
   installmentTotal?: number | null;
   createdAt: string;
   version: number;
+  tagIds?: string[];
+  settlementTagId?: string | null;
 }
 
 /** Escopo da edição/exclusão/movimento em parcelas (contracts/openapi.yaml). */
@@ -61,6 +65,8 @@ export interface CardPurchaseUpdate {
   scope: 'this' | 'all';
   confirmPaidInvoice?: boolean;
   version: number;
+  /** Aplicado conforme `scope` (research R1); ausente = não mexe nas tags. */
+  tagIds?: string[];
 }
 
 export interface CardPurchaseResult {

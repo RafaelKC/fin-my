@@ -37,6 +37,7 @@ describe('LancamentoSheet — aba Cartão (003 US2–US4)', () => {
     el = fixture.nativeElement;
     fixture.detectChanges();
     http.expectOne('/api/v1/wallets?archived=false').flush([carteira()]);
+    http.match('/api/v1/tags?archived=all').forEach((req) => req.flush([]));
     http.expectOne('/api/v1/credit-cards?archived=false').flush(cartoes);
     await atualizar();
   }

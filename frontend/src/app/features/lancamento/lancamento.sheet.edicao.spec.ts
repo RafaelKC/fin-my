@@ -38,6 +38,7 @@ describe('LancamentoSheet em edição', () => {
     const el: HTMLElement = fixture.nativeElement;
     fixture.detectChanges();
     http.expectOne('/api/v1/wallets?archived=all').flush([carteira()]);
+    http.match('/api/v1/tags?archived=all').forEach((req) => req.flush([]));
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();

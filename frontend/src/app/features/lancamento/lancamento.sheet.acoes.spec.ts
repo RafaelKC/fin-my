@@ -48,6 +48,7 @@ describe('LancamentoSheet: editar, duplicar e excluir (US6)', () => {
     el = fixture.nativeElement;
     fixture.detectChanges();
     http.expectOne('/api/v1/wallets?archived=all').flush([carteira()]);
+    http.match('/api/v1/tags?archived=all').forEach((req) => req.flush([]));
     await fixture.whenStable();
     fixture.detectChanges();
     (el as unknown as { fixture: typeof fixture }).fixture = fixture;

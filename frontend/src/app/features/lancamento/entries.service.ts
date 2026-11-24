@@ -66,6 +66,7 @@ export class EntriesService {
     if (q) query.set('q', q);
     if (params.kinds?.length) query.set('kinds', params.kinds.join(','));
     if (params.walletIds?.length) query.set('walletIds', params.walletIds.join(','));
+    if (params.tagIds?.length) query.set('tagIds', params.tagIds.join(','));
     if (params.status) query.set('status', params.status);
     if (params.from) query.set('from', params.from);
     if (params.to) query.set('to', params.to);

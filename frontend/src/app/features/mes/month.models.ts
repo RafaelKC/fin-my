@@ -1,4 +1,5 @@
 import type { InvoiceSummary } from '../cartoes/card.models';
+import type { CardPurchase } from '../lancamento/card-purchase.models';
 import { Entry } from '../lancamento/entry.models';
 
 /** Coluna do resumo (`SummaryColumn` do contrato): Previsto ou Realizado. */
@@ -37,6 +38,13 @@ export interface MonthInvoiceLine extends InvoiceSummary {
   actualCents: number;
 }
 
+/** Totais dos itens listados com filtro de tags (004 research R6). */
+export interface FilterTotals {
+  incomeCents: number;
+  expenseCents: number;
+  purchasesNetCents: number;
+}
+
 /** `MonthView` do contrato: resposta de `GET /months/{month}`. */
 export interface MonthView {
   month: string;
@@ -50,4 +58,8 @@ export interface MonthView {
   /** Faturas com vencimento no mês (003 FR-021). */
   invoices?: MonthInvoiceLine[];
   pending: { count: number; toReceiveCents: number; toPayCents: number };
+  /** Só com filtro de tags: compras das faturas do mês com essas tags (research R6). */
+  purchases?: CardPurchase[];
+  /** Só com filtro de tags; o resumo continua o do mês inteiro. */
+  filterTotals?: FilterTotals | null;
 }

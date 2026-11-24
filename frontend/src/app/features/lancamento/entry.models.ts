@@ -1,4 +1,5 @@
 import type { Transfer } from '../mes/month.models';
+import type { CardPurchase } from './card-purchase.models';
 
 export type EntryKind = 'expense' | 'income';
 export type EntryStatus = 'planned' | 'settled';
@@ -15,6 +16,8 @@ export interface EntryCreate {
   /** `AAAA-MM`; ausente → mês da data (RT-04). */
   referenceMonth?: string;
   notes?: string | null;
+  /** Todas as tags, de acerto ou não (004 research R1); ausente = nenhuma. */
+  tagIds?: string[];
 }
 
 /** `EntryUpdate` do contrato: todos os campos mais a `version` lida. */
@@ -36,6 +39,9 @@ export interface Entry {
   notes?: string | null;
   createdAt: string;
   version: number;
+  /** Todas as tags do lançamento (a de acerto inclusive); `settlementTagId` é a de acerto. */
+  tagIds?: string[];
+  settlementTagId?: string | null;
 }
 
 /** Item de `GET /entries/suggestions` (FR-011, research R8). */
@@ -45,6 +51,8 @@ export interface EntrySuggestion {
   walletId?: string | null;
   /** Só em `kind=card_purchase`: cartão da compra mais recente com a descrição (`null` se arquivado). */
   creditCardId?: string | null;
+  /** Tags do lançamento mais recente com a descrição (arquivadas omitidas; FR-003). */
+  tagIds?: string[];
 }
 
 export const DESCRICAO_MAX = 80;
@@ -63,13 +71,14 @@ export interface TransferCreate {
 export const DESCRICAO_TRANSFERENCIA = 'Transferência';
 
 /** Tipos que a busca devolve (`LedgerItem.type`). */
-export type LedgerKind = EntryKind | 'transfer';
+export type LedgerKind = EntryKind | 'transfer' | 'card_purchase';
 
-/** `LedgerItem` do contrato: `type` diz qual dos dois objetos veio preenchido. */
+/** `LedgerItem` do contrato: `type` diz qual dos três objetos veio preenchido. */
 export interface LedgerItem {
   type: LedgerKind;
   entry?: Entry;
   transfer?: Transfer;
+  purchase?: CardPurchase;
 }
 
 /** Filtros de `GET /entries/search` (FR-025); todos opcionais. */
@@ -77,6 +86,8 @@ export interface SearchParams {
   q?: string;
   kinds?: readonly LedgerKind[];
   walletIds?: readonly string[];
+  /** Lançamentos com qualquer uma das tags (004 FR-004). */
+  tagIds?: readonly string[];
   status?: EntryStatus | null;
   from?: string;
   to?: string;
