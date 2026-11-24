@@ -52,6 +52,8 @@
       </div>
     }
 
+    <app-tag-filter [ids]="tagIds()" (idsChange)="aoMudarTags($event)" />
+
     <div class="linha-campos">
       <div class="campo">
         <label for="busca-situacao">Situação</label>
@@ -115,7 +117,7 @@
   }
 
   <ul class="itens" data-testid="resultados">
-    @for (item of itens(); track item.entry?.id ?? item.transfer?.id) {
+    @for (item of itens(); track identidade(item)) {
       @if (item.entry; as e) {
         <li class="item" data-testid="resultado">
           <button type="button" class="linha" (click)="abrir(e)">
@@ -126,6 +128,18 @@
             <span class="meta">
               <span class="cor" [style.background]="corCarteira(e.walletId)"></span>
               {{ nomeCarteira(e.walletId) }} · {{ data(e.date) }} · {{ rotuloSituacao(e) }}
+            </span>
+          </button>
+        </li>
+      } @else if (item.purchase; as c) {
+        <li class="item" data-testid="resultado-compra">
+          <button type="button" class="linha" (click)="abrirCompra(c)">
+            <span class="descricao">{{ c.displayDescription }}</span>
+            <span class="valor-item" [class.negativo]="c.nature === 'debit'">{{
+              valorCompra(c) | brl
+            }}</span>
+            <span class="meta">
+              {{ nomeCartao(c.creditCardId) }} · {{ data(c.date) }} · Compra no cartão
             </span>
           </button>
         </li>

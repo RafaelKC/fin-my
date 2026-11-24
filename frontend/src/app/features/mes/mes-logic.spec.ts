@@ -7,6 +7,7 @@ import {
   formatarData,
   lerCarteiras,
   lerSituacao,
+  lerTags,
   montarQuery,
   ordenar,
 } from './mes-logic';
@@ -35,6 +36,13 @@ describe('mes-logic', () => {
     expect(lerSituacao('x')).toBeNull();
     expect(montarQuery(['a', 'b'], 'settled')).toEqual({ carteiras: 'a,b', situacao: 'settled' });
     expect(montarQuery([], null)).toEqual({ carteiras: null, situacao: null });
+    expect(montarQuery([], null, ['t1', 't2'])).toEqual({
+      carteiras: null,
+      situacao: null,
+      tags: 't1,t2',
+    });
+    expect(lerTags('t1, t2,t1,')).toEqual(['t1', 't2']);
+    expect(lerTags(null)).toEqual([]);
   });
 
   it('filtra por situação e marca atrasadas', () => {

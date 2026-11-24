@@ -14,6 +14,8 @@ export interface Problem {
   errors?: Record<string, string[]>;
   /** Só em `login_locked` / `rate_limited`. */
   retryAfterSeconds?: number;
+  /** Só em `tag.name_taken` (004): a tag que já tem esse nome. */
+  existingTagId?: string;
 }
 
 export const MENSAGEM_ERRO_GENERICO = 'Algo deu errado. Tente novamente.';

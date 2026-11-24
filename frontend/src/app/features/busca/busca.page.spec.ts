@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subject } from 'rxjs';
+import { bruna } from '../../shared/tag-picker/testing';
 import { carteira } from '../carteiras/testing';
 import { Entry, LedgerItem, SearchResult } from '../lancamento/entry.models';
 import { LancamentoLauncher } from '../lancamento/lancamento.launcher';
@@ -47,6 +48,7 @@ describe('BuscaPage', () => {
     http
       .expectOne('/api/v1/wallets?archived=all')
       .flush([carteira(), carteira({ id: 'w-verde', name: 'Verde' })]);
+    http.expectOne('/api/v1/credit-cards?archived=all').flush([]);
     http.expectOne((r) => r.url.startsWith('/api/v1/entries/search')).flush(primeira);
     await fixture.whenStable();
     fixture.detectChanges();
@@ -178,10 +180,73 @@ describe('BuscaPage', () => {
     el = fixture.nativeElement;
     fixture.detectChanges();
     http.expectOne('/api/v1/wallets?archived=all').flush([]);
+    http.expectOne('/api/v1/credit-cards?archived=all').flush([]);
     http
       .expectOne((r) => r.url.startsWith('/api/v1/entries/search'))
       .flush({ code: 'x', detail: 'Falhou.' }, { status: 500, statusText: 'Error' });
     fixture.detectChanges();
     expect(el.querySelector('[data-testid="erro-busca"]')?.textContent).toContain('Falhou.');
+  });
+
+  describe('tags e compras no cartão (004 FR-004)', () => {
+    const compraItem = (): LedgerItem => ({
+      type: 'card_purchase',
+      purchase: {
+        id: 'p1',
+        creditCardId: 'c-azul',
+        dueMonth: '2026-03',
+        description: 'Ifood',
+        displayDescription: 'Ifood',
+        amountCents: 15681,
+        nature: 'debit',
+        date: '2026-03-04',
+        origin: 'manual',
+        reconciled: false,
+        manuallyMoved: false,
+        createdAt: '',
+        version: 1,
+      },
+    });
+
+    it('filtra por tags e lista as compras do cartão com o nome do cartão', async () => {
+      await abrir();
+      el.querySelector<HTMLElement>('[data-testid="filtro-tags-abrir"]')!.click();
+      http.expectOne('/api/v1/tags?archived=all').flush([bruna]);
+      await fixture.whenStable();
+      fixture.detectChanges();
+      el.querySelector<HTMLElement>('[data-testid="filtro-tag"]')!.click();
+      await fixture.whenStable();
+
+      const req = http.expectOne((r) => r.url.startsWith('/api/v1/entries/search'));
+      expect(consulta(req)['tagIds']).toBe('t-bruna');
+      req.flush(resultado({ items: [item(entry('1')), compraItem()], totalCount: 2 }));
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(el.querySelectorAll('[data-testid="resultado"]')).toHaveLength(1);
+      const compra = el.querySelector('[data-testid="resultado-compra"]')!;
+      expect(compra.textContent).toContain('Ifood');
+      expect(compra.textContent).toContain('Compra no cartão');
+      expect(compra.textContent).toContain('R$ 156,81');
+      expect(el.querySelector('[data-testid="limpar"]')).not.toBeNull();
+    });
+
+    it('tocar numa compra abre o formulário de edição da compra', async () => {
+      await abrir(resultado({ items: [compraItem()], totalCount: 1 }));
+      const abrirCompra = vi
+        .spyOn(TestBed.inject(LancamentoLauncher), 'abrirCompra')
+        .mockReturnValue(undefined as never);
+      el.querySelector<HTMLElement>('[data-testid="resultado-compra"] button')!.click();
+      expect(abrirCompra).toHaveBeenCalledWith(expect.objectContaining({ id: 'p1' }));
+    });
+
+    it('o tipo "Compras no cartão" vai em kinds', async () => {
+      await abrir();
+      el.querySelector<HTMLElement>('[data-testid="tipo-card_purchase"]')!.click();
+      await fixture.whenStable();
+      const req = http.expectOne((r) => r.url.startsWith('/api/v1/entries/search'));
+      expect(consulta(req)['kinds']).toBe('card_purchase');
+      req.flush(resultado());
+    });
   });
 });

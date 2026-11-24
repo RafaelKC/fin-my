@@ -13,8 +13,12 @@ import { FormsModule } from '@angular/forms';
 import { Subject, catchError, merge, of, switchMap, tap, timer } from 'rxjs';
 import { problemMessage } from '../../core/errors/problem-details';
 import { BrlPipe } from '../../core/money';
+import { TagFilter } from '../../shared/tag-picker/tag-filter';
 import { Wallet } from '../carteiras/wallet.models';
 import { WalletsService } from '../carteiras/wallets.service';
+import { CardPurchase } from '../lancamento/card-purchase.models';
+import { CardsService } from '../cartoes/cards.service';
+import { CardPurchasesService } from '../lancamento/card-purchases.service';
 import { EntriesService } from '../lancamento/entries.service';
 import {
   Entry,
@@ -34,6 +38,7 @@ export const TIPOS_BUSCA: readonly { value: LedgerKind; rotulo: string }[] = [
   { value: 'income', rotulo: 'Entradas' },
   { value: 'expense', rotulo: 'Saídas' },
   { value: 'transfer', rotulo: 'Transferências' },
+  { value: 'card_purchase', rotulo: 'Compras no cartão' },
 ];
 
 /** `AAAA-MM-DD` → `DD/MM/AAAA` (RT-10). */
@@ -50,15 +55,17 @@ function dataBr(iso: string): string {
 @Component({
   selector: 'app-busca-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, BrlPipe],
+  imports: [FormsModule, BrlPipe, TagFilter],
   templateUrl: './busca.page.html',
   styleUrl: './busca.page.scss',
 })
 export class BuscaPage {
   private readonly entries = inject(EntriesService);
   private readonly wallets = inject(WalletsService);
+  private readonly cards = inject(CardsService);
   private readonly launcher = inject(LancamentoLauncher);
   private readonly exclusao = inject(ExclusaoService);
+  private readonly compras = inject(CardPurchasesService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly fim = viewChild<ElementRef<HTMLElement>>('fim');
 
@@ -66,6 +73,8 @@ export class BuscaPage {
   protected readonly q = signal('');
   protected readonly kinds = signal<LedgerKind[]>([]);
   protected readonly walletIds = signal<string[]>([]);
+  /** Filtro de tags (FR-004): lançamentos e compras com qualquer uma delas. */
+  protected readonly tagIds = signal<string[]>([]);
   protected readonly status = signal<EntryStatus | ''>('');
   protected readonly from = signal('');
   protected readonly to = signal('');
@@ -84,6 +93,7 @@ export class BuscaPage {
   /** `null` = primeira página (substitui a lista); texto = cursor da próxima (acrescenta). */
   private readonly pedido$ = new Subject<string | null>();
   private carteirasPorId = new Map<string, Wallet>();
+  private cartoesPorId = new Map<string, string>();
 
   constructor() {
     this.pedido$
@@ -103,6 +113,7 @@ export class BuscaPage {
                 q: this.q(),
                 kinds: this.kinds(),
                 walletIds: this.walletIds(),
+                tagIds: this.tagIds(),
                 status: this.status() === '' ? null : (this.status() as EntryStatus),
                 from: this.from(),
                 to: this.to(),
@@ -124,7 +135,13 @@ export class BuscaPage {
       .subscribe();
 
     // FR-016: o que mudar um lançamento recarrega a busca.
-    merge(this.entries.criados$, this.entries.alterados$, this.exclusao.mudou$)
+    merge(
+      this.entries.criados$,
+      this.entries.alterados$,
+      this.exclusao.mudou$,
+      this.compras.criadas$,
+      this.compras.alteradas$,
+    )
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.pedido$.next(null));
 
@@ -138,6 +155,15 @@ export class BuscaPage {
         this.carteiras.set(lista);
         this.carteirasPorId = new Map(lista.map((w) => [w.id, w]));
       });
+
+    // Nomes dos cartões para as compras (a lista inclui arquivados); sem eles a linha só perde o nome.
+    this.cards
+      .list('all')
+      .pipe(
+        takeUntilDestroyed(),
+        catchError(() => of([])),
+      )
+      .subscribe((lista) => (this.cartoesPorId = new Map(lista.map((c) => [c.id, c.name]))));
 
     // Rolagem infinita: ao chegar perto do fim da lista, pede a próxima página.
     effect((onCleanup) => {
@@ -184,6 +210,11 @@ export class BuscaPage {
     this.pedido$.next(null);
   }
 
+  protected aoMudarTags(ids: string[]): void {
+    this.tagIds.set(ids);
+    this.pedido$.next(null);
+  }
+
   protected escolherSituacao(valor: string): void {
     this.status.set(valor === 'planned' || valor === 'settled' ? valor : '');
     this.pedido$.next(null);
@@ -198,6 +229,7 @@ export class BuscaPage {
     this.q.set('');
     this.kinds.set([]);
     this.walletIds.set([]);
+    this.tagIds.set([]);
     this.status.set('');
     this.from.set('');
     this.to.set('');
@@ -209,6 +241,7 @@ export class BuscaPage {
       this.q() !== '' ||
       this.kinds().length > 0 ||
       this.walletIds().length > 0 ||
+      this.tagIds().length > 0 ||
       this.status() !== '' ||
       this.from() !== '' ||
       this.to() !== ''
@@ -223,6 +256,24 @@ export class BuscaPage {
 
   protected abrir(entry: Entry): void {
     this.launcher.abrir(entry);
+  }
+
+  /** Compra no cartão: abre o formulário em modo edição (003 FR-015). */
+  protected abrirCompra(compra: CardPurchase): void {
+    this.launcher.abrirCompra(compra);
+  }
+
+  protected nomeCartao(id: string): string {
+    return this.cartoesPorId.get(id) ?? '';
+  }
+
+  /** Débito negativo e crédito positivo, como na soma do total (FR-025). */
+  protected valorCompra(c: CardPurchase): number {
+    return c.nature === 'credit' ? Math.abs(c.amountCents) : -Math.abs(c.amountCents);
+  }
+
+  protected identidade(item: LedgerItem): string {
+    return item.entry?.id ?? item.transfer?.id ?? item.purchase?.id ?? '';
   }
 
   /** RT-09: exclui a transferência e oferece "Desfazer" por 8 s. */

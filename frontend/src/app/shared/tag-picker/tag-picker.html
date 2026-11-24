@@ -1,0 +1,97 @@
+<div class="tags" role="group" aria-labelledby="tags-rotulo" data-testid="tag-picker">
+  <span class="rotulo" id="tags-rotulo">Tags</span>
+
+  @if (carregando()) {
+    <p class="ajuda" role="status">Carregando tags…</p>
+  } @else if (erroCarga(); as mensagem) {
+    <p class="erro" role="alert" data-testid="erro-tags">{{ mensagem }}</p>
+  } @else {
+    @if (chips().length > 0) {
+      <div class="chips">
+        @for (t of chips(); track t.id) {
+          <button
+            type="button"
+            class="chip"
+            data-testid="tag-chip"
+            [attr.aria-pressed]="escolhida(t)"
+            [attr.data-tag]="t.name"
+            (click)="alternar(t)"
+          >
+            <span class="cor" [style.background]="t.color" aria-hidden="true"></span>
+            @if (t.isSettlement) {
+              <mat-icon class="acerto" fontSet="material-symbols-outlined" aria-hidden="true"
+                >person</mat-icon
+              >
+              <span class="so-leitor">Tag de acerto: </span>
+            }
+            {{ t.name }}
+            @if (t.archived) {
+              <small>(arquivada)</small>
+            }
+          </button>
+        }
+      </div>
+    }
+
+    <input
+      type="text"
+      class="busca"
+      autocomplete="off"
+      data-testid="tag-busca"
+      placeholder="Buscar ou criar tag"
+      aria-label="Buscar ou criar tag"
+      [attr.maxlength]="nomeMax + 20"
+      [value]="texto()"
+      (input)="aoDigitar($any($event.target).value)"
+      (keydown.enter)="confirmarTexto($event)"
+    />
+
+    @if (resultados().length > 0) {
+      <ul class="resultados" aria-label="Tags encontradas">
+        @for (t of resultados(); track t.id) {
+          <li>
+            <button
+              type="button"
+              class="resultado"
+              data-testid="tag-resultado"
+              (click)="alternar(t)"
+            >
+              <span class="cor" [style.background]="t.color" aria-hidden="true"></span>
+              @if (t.isSettlement) {
+                <mat-icon class="acerto" fontSet="material-symbols-outlined" aria-hidden="true"
+                  >person</mat-icon
+                >
+              }
+              {{ t.name }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
+    @if (nomeNovo(); as nome) {
+      <button
+        type="button"
+        class="criar"
+        data-testid="tag-criar"
+        [disabled]="criando()"
+        (click)="criar(nome)"
+      >
+        Criar tag "{{ nome }}"
+      </button>
+    }
+  }
+
+  @if (avisoAcerto()) {
+    <p class="aviso" role="alert" data-testid="aviso-duas-de-acerto">
+      {{ mensagemAcerto }}
+      @if (dividirDisponivel()) {
+        <button type="button" class="link" data-testid="tag-dividir" (click)="irParaDividir()">
+          Dividir
+        </button>
+      }
+    </p>
+  }
+  @if (erro(); as mensagem) {
+    <p class="erro" role="alert" data-testid="erro-tag">{{ mensagem }}</p>
+  }
+</div>

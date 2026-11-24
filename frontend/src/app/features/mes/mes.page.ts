@@ -24,6 +24,8 @@ import { CardsService } from '../cartoes/cards.service';
 import { InvoicesService } from '../cartoes/fatura/invoices.service';
 import { Wallet } from '../carteiras/wallet.models';
 import { WalletsService } from '../carteiras/wallets.service';
+import { TagFilter } from '../../shared/tag-picker/tag-filter';
+import { CardPurchase } from '../lancamento/card-purchase.models';
 import { CardPurchasesService } from '../lancamento/card-purchases.service';
 import { EntriesService } from '../lancamento/entries.service';
 import { Entry } from '../lancamento/entry.models';
@@ -44,6 +46,7 @@ import {
   formatarData,
   lerCarteiras,
   lerSituacao,
+  lerTags,
   montarQuery,
   ordenar,
 } from './mes-logic';
@@ -82,7 +85,7 @@ interface LinhaResumo {
 @Component({
   selector: 'app-mes-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BrlPipe, MatIconModule, PendenciasComponent],
+  imports: [BrlPipe, MatIconModule, PendenciasComponent, TagFilter],
   templateUrl: './mes.page.html',
   styleUrl: './mes.page.scss',
 })
@@ -105,6 +108,8 @@ export class MesPage {
   protected readonly mes = signal('');
   protected readonly carteirasSelecionadas = signal<string[]>([]);
   protected readonly situacao = signal<FiltroSituacao>(null);
+  /** Filtro de tags (query `tags`, FR-004): lançamentos com qualquer uma delas. */
+  protected readonly tagsSelecionadas = signal<string[]>([]);
   protected readonly visao = signal<MonthView | null>(null);
   protected readonly carregando = signal(true);
   protected readonly erro = signal<string | null>(null);
@@ -143,13 +148,20 @@ export class MesPage {
     if (situacao === null) return todas;
     return todas.filter((f) => (f.status === 'paid') === (situacao === 'settled'));
   });
+  protected readonly comFiltroTags = computed(() => this.tagsSelecionadas().length > 0);
+  /** Com filtro de tags: compras das faturas do mês com essas tags (research R6). */
+  protected readonly comprasFiltradas = computed<CardPurchase[]>(
+    () => this.visao()?.purchases ?? [],
+  );
+  protected readonly totaisFiltro = computed(() => this.visao()?.filterTotals ?? null);
   protected readonly mesVazio = computed(() => {
     const v = this.visao();
     return (
       v !== null &&
       v.entries.length === 0 &&
       v.transfers.length === 0 &&
-      (v.invoices ?? []).length === 0
+      (v.invoices ?? []).length === 0 &&
+      this.comprasFiltradas().length === 0
     );
   });
   protected readonly semResultadoNoFiltro = computed(
@@ -159,6 +171,7 @@ export class MesPage {
       this.entradas().length === 0 &&
       this.saidas().length === 0 &&
       this.faturas().length === 0 &&
+      this.comprasFiltradas().length === 0 &&
       this.transferencias().length === 0,
   );
 
@@ -217,7 +230,7 @@ export class MesPage {
     this.recarregar$
       .pipe(
         switchMap(() =>
-          this.months.get(this.mes(), this.carteirasSelecionadas()).pipe(
+          this.months.get(this.mes(), this.carteirasSelecionadas(), this.tagsSelecionadas()).pipe(
             tap(() => this.erro.set(null)),
             catchError((error: unknown) => {
               this.erro.set(problemMessage(error));
@@ -244,9 +257,11 @@ export class MesPage {
         this.mes.set(mes);
         this.carteirasSelecionadas.set(carteiras);
         this.situacao.set(lerSituacao(query.get('situacao')));
+        const tags = lerTags(query.get('tags'));
+        this.tagsSelecionadas.set(tags);
 
-        // Só o mês e as carteiras vão à API; a situação filtra as listas aqui mesmo.
-        const chave = `${mes}|${carteiras.join(',')}`;
+        // Só o mês, as carteiras e as tags vão à API; a situação filtra as listas aqui mesmo.
+        const chave = `${mes}|${carteiras.join(',')}|${tags.join(',')}`;
         if (chave === this.chave) return;
         this.chave = chave;
         this.visao.set(null);
@@ -391,15 +406,32 @@ export class MesPage {
   protected alternarCarteira(id: string): void {
     const atual = this.carteirasSelecionadas();
     const proximas = atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id];
-    this.filtrar(proximas, this.situacao());
+    this.filtrar(proximas, this.situacao(), this.tagsSelecionadas());
   }
 
   protected limparCarteiras(): void {
-    this.filtrar([], this.situacao());
+    this.filtrar([], this.situacao(), this.tagsSelecionadas());
   }
 
   protected escolherSituacao(situacao: FiltroSituacao): void {
-    this.filtrar(this.carteirasSelecionadas(), situacao);
+    this.filtrar(this.carteirasSelecionadas(), situacao, this.tagsSelecionadas());
+  }
+
+  protected aoMudarTags(ids: string[]): void {
+    this.filtrar(this.carteirasSelecionadas(), this.situacao(), ids);
+  }
+
+  /** Tocar numa compra do filtro abre o formulário em modo edição; salvar recarrega a visão. */
+  protected editarCompra(compra: CardPurchase): void {
+    this.launcher.abrirCompra(compra);
+  }
+
+  protected valorCompra(c: CardPurchase): number {
+    return c.nature === 'credit' ? -Math.abs(c.amountCents) : Math.abs(c.amountCents);
+  }
+
+  protected nomeCartao(id: string): string {
+    return this.cartoes().find((c) => c.id === id)?.name ?? '';
   }
 
   protected ordenarPor(coluna: ColunaOrdem): void {
@@ -466,10 +498,14 @@ export class MesPage {
     this.inicioDoDeslize = null;
   }
 
-  private filtrar(carteiras: readonly string[], situacao: FiltroSituacao): void {
+  private filtrar(
+    carteiras: readonly string[],
+    situacao: FiltroSituacao,
+    tags: readonly string[],
+  ): void {
     void this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: montarQuery(carteiras, situacao),
+      queryParams: montarQuery(carteiras, situacao, tags),
     });
   }
 

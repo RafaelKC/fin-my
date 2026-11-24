@@ -8,10 +8,18 @@ import { MonthView } from './month.models';
 export class MonthsService {
   private readonly api = inject(ApiClient);
 
-  /** `walletIds` vazio = todas as carteiras (ativas e arquivadas). */
-  get(month: string, walletIds: readonly string[] = []): Observable<MonthView> {
-    const query =
-      walletIds.length > 0 ? `?walletIds=${walletIds.map(encodeURIComponent).join(',')}` : '';
-    return this.api.get<MonthView>(`/months/${month}${query}`);
+  /** `walletIds` vazio = todas as carteiras (ativas e arquivadas); `tagIds` vazio = sem filtro de tags. */
+  get(
+    month: string,
+    walletIds: readonly string[] = [],
+    tagIds: readonly string[] = [],
+  ): Observable<MonthView> {
+    const partes: string[] = [];
+    if (walletIds.length > 0)
+      partes.push(`walletIds=${walletIds.map(encodeURIComponent).join(',')}`);
+    if (tagIds.length > 0) partes.push(`tagIds=${tagIds.map(encodeURIComponent).join(',')}`);
+    return this.api.get<MonthView>(
+      `/months/${month}${partes.length ? `?${partes.join('&')}` : ''}`,
+    );
   }
 }

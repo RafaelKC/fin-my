@@ -6,6 +6,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { carteira } from '../../carteiras/testing';
+import { bruna, ifood } from '../../../shared/tag-picker/testing';
 import { LancamentoLauncher } from '../../lancamento/lancamento.launcher';
 import { cartao } from '../testing';
 import { FaturaPage } from './fatura.page';
@@ -304,5 +305,42 @@ describe('FaturaPage (US5.2–US5.5, US6.2, US7)', () => {
       .flush({ code: 'x', detail: 'Não foi possível mover.' }, { status: 422, statusText: 'x' });
     await atualizar();
     expect(texto('aviso-fatura')).toBe('Não foi possível mover.');
+  });
+
+  describe('filtro por tag (004 FR-004)', () => {
+    it('refaz a consulta com tagIds e mostra o total das compras filtradas', async () => {
+      await abrir(faturaDetalhada({ purchases: [compra({ id: 'p1' }), compra({ id: 'p2' })] }));
+      expect(el.querySelector('[data-testid="total-filtrado"]')).toBeNull();
+
+      await clicar('filtro-tags-abrir');
+      http.expectOne('/api/v1/tags?archived=all').flush([bruna, ifood]);
+      await atualizar();
+      await clicar('filtro-tag', 0); // "Bruna" (mais usada)
+
+      http.expectOne(`${BASE}?tagIds=t-bruna`).flush(
+        faturaDetalhada({
+          purchases: [compra({ id: 'p1', tagIds: ['t-bruna'] })],
+          filteredTotalCents: 1295,
+        }),
+      );
+      await atualizar();
+      expect(el.querySelectorAll('[data-testid="compra"]')).toHaveLength(1);
+      expect(texto('total-filtrado')).toContain('R$ 12,95');
+      // Total da fatura segue sendo o da fatura inteira
+      expect(texto('total')).toContain('R$ 200,00');
+    });
+
+    it('sem compras com a tag mostra a mensagem do filtro', async () => {
+      await abrir();
+      await clicar('filtro-tags-abrir');
+      http.expectOne('/api/v1/tags?archived=all').flush([bruna]);
+      await atualizar();
+      await clicar('filtro-tag');
+      http
+        .expectOne(`${BASE}?tagIds=t-bruna`)
+        .flush(faturaDetalhada({ purchases: [], filteredTotalCents: 0 }));
+      await atualizar();
+      expect(texto('sem-compras')).toBe('Nenhuma compra com estas tags nesta fatura.');
+    });
   });
 });

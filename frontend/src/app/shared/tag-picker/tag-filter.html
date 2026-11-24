@@ -1,0 +1,55 @@
+<div class="filtro-tags" data-testid="filtro-tags">
+  <button
+    type="button"
+    class="botao-filtro"
+    data-testid="filtro-tags-abrir"
+    aria-controls="filtro-tags-painel"
+    [attr.aria-expanded]="aberto()"
+    [attr.aria-pressed]="ids().length > 0"
+    (click)="alternarPainel()"
+  >
+    <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">sell</mat-icon>
+    {{ rotulo() }}
+  </button>
+
+  @if (aberto()) {
+    <div id="filtro-tags-painel" class="painel" role="group" aria-label="Filtrar por tags">
+      @if (carregando()) {
+        <p class="ajuda" role="status">Carregando tags…</p>
+      } @else if (erro(); as mensagem) {
+        <p class="erro" role="alert" data-testid="erro-filtro-tags">{{ mensagem }}</p>
+      } @else if (ordenadas().length === 0) {
+        <p class="ajuda" data-testid="filtro-tags-vazio">Você ainda não tem tags.</p>
+      } @else {
+        <div class="chips">
+          @for (t of ordenadas(); track t.id) {
+            <button
+              type="button"
+              class="chip"
+              data-testid="filtro-tag"
+              [attr.aria-pressed]="escolhida(t)"
+              [attr.data-tag]="t.name"
+              (click)="alternar(t)"
+            >
+              <span class="cor" [style.background]="t.color" aria-hidden="true"></span>
+              @if (t.isSettlement) {
+                <mat-icon class="acerto" fontSet="material-symbols-outlined" aria-hidden="true"
+                  >person</mat-icon
+                >
+              }
+              {{ t.name }}
+              @if (t.archived) {
+                <small>(arquivada)</small>
+              }
+            </button>
+          }
+        </div>
+      }
+      @if (ids().length > 0) {
+        <button type="button" class="link" data-testid="filtro-tags-limpar" (click)="limpar()">
+          Limpar tags
+        </button>
+      }
+    </div>
+  }
+</div>

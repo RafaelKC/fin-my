@@ -13,6 +13,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { problemMessage } from '../../../core/errors/problem-details';
 import { BrlPipe, formatBrl, isYearMonth, monthLabel } from '../../../core/money';
+import { TagFilter } from '../../../shared/tag-picker/tag-filter';
 import { Wallet } from '../../carteiras/wallet.models';
 import { WalletsService } from '../../carteiras/wallets.service';
 import { CardPurchase } from '../../lancamento/card-purchase.models';
@@ -43,7 +44,7 @@ const ROTULO_SITUACAO: Record<InvoiceStatus, string> = {
 @Component({
   selector: 'app-fatura-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, BrlPipe],
+  imports: [RouterLink, BrlPipe, TagFilter],
   templateUrl: './fatura.page.html',
   styleUrl: './fatura.page.scss',
 })
@@ -74,6 +75,8 @@ export class FaturaPage {
   protected readonly ocupado = signal(false);
   protected readonly cartao = signal<CreditCardOverview | null>(null);
   protected readonly fatura = signal<Invoice | null>(null);
+  /** Filtro de tags (004 FR-004): só as compras com qualquer uma delas; vale ao trocar de fatura. */
+  protected readonly tagIds = signal<string[]>([]);
   private readonly carteiras = signal<Wallet[]>([]);
 
   protected readonly diaEMes = diaEMes;
@@ -87,6 +90,11 @@ export class FaturaPage {
       ? `Sem valor a pagar — crédito de ${formatBrl(-f.totalCents)}`
       : ROTULO_SITUACAO[f.status];
   });
+
+  protected aoMudarTags(ids: string[]): void {
+    this.tagIds.set(ids);
+    this.carregarFatura();
+  }
 
   /** Pagar enquanto houver restante (FR-017). */
   protected readonly podePagar = computed(() => (this.fatura()?.remainingCents ?? 0) > 0);
@@ -304,7 +312,7 @@ export class FaturaPage {
     if (!this.mesValido()) return;
     const id = this.cardId();
     const mes = this.mes();
-    this.invoices.get(id, mes).subscribe({
+    this.invoices.get(id, mes, this.tagIds()).subscribe({
       next: (f) => {
         if (id !== this.cardId() || mes !== this.mes()) return;
         this.fatura.set(f);

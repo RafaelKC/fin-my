@@ -7,6 +7,8 @@ import { Subject } from 'rxjs';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { carteira } from '../carteiras/testing';
 import { cartao } from '../cartoes/testing';
+import { bruna, ifood } from '../../shared/tag-picker/testing';
+import { CardPurchase } from '../lancamento/card-purchase.models';
 import { CardPurchasesService } from '../lancamento/card-purchases.service';
 import { Entry } from '../lancamento/entry.models';
 import { LancamentoLauncher } from '../lancamento/lancamento.launcher';
@@ -466,6 +468,95 @@ describe('MesPage', () => {
       TestBed.inject(CardPurchasesService).delete('p1').subscribe();
       http.expectOne('/api/v1/card-purchases/p1?scope=this').flush({ deletionBatchId: 'l' });
       http.expectOne('/api/v1/months/2026-03').flush(visao());
+    });
+  });
+  describe('filtro por tag (004 US1.5, FR-004)', () => {
+    const compraDoFiltro = (p: Partial<CardPurchase> = {}): CardPurchase => ({
+      id: 'p1',
+      creditCardId: 'c-azul',
+      dueMonth: '2026-03',
+      description: 'Ifood',
+      displayDescription: 'Ifood',
+      amountCents: 15681,
+      nature: 'debit',
+      date: '2026-03-04',
+      origin: 'manual',
+      reconciled: false,
+      manuallyMoved: false,
+      createdAt: '',
+      version: 1,
+      tagIds: ['t-bruna'],
+      settlementTagId: 't-bruna',
+      ...p,
+    });
+    const filtrada = (): MonthView =>
+      visao({
+        entries: [
+          entry({ id: 'x1', kind: 'expense', description: 'Presente Bruna', amountCents: 4000 }),
+        ],
+        purchases: [compraDoFiltro()],
+        filterTotals: { incomeCents: 0, expenseCents: 4000, purchasesNetCents: 15681 },
+      });
+
+    it('manda tagIds da query à API e mostra lançamentos, compras e os totais do filtro', async () => {
+      await abrir('/mes/2026-03?tags=t-bruna', filtrada());
+      expect(el.querySelectorAll('[data-testid="lancamento"]')).toHaveLength(1);
+      expect(txt('lista-compras-filtro')).toContain('Ifood');
+      expect(txt('lista-compras-filtro')).toContain('R$ 156,81');
+      expect(txt('lista-compras-filtro')).toContain('Azul');
+      expect(txt('filtro-saidas')).toBe('R$ 40,00');
+      expect(txt('filtro-compras')).toBe('R$ 156,81');
+      // o resumo continua o do mês inteiro (research R6)
+      expect(
+        el.querySelector('[data-testid="resumo-entradas"] [data-testid="previsto"]')?.textContent,
+      ).toContain('R$ 1.518,27');
+      expect(el.querySelector('[data-testid="filtro-tags-abrir"]')?.textContent).toContain(
+        'Tags (1)',
+      );
+    });
+
+    it('escolher uma tag no filtro refaz a consulta com tagIds e guarda na URL', async () => {
+      await abrir();
+      el.querySelector<HTMLElement>('[data-testid="filtro-tags-abrir"]')!.click();
+      http.expectOne('/api/v1/tags?archived=all').flush([bruna, ifood]);
+      harness.detectChanges();
+      await harness.fixture.whenStable();
+      harness.detectChanges();
+
+      el.querySelector<HTMLElement>('[data-testid="filtro-tag"][data-tag="Bruna"]')!.click();
+      await harness.fixture.whenStable();
+      http.expectOne('/api/v1/months/2026-03?tagIds=t-bruna').flush(filtrada());
+      harness.detectChanges();
+      expect(TestBed.inject(Router).url).toContain('tags=t-bruna');
+      expect(el.querySelector('[data-testid="totais-filtro"]')).not.toBeNull();
+    });
+
+    it('sem resultado mostra a mensagem do filtro e nada de "Nada lançado"', async () => {
+      await abrir(
+        '/mes/2026-03?tags=t-bruna',
+        visao({
+          entries: [],
+          purchases: [],
+          filterTotals: { incomeCents: 0, expenseCents: 0, purchasesNetCents: 0 },
+        }),
+      );
+      expect(el.querySelector('[data-testid="filtro-tags-sem-resultado"]')).not.toBeNull();
+      expect(el.querySelector('[data-testid="mes-vazio"]')).toBeNull();
+    });
+
+    it('sem filtro de tags não mostra totais nem compras', async () => {
+      await abrir();
+      expect(el.querySelector('[data-testid="totais-filtro"]')).toBeNull();
+      expect(el.querySelector('[data-testid="lista-compras-filtro"]')).toBeNull();
+    });
+
+    it('tocar numa compra do filtro abre o formulário em edição', async () => {
+      await abrir('/mes/2026-03?tags=t-bruna', filtrada());
+      const abrirCompra = vi
+        .spyOn(TestBed.inject(LancamentoLauncher), 'abrirCompra')
+        .mockReturnValue(undefined as never);
+      el.querySelector<HTMLElement>('[data-testid="compra-filtro"] button')!.click();
+      expect(abrirCompra).toHaveBeenCalledWith(expect.objectContaining({ id: 'p1' }));
     });
   });
 });

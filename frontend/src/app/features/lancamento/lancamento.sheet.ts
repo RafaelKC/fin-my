@@ -30,6 +30,7 @@ import {
 } from '../../core/money';
 import { DevicePrefsService, LancamentoKind } from '../../core/prefs/device-prefs.service';
 import { AmountInput } from '../../shared/amount-input/amount-input';
+import { TagPicker } from '../../shared/tag-picker/tag-picker';
 import { WALLET_COLORS, Wallet } from '../carteiras/wallet.models';
 import { WalletsService } from '../carteiras/wallets.service';
 import { ConfirmarData, ConfirmarDialog, ConfirmarResultado } from '../carteiras/confirmar.dialog';
@@ -100,6 +101,9 @@ interface Rascunho {
   status: EntryStatus | null;
   refMonth: string | null;
   notes: string;
+  /** Tags escolhidas (rascunhos antigos não têm). */
+  tagIds?: string[];
+  tagsManual?: boolean;
 }
 
 /**
@@ -112,7 +116,7 @@ interface Rascunho {
 @Component({
   selector: 'app-lancamento-sheet',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, MatIconModule, AmountInput],
+  imports: [FormsModule, MatIconModule, AmountInput, TagPicker],
   templateUrl: './lancamento.sheet.html',
   styleUrl: './lancamento.sheet.scss',
 })
@@ -159,6 +163,10 @@ export class LancamentoSheet {
   /** Mês de referência escolhido à mão; `null` = segue a data (RT-04). */
   protected readonly refManual = signal<string | null>(null);
   protected readonly notes = signal('');
+  /** Tags escolhidas (de acerto ou não); o `TagPicker` edita esta lista (004 FR-003). */
+  protected readonly tagIds = signal<string[]>([]);
+  /** `true` quando a pessoa mexeu no campo Tags: sugestões não o sobrescrevem mais (FR-003). */
+  private readonly tagsManual = signal(false);
   protected readonly maisOpcoes = signal(false);
 
   // aba Cartão (003)
@@ -375,6 +383,10 @@ export class LancamentoSheet {
     this.resolverDestino();
   }
 
+  protected aoAlterarTags(): void {
+    this.tagsManual.set(true);
+  }
+
   protected aoDigitarDescricao(texto: string): void {
     this.description.set(texto);
     this.termo$.next(texto);
@@ -385,6 +397,8 @@ export class LancamentoSheet {
     this.description.set(s.description);
     this.termo$.next('');
     this.sugestoes.set([]);
+    // FR-003: as tags do lançamento mais recente com a descrição, se o campo não foi alterado.
+    if (!this.tagsManual()) this.tagIds.set([...(s.tagIds ?? [])]);
     if (this.ehCartao()) {
       // FR-011: o cartão da compra mais recente, se ativo e ainda não alterado à mão.
       const ativo = s.creditCardId && this.cartoes().some((c) => c.id === s.creditCardId);
@@ -678,6 +692,8 @@ export class LancamentoSheet {
       status: this.status(),
       notes: base.notes ?? null,
       version: original.version,
+      // Na edição o servidor troca as tags pelas enviadas: lista vazia remove todas.
+      tagIds: [...this.tagIds()],
     };
     this.ocupado.set(true);
     this.entries.update(original.id, corpo).subscribe({
@@ -798,6 +814,7 @@ export class LancamentoSheet {
       notes: notas === '' ? null : notas,
       scope: escopo,
       version: original.version,
+      tagIds: [...this.tagIds()],
     };
     if (confirmarFaturaPaga) corpo.confirmPaidInvoice = true;
 
@@ -1003,6 +1020,7 @@ export class LancamentoSheet {
       creditCardId: this.cardId(),
     };
     if (notas !== '') corpo.notes = notas;
+    if (this.tagIds().length > 0) corpo.tagIds = [...this.tagIds()];
     if (this.emAndamento()) {
       corpo.installments = {
         total: this.parcelas(),
@@ -1089,6 +1107,7 @@ export class LancamentoSheet {
     const ref = this.refManual();
     if (ref !== null && ref !== '' && ref !== monthOfDate(this.date())) corpo.referenceMonth = ref;
     if (notas !== '') corpo.notes = notas;
+    if (this.tagIds().length > 0) corpo.tagIds = [...this.tagIds()];
     return corpo;
   }
 
@@ -1113,6 +1132,8 @@ export class LancamentoSheet {
     this.amount.set('');
     this.description.set('');
     this.notes.set('');
+    this.tagIds.set([]);
+    this.tagsManual.set(false);
     this.statusManual.set(null);
     this.refManual.set(null);
     this.walletManual.set(false);
@@ -1186,6 +1207,7 @@ export class LancamentoSheet {
     this.date.set(compra.date);
     this.cardId.set(compra.creditCardId);
     this.cardManual.set(true);
+    this.tagIds.set([...(compra.tagIds ?? [])]);
     this.notes.set(compra.notes ?? '');
     if (this.notes() !== '') this.maisOpcoes.set(true);
   }
@@ -1198,6 +1220,7 @@ export class LancamentoSheet {
     this.date.set(entry.date);
     this.walletId.set(entry.walletId);
     this.walletManual.set(true);
+    this.tagIds.set([...(entry.tagIds ?? [])]);
     this.statusManual.set(entry.status);
     if (entry.referenceMonth !== monthOfDate(entry.date)) {
       this.refManual.set(entry.referenceMonth);
@@ -1233,6 +1256,10 @@ export class LancamentoSheet {
       this.toWalletId.set(r.toWalletId);
       this.toManual.set(r.toManual === true);
     }
+    if (Array.isArray(r.tagIds)) {
+      this.tagIds.set(r.tagIds.filter((id): id is string => typeof id === 'string'));
+      this.tagsManual.set(r.tagsManual === true);
+    }
     this.maisOpcoes.set(r.refMonth != null || (r.notes ?? '') !== '');
   }
 
@@ -1253,6 +1280,8 @@ export class LancamentoSheet {
       status: this.statusManual(),
       refMonth: this.refManual(),
       notes: this.notes(),
+      tagIds: this.tagIds(),
+      tagsManual: this.tagsManual(),
     };
     if (
       this.finalizado ||

@@ -20,6 +20,8 @@ export interface Invoice extends InvoiceSummary {
   payments: InvoicePayment[];
   previousMonth: string;
   nextMonth: string;
+  /** Só com filtro de tags: Débitos − Créditos das compras listadas (004 research R6). */
+  filteredTotalCents?: number | null;
 }
 
 /** Corpo de `POST .../payments`; vazio = padrões (FR-017). */

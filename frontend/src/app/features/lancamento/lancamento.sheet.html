@@ -326,6 +326,10 @@
       </div>
     }
 
+    @if (!ehTransferencia()) {
+      <app-tag-picker [(ids)]="tagIds" (alterado)="aoAlterarTags()" />
+    }
+
     @if (!ehTransferencia() && !ehCartao()) {
       <div class="campo">
         <span class="rotulo" id="lancamento-situacao">Situação</span>

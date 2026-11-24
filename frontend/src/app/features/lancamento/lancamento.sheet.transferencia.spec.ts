@@ -43,6 +43,7 @@ describe('LancamentoSheet — Transferência (US5)', () => {
     el = fixture.nativeElement;
     fixture.detectChanges();
     http.expectOne('/api/v1/wallets?archived=false').flush(carteiras);
+    http.match('/api/v1/tags?archived=all').forEach((req) => req.flush([]));
     await atualizar();
   }
   async function atualizar() {
