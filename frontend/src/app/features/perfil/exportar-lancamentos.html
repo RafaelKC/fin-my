@@ -1,0 +1,25 @@
+<section class="secao" aria-labelledby="titulo-exportar">
+  <h2 id="titulo-exportar">Exportar lançamentos (CSV)</h2>
+  <form class="form" [formGroup]="form" (ngSubmit)="exportar()" novalidate>
+    @if (erro(); as mensagem) {
+      <div class="aviso" role="alert" data-testid="erro-exportar">{{ mensagem }}</div>
+    }
+    @if (exportado(); as nome) {
+      <div class="confirmacao" role="status" data-testid="exportado">
+        <p>Arquivo {{ nome }} baixado.</p>
+      </div>
+    }
+    <div class="campo">
+      <label for="exportar-de">Mês inicial</label>
+      <input id="exportar-de" type="month" formControlName="de" />
+    </div>
+    <div class="campo">
+      <label for="exportar-ate">Mês final</label>
+      <input id="exportar-ate" type="month" formControlName="ate" />
+    </div>
+    <span class="ajuda">Planilha .csv com um lançamento por linha, até 120 meses.</span>
+    <button type="submit" class="enviar" [disabled]="exportando()">
+      {{ exportando() ? 'Gerando…' : 'Exportar' }}
+    </button>
+  </form>
+</section>

@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -15,6 +15,11 @@ export class ApiClient {
 
   get<T>(path: string): Observable<T> {
     return this.http.get<T>(url(path));
+  }
+
+  /** Baixa um arquivo (corpo binário); a resposta inteira vem junto para ler `Content-Disposition`. */
+  getFile(path: string): Observable<HttpResponse<Blob>> {
+    return this.http.get(url(path), { observe: 'response', responseType: 'blob' });
   }
 
   post<T>(path: string, body?: unknown, headers?: ApiHeaders): Observable<T> {
