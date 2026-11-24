@@ -5,6 +5,7 @@ import { ApiClient } from '../../core/api/api-client';
 import { AuthService } from '../../core/auth/auth.service';
 import { TenantDto, UserDto } from '../../core/auth/session';
 import { asProblem, problemMessage } from '../../core/errors/problem-details';
+import { AplicativosConectados } from './aplicativos-conectados';
 
 export const NOME_MAX = 60;
 export const SENHA_MIN = 8;
@@ -16,7 +17,7 @@ type CampoSenha = 'currentPassword' | 'newPassword';
 @Component({
   selector: 'app-perfil-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatIconModule],
+  imports: [ReactiveFormsModule, MatIconModule, AplicativosConectados],
   templateUrl: './perfil.page.html',
   styleUrl: './perfil.page.scss',
 })

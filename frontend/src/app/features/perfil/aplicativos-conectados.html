@@ -1,0 +1,61 @@
+<section class="secao" aria-labelledby="titulo-aplicativos">
+  <h2 id="titulo-aplicativos">Aplicativos conectados</h2>
+
+  @if (erro(); as mensagem) {
+    <div class="aviso" role="alert" data-testid="erro-aplicativos">{{ mensagem }}</div>
+  }
+
+  @if (aplicativos(); as lista) {
+    @if (lista.length === 0) {
+      <p class="vazio" data-testid="sem-aplicativos">
+        Nenhum aplicativo conectado. Para lançar e consultar pelo Claude, adicione o conector do
+        Fin-My nele.
+      </p>
+    } @else {
+      <ul class="lista" data-testid="aplicativos-conectados">
+        @for (app of lista; track app.id) {
+          <li class="item" data-testid="aplicativo-conectado">
+            <div class="dados">
+              <strong class="nome">{{ app.name }}</strong>
+              <span class="detalhe">Conectado em {{ formatar(app.connectedAt) }}</span>
+              <span class="detalhe" data-testid="ultimo-uso">
+                {{
+                  app.lastUsedAt ? 'Último uso em ' + formatar(app.lastUsedAt) : 'Ainda não usado'
+                }}
+              </span>
+            </div>
+            @if (confirmando() === app.id) {
+              <div class="confirmar" role="group" [attr.aria-label]="'Desconectar ' + app.name">
+                <p>Desconectar {{ app.name }}? Ele perde o acesso na hora.</p>
+                <div class="botoes">
+                  <button
+                    type="button"
+                    class="perigo"
+                    [disabled]="desconectando() !== null"
+                    (click)="desconectar(app.id)"
+                  >
+                    {{ desconectando() === app.id ? 'Desconectando…' : 'Sim, desconectar' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="neutro"
+                    [disabled]="desconectando() !== null"
+                    (click)="manter()"
+                  >
+                    Manter
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <button type="button" class="neutro" (click)="pedirConfirmacao(app.id)">
+                Desconectar
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    }
+  } @else {
+    <p class="vazio" role="status">Carregando…</p>
+  }
+</section>

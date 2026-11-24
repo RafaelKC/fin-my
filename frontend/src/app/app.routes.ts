@@ -29,6 +29,12 @@ export const routes: Routes = [
       ),
   },
   {
+    // Consentimento do conector do Claude (008): exige login e guarda os parâmetros do pedido em `returnUrl`; sem o shell.
+    path: 'autorizar',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/autorizar/autorizar.page').then((m) => m.AutorizarPage),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./shell/shell').then((m) => m.Shell),

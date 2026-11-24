@@ -1,0 +1,65 @@
+.pagina {
+  box-sizing: border-box;
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+h1 {
+  font: var(--mat-sys-headline-medium);
+  margin: 0 0 16px;
+}
+
+.consentimento {
+  font: var(--mat-sys-body-large);
+  margin: 0 0 8px;
+}
+
+.ajuda {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0 0 24px;
+}
+
+.aviso {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  color: var(--mat-sys-on-error-container);
+  background: var(--mat-sys-error-container);
+  border-radius: 8px;
+
+  p {
+    margin: 0;
+  }
+}
+
+.acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.autorizar,
+.cancelar {
+  min-height: 48px;
+  font: var(--mat-sys-label-large);
+  border-radius: 24px;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+}
+
+.autorizar {
+  color: var(--mat-sys-on-primary);
+  background: var(--mat-sys-primary);
+  border: 0;
+}
+
+.cancelar {
+  color: var(--mat-sys-primary);
+  background: transparent;
+  border: 1px solid var(--mat-sys-outline);
+}

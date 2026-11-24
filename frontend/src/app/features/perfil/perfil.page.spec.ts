@@ -36,6 +36,7 @@ describe('PerfilPage', () => {
     fixture = TestBed.createComponent(PerfilPage);
     el = fixture.nativeElement;
     fixture.detectChanges();
+    http.expectOne('/api/v1/me/connected-apps').flush([]);
   });
 
   afterEach(() => http.verify());
