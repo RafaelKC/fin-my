@@ -92,7 +92,11 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
         var compraComTags = await CreateJsonAsync(asA, "/api/v1/card-purchases", new { description = "Mercado Segredo da Alice", amount = "20,00", date = "2026-03-11", creditCardId = cartaoId, tagIds = new[] { brunaId, ifoodId } });
         var dividida = await CreateJsonAsync(asA, "/api/v1/entries/split", new
         {
-            kind = "expense", description = "Dividida Segredo da Alice", amount = "50,00", date = "2026-03-12", walletId = azulId,
+            kind = "expense",
+            description = "Dividida Segredo da Alice",
+            amount = "50,00",
+            date = "2026-03-12",
+            walletId = azulId,
             split = new { mode = "equal", parts = new object[] { new { settlementTagId = (Guid?)null }, new { settlementTagId = (Guid?)brunaId } } },
         });
 
