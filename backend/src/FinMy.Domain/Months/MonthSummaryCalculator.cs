@@ -15,12 +15,14 @@ public sealed record WalletOpening(Guid WalletId, long Cents, DateOnly Date);
 /// <summary>
 /// Uma Fatura vista pela visão do mês (003 FR-022/FR-023, research R8): total, pago por Carteira e Carteira de pagamento
 /// do cartão, por mês de vencimento. Os valores no recorte de Carteiras saem de <see cref="Planned"/> e <see cref="Actual"/>.
+/// <paramref name="ActiveEstimateCents"/> é a Estimativa (007) só quando ainda vale (hoje &lt; fechamento); <c>null</c> caso contrário.
 /// </summary>
 public sealed record InvoiceFigure(
     YearMonth DueMonth,
     long TotalCents,
     Guid PaymentWalletId,
-    IReadOnlyDictionary<Guid, long> PaidByWallet)
+    IReadOnlyDictionary<Guid, long> PaidByWallet,
+    long? ActiveEstimateCents = null)
 {
     /// <summary>Total pago, com qualquer Carteira.</summary>
     public long PaidCents => PaidByWallet.Values.Sum();
@@ -32,11 +34,18 @@ public sealed record InvoiceFigure(
     public long Actual(IReadOnlySet<Guid> selected) => PaidByWallet.Where(p => selected.Contains(p.Key)).Sum(p => p.Value);
 
     /// <summary>
+    /// Acréscimo que a Estimativa dá ao Previsto: <c>max(Total, Pago, Estimativa, 0) − max(Total, Pago, 0)</c> (007 FR-010).
+    /// </summary>
+    public long EstimateLiftCents =>
+        ActiveEstimateCents is { } estimate ? Math.Max(estimate - Math.Max(Math.Max(TotalCents, PaidCents), 0), 0) : 0;
+
+    /// <summary>
     /// Previsto: pagamentos com as Carteiras selecionadas, mais o maior entre Restante e 0 se a Carteira de pagamento do cartão
-    /// estiver entre elas (FR-023). Com todas as Carteiras vale <c>max(Total, Pago, 0)</c> (FR-022).
+    /// estiver entre elas (FR-023). Com todas as Carteiras vale <c>max(Total, Pago, 0)</c> (FR-022). O acréscimo da Estimativa
+    /// (007 FR-011) também vai para a Carteira de pagamento do cartão.
     /// </summary>
     public long Planned(IReadOnlySet<Guid> selected) =>
-        Actual(selected) + (selected.Contains(PaymentWalletId) ? Math.Max(RemainingCents, 0) : 0);
+        Actual(selected) + (selected.Contains(PaymentWalletId) ? Math.Max(RemainingCents, 0) + EstimateLiftCents : 0);
 }
 
 /// <summary>Uma coluna do resumo (Previsto ou Realizado), todos os valores em centavos.</summary>

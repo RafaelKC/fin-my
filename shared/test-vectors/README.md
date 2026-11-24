@@ -89,6 +89,7 @@ Os nomes abaixo são o ponto de partida (`docs/arquitetura.md` §5); o formato e
 | `text-normalize.json` | `TextNormalizer`: trim, minúsculas, sem acentos; espaços internos preservados | 002 FR-001, RT-05a | 002 |
 | `invoice-cycle.json` | `InvoiceCycle`: datas de fechamento/vencimento e fatura de uma compra | 003 FR-003/004/008 | 003 |
 | `invoice-status.json` | `InvoiceStatusRule`: situação da fatura (Total, Restante, hoje, fechamento, vencimento) | 003 FR-006 | 003 |
+| `invoice-forecast.json` | `InvoiceForecast`: Previsto da fatura com Estimativa (até o fechamento) | 007 FR-010 | 007 |
 
 Formato de `input`/`expected` dos arquivos da feature 002:
 
@@ -104,6 +105,7 @@ Formato dos arquivos da feature 003 (`today`, `date`, `closingDate`, `dueDate` e
 |---|---|---|
 | `invoice-cycle.json` | `{ "date": "2026-03-17", "closingDay": 18, "dueDay": 25 }` | `{ "invoiceMonth": "2026-03", "closingDate": "2026-03-18", "dueDate": "2026-03-25" }` (fatura da compra e datas dessa fatura) |
 | `invoice-status.json` | `{ "totalCents", "paidCents", "today", "closingDate", "dueDate" }` | `{ "status": "no_amount_due" \| "paid" \| "open" \| "closed" \| "overdue" }` |
+| `invoice-forecast.json` | `{ "totalCents", "paidCents", "estimateCents" (ou `null`), "today", "closingDate" }` | `{ "plannedCents", "estimateActive" }` (Previsto da fatura e se a estimativa vale: hoje < fechamento) |
 | `installments.json` | `{ "mode": "total_amount" \| "installment_amount" \| "in_progress", "installmentCount", "firstNumber", "amountCents", "firstInvoiceMonth" }` (`firstNumber` = 1 fora do modo em andamento) | `{ "installments": [{ "number", "amountCents", "dueMonth" }] }` |
 
 O vetor de valor usa o modo padrão do parser (resultado > 0). O modo que aceita zero e negativo (saldo

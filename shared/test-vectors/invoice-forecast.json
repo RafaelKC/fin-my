@@ -1,0 +1,156 @@
+{
+  "rule": "InvoiceForecast",
+  "description": "Previsto da fatura com Estimativa (007 FR-010, research R1): antes do fechamento (hoje < fechamento) max(Total, Pago, Estimativa, 0); senão a regra da 003 FR-022, max(Total, Pago, 0). Inclui o exemplo numérico da US2 (SC-003) e a fronteira hoje = fechamento.",
+  "cases": [
+    {
+      "id": "us2-antes-do-fechamento-vale-a-estimativa",
+      "description": "US2: 10/01/2027, Total 205,53 e estimativa 800,00 → Previsto 800,00",
+      "input": {
+        "totalCents": 20553,
+        "paidCents": 0,
+        "estimateCents": 80000,
+        "today": "2027-01-10",
+        "closingDate": "2027-05-18"
+      },
+      "expected": {
+        "plannedCents": 80000,
+        "estimateActive": true
+      }
+    },
+    {
+      "id": "us2-compras-passaram-da-estimativa",
+      "description": "US2: 10/05/2027, Total 912,40 (acima da estimativa) → Previsto = Total",
+      "input": {
+        "totalCents": 91240,
+        "paidCents": 0,
+        "estimateCents": 80000,
+        "today": "2027-05-10",
+        "closingDate": "2027-05-18"
+      },
+      "expected": {
+        "plannedCents": 91240,
+        "estimateActive": true
+      }
+    },
+    {
+      "id": "us2-depois-do-fechamento-ignora-estimativa",
+      "description": "US2: 19/05/2027, após o fechamento → regra da 003 sem estimativa",
+      "input": {
+        "totalCents": 64000,
+        "paidCents": 0,
+        "estimateCents": 80000,
+        "today": "2027-05-19",
+        "closingDate": "2027-05-18"
+      },
+      "expected": {
+        "plannedCents": 64000,
+        "estimateActive": false
+      }
+    },
+    {
+      "id": "fronteira-hoje-igual-ao-fechamento",
+      "description": "Hoje = fechamento: a estimativa já não vale (hoje < fechamento)",
+      "input": {
+        "totalCents": 64000,
+        "paidCents": 0,
+        "estimateCents": 80000,
+        "today": "2027-05-18",
+        "closingDate": "2027-05-18"
+      },
+      "expected": {
+        "plannedCents": 64000,
+        "estimateActive": false
+      }
+    },
+    {
+      "id": "fronteira-dia-antes-do-fechamento",
+      "description": "Um dia antes do fechamento a estimativa ainda vale",
+      "input": {
+        "totalCents": 64000,
+        "paidCents": 0,
+        "estimateCents": 80000,
+        "today": "2027-05-17",
+        "closingDate": "2027-05-18"
+      },
+      "expected": {
+        "plannedCents": 80000,
+        "estimateActive": true
+      }
+    },
+    {
+      "id": "sem-estimativa-usa-regra-da-003",
+      "description": "Sem estimativa: max(Total, Pago, 0)",
+      "input": {
+        "totalCents": 20553,
+        "paidCents": 0,
+        "estimateCents": null,
+        "today": "2027-01-10",
+        "closingDate": "2027-05-18"
+      },
+      "expected": {
+        "plannedCents": 20553,
+        "estimateActive": false
+      }
+    },
+    {
+      "id": "pago-acima-da-estimativa",
+      "description": "Pago maior que Total e estimativa → Previsto = Pago",
+      "input": {
+        "totalCents": 10000,
+        "paidCents": 95000,
+        "estimateCents": 80000,
+        "today": "2027-05-10",
+        "closingDate": "2027-05-18"
+      },
+      "expected": {
+        "plannedCents": 95000,
+        "estimateActive": true
+      }
+    },
+    {
+      "id": "total-negativo-com-estimativa",
+      "description": "Só estornos (Total negativo) com estimativa → estimativa",
+      "input": {
+        "totalCents": -5000,
+        "paidCents": 0,
+        "estimateCents": 80000,
+        "today": "2027-01-10",
+        "closingDate": "2027-05-18"
+      },
+      "expected": {
+        "plannedCents": 80000,
+        "estimateActive": true
+      }
+    },
+    {
+      "id": "total-negativo-sem-estimativa",
+      "description": "Só estornos sem estimativa → 0",
+      "input": {
+        "totalCents": -5000,
+        "paidCents": 0,
+        "estimateCents": null,
+        "today": "2027-01-10",
+        "closingDate": "2027-05-18"
+      },
+      "expected": {
+        "plannedCents": 0,
+        "estimateActive": false
+      }
+    },
+    {
+      "id": "estimativa-igual-ao-total",
+      "description": "Estimativa igual ao Total → mesmo valor",
+      "input": {
+        "totalCents": 80000,
+        "paidCents": 0,
+        "estimateCents": 80000,
+        "today": "2027-05-10",
+        "closingDate": "2027-05-18"
+      },
+      "expected": {
+        "plannedCents": 80000,
+        "estimateActive": true
+      }
+    }
+  ]
+}
