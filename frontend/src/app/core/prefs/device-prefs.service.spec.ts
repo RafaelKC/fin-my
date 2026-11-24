@@ -8,7 +8,10 @@ describe('DevicePrefsService', () => {
     localStorage.clear();
     prefs = TestBed.inject(DevicePrefsService);
   });
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
 
   it('primeiro uso: tipo Cartão e nenhuma carteira ou cartão lembrado (FR-009, 003 FR-010)', () => {
     expect(prefs.lastKind()).toBe('card');
@@ -60,6 +63,16 @@ describe('DevicePrefsService', () => {
     expect(prefs.readDraft()).toBeNull();
   });
 
+  it('tela inicial: Mês por padrão; a escolha do Painel é lembrada sem apagar o resto (FR-006)', () => {
+    expect(prefs.homeScreen()).toBe('mes');
+    prefs.rememberSaved('expense', 'w-azul');
+    prefs.setHomeScreen('painel');
+    expect(prefs.homeScreen()).toBe('painel');
+    expect(prefs.lastWalletId('expense')).toBe('w-azul');
+    prefs.setHomeScreen('mes');
+    expect(prefs.homeScreen()).toBe('mes');
+  });
+
   it('com o armazenamento bloqueado, nada quebra', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('bloqueado');
@@ -72,6 +85,8 @@ describe('DevicePrefsService', () => {
     });
     expect(prefs.lastKind()).toBe('card');
     expect(() => prefs.rememberSaved('income', 'w')).not.toThrow();
+    expect(prefs.homeScreen()).toBe('mes');
+    expect(() => prefs.setHomeScreen('painel')).not.toThrow();
     expect(() => prefs.saveDraft({})).not.toThrow();
     expect(() => prefs.clearDraft()).not.toThrow();
     expect(prefs.readDraft()).toBeNull();

@@ -3,6 +3,9 @@ import { Injectable } from '@angular/core';
 /** Tipos que o formulário rápido grava por aparelho (FR-009; `card` = aba Cartão, 003 FR-010). */
 export type LancamentoKind = 'card' | 'expense' | 'income' | 'transfer';
 
+/** Tela inicial do aparelho (006 FR-006, research R6). */
+export type HomeScreen = 'mes' | 'painel';
+
 const PREFS_KEY = 'finmy.prefs.v1';
 const DRAFT_KEY = 'finmy.draft.lancamento';
 
@@ -11,6 +14,8 @@ interface Prefs {
   lastWalletByKind?: Partial<Record<LancamentoKind, string>>;
   /** Último cartão usado na aba Cartão (research R9). */
   lastCardId?: string;
+  /** Tela inicial escolhida no Perfil (006 R6). */
+  homeScreen?: HomeScreen;
 }
 
 function isKind(value: unknown): value is LancamentoKind {
@@ -54,6 +59,15 @@ export class DevicePrefsService {
       lastKind: kind,
       lastWalletByKind: { ...prefs.lastWalletByKind, [kind]: walletId },
     });
+  }
+
+  /** Tela inicial deste aparelho; sem escolha, a visão do mês (FR-006). */
+  homeScreen(): HomeScreen {
+    return this.readPrefs().homeScreen === 'painel' ? 'painel' : 'mes';
+  }
+
+  setHomeScreen(homeScreen: HomeScreen): void {
+    this.write(PREFS_KEY, { ...this.readPrefs(), homeScreen });
   }
 
   readDraft<T>(): T | null {

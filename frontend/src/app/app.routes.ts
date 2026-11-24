@@ -1,4 +1,6 @@
+import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
+import { DevicePrefsService } from './core/prefs/device-prefs.service';
 import { today } from './core/money';
 import { authGuard, publicGuard } from './core/auth/auth.guards';
 
@@ -40,9 +42,22 @@ export const routes: Routes = [
     loadComponent: () => import('./shell/shell').then((m) => m.Shell),
     children: [
       {
+        // Tela inicial do aparelho (006 FR-006): Mês (padrão) ou Painel.
         path: '',
         pathMatch: 'full',
-        redirectTo: () => `/mes/${today().slice(0, 7)}`,
+        redirectTo: () =>
+          inject(DevicePrefsService).homeScreen() === 'painel'
+            ? `/painel/${today().slice(0, 4)}`
+            : `/mes/${today().slice(0, 7)}`,
+      },
+      {
+        path: 'painel',
+        pathMatch: 'full',
+        redirectTo: () => `/painel/${today().slice(0, 4)}`,
+      },
+      {
+        path: 'painel/:ano',
+        loadComponent: () => import('./features/painel/painel.page').then((m) => m.PainelPage),
       },
       {
         path: 'mes',

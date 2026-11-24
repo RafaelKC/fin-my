@@ -1,0 +1,53 @@
+<svg
+  class="grafico"
+  data-testid="grafico"
+  role="img"
+  [attr.viewBox]="'0 0 ' + geometria().largura + ' ' + geometria().altura"
+  [attr.aria-label]="descricao()"
+  preserveAspectRatio="xMidYMid meet"
+>
+  <title>{{ descricao() }}</title>
+  <line
+    class="zero"
+    [attr.x1]="0"
+    [attr.x2]="geometria().largura"
+    [attr.y1]="geometria().zeroY"
+    [attr.y2]="geometria().zeroY"
+  />
+  @for (m of dados(); track m.rotulo) {
+    <g class="mes" data-testid="grafico-mes">
+      <rect
+        class="entradas"
+        [attr.x]="m.entradas.x"
+        [attr.y]="m.entradas.y"
+        [attr.width]="m.entradas.largura"
+        [attr.height]="m.entradas.altura"
+      >
+        <title>{{ m.rotulo }}: entradas {{ brl(m.ponto.entradasCents) }}</title>
+      </rect>
+      <rect
+        class="saidas"
+        [attr.x]="m.saidas.x"
+        [attr.y]="m.saidas.y"
+        [attr.width]="m.saidas.largura"
+        [attr.height]="m.saidas.altura"
+      >
+        <title>{{ m.rotulo }}: saídas {{ brl(m.ponto.saidasCents) }}</title>
+      </rect>
+      <text class="rotulo" [attr.x]="m.centroX" [attr.y]="geometria().altura - 8">
+        {{ m.rotulo }}
+      </text>
+    </g>
+  }
+  <polyline class="saldo" [attr.points]="geometria().linhaSaldo" />
+  @for (m of dados(); track m.rotulo) {
+    <circle class="ponto" [attr.cx]="m.saldo.x" [attr.cy]="m.saldo.y" r="3.5">
+      <title>{{ m.rotulo }}: saldo final {{ brl(m.ponto.saldoCents) }}</title>
+    </circle>
+  }
+</svg>
+<ul class="legenda" aria-hidden="true">
+  <li><span class="amostra entradas"></span> Entradas</li>
+  <li><span class="amostra saidas"></span> Saídas</li>
+  <li><span class="amostra saldo"></span> Saldo final</li>
+</ul>
