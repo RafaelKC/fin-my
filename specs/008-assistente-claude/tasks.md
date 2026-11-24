@@ -26,7 +26,7 @@ Normas: `docs/arquitetura.md` §12, constituição, research da 002–004.
 ## Phase 3: Skill e entrega
 
 - [x] T007 Skill e documentação em `integrations/claude/` (research R6): `skill/SKILL.md`, `README.md` (publicar com HTTPS, adicionar conector, enviar skill) e `roteiro-de-testes.md` com os 30 pedidos e resultados esperados (dados fictícios). Depende de T004, T005
-- [ ] T008 Validação: isolamento via MCP, quickstart (partes automatizáveis), `docs/arquitetura.md` §12 (nomes finais das ferramentas, ex. `undo_creation`) e §14, README. Depende de todas
+- [x] T008 Validação: isolamento via MCP, quickstart (partes automatizáveis), `docs/arquitetura.md` §12 (nomes finais das ferramentas, ex. `undo_creation`) e §14, README. Depende de todas
 
 ## Dependências (resumo)
 
