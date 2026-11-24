@@ -138,6 +138,10 @@
                 <div class="texto">
                   <span class="descricao" data-testid="descricao">{{ c.displayDescription }}</span>
                   <app-selo-via-claude [via]="c.createdVia" />
+                  <app-selo-recorrencia
+                    [recorrenciaId]="c.recurrenceId"
+                    [alterada]="c.recurrenceModified"
+                  />
                   @if ((c.splitCount ?? 0) > 1) {
                     <span class="selo" data-testid="selo-divisao"
                       >Dividida em {{ c.splitCount }}</span

@@ -27,7 +27,7 @@ export interface CardPurchaseCreate {
   tagIds?: string[];
 }
 
-export type PurchaseOrigin = 'manual' | 'installment' | 'carry_over';
+export type PurchaseOrigin = 'manual' | 'installment' | 'carry_over' | 'recurrence';
 
 /** `CardPurchase` do contrato. */
 export interface CardPurchase {
@@ -54,6 +54,10 @@ export interface CardPurchase {
   settlementTagId?: string | null;
   splitGroupId?: string | null;
   splitCount?: number;
+  /** Recorrência (005): vínculo, mês da ocorrência e se foi editada à mão (FR-005). */
+  recurrenceId?: string | null;
+  recurrenceMonth?: string | null;
+  recurrenceModified?: boolean;
 }
 
 /** Escopo da edição/exclusão/movimento em parcelas (contracts/openapi.yaml). */

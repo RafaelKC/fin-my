@@ -67,6 +67,24 @@ describe('BuscaPage', () => {
     expect(total.classList).toContain('negativo');
   });
 
+  it('005: resultado que veio de recorrência mostra o ícone e "alterada"', async () => {
+    await abrir(
+      resultado({
+        items: [
+          item(entry('1', { description: 'Tim', recurrenceId: 'r-tim' })),
+          item(entry('2', { recurrenceId: 'r-tim', recurrenceModified: true })),
+          item(entry('3')),
+        ],
+        totalCount: 3,
+      }),
+    );
+    const linhas = [...el.querySelectorAll('[data-testid="resultado"]')];
+    expect(linhas[0].querySelector('[data-testid="selo-recorrencia"]')).not.toBeNull();
+    expect(linhas[0].querySelector('[data-testid="selo-alterada"]')).toBeNull();
+    expect(linhas[1].querySelector('[data-testid="selo-alterada"]')).not.toBeNull();
+    expect(linhas[2].querySelector('[data-testid="selo-recorrencia"]')).toBeNull();
+  });
+
   it('digitar busca depois de uma pausa, enviando o texto', async () => {
     vi.useFakeTimers();
     try {
