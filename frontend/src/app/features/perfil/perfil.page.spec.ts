@@ -39,7 +39,11 @@ describe('PerfilPage', () => {
     http.expectOne('/api/v1/me/connected-apps').flush([]);
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    http.verify();
+    // A preferência de tela inicial grava em localStorage; não deixa vazar para outros testes.
+    localStorage.clear();
+  });
 
   it('mostra e-mail e preenche nome e nome do Espaço atuais', () => {
     expect(el.querySelector('[data-testid="email-da-conta"]')!.textContent).toContain(

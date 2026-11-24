@@ -8,7 +8,10 @@ describe('DevicePrefsService', () => {
     localStorage.clear();
     prefs = TestBed.inject(DevicePrefsService);
   });
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
 
   it('primeiro uso: tipo Cartão e nenhuma carteira ou cartão lembrado (FR-009, 003 FR-010)', () => {
     expect(prefs.lastKind()).toBe('card');
