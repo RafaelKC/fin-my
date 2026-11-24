@@ -303,17 +303,21 @@ do horizonte também é executada sob demanda ao abrir um mês/ano além do hori
   automáticos (§3–§4). Revogação: "Aplicativos conectados" (008 FR-003) revoga as autorizações do
   OpenIddict; redefinir senha também revoga.
 - **Ferramentas**: nomes em inglês `snake_case` (`create_entry`, `create_card_purchase`,
-  `create_transfer`, `undo_last`, `get_month_summary`, `get_wallet_balances`, `list_invoices`,
+  `create_transfer`, `undo_creation`, `get_month_summary`, `get_wallet_balances`, `list_invoices`,
   `get_invoice`, `list_pending`, `get_settlements`, `search_entries`, `set_entry_status`,
   `pay_invoice`, `generate_settlement_charge`, `delete_entry`, `list_catalog`). Parâmetros aceitam
   **nomes** de carteira/cartão/tag (resolução 008 FR-006) e devolvem erros estruturados com as opções.
-  Descrições das ferramentas em pt-BR. Ferramentas que exigem confirmação (008 FR-007) são marcadas
-  como destrutivas (`destructiveHint`) e recebem `confirmed: true` obrigatório.
+  Descrições das ferramentas em pt-BR. Ferramentas que exigem confirmação (008 FR-007:
+  `set_entry_status`, `pay_invoice`, `generate_settlement_charge`, `delete_entry`) são marcadas como
+  destrutivas (`destructiveHint`) e têm o parâmetro opcional `confirmed`: sem `confirmed: true` nada
+  é alterado e a resposta traz o `preview` do que seria feito. `undo_creation` desfaz, sem
+  confirmação, o que o Claude criou há até 10 minutos.
 - **Idempotência**: cada chamada de criação gera/aceita uma chave de idempotência (§6).
 - **Skill**: `integrations/claude/skill/SKILL.md` versionada no repo; contém as instruções da 008
   FR-009 e exemplos de conversa. Distribuída manualmente (upload no Claude dela).
-- **Testes**: testes de contrato das ferramentas (entrada/saída) + roteiro de conversas (008 SC-002/003)
-  executado manualmente antes de liberar.
+- **Testes**: testes de contrato das ferramentas (entrada/saída), de confirmação (SC-003), de
+  paridade com o REST (SC-002) e de isolamento entre Espaços via MCP (`McpIsolationTests`) + roteiro de
+  conversas (008 SC-002/003) executado manualmente antes de liberar (`integrations/claude/`).
 
 ## 13. Deploy
 
@@ -386,3 +390,15 @@ Mesma regra: quando uma feature futura mexer em um destes pontos, atualize a lis
 | 28 | Filtro por tag no mês | Com `tagIds`, `GET /months/{mes}` filtra as listas, acrescenta `purchases[]` (compras das faturas do mês) e traz `filterTotals`; faturas e transferências somem da lista e o resumo Previsto/Realizado **não muda**. | O resumo continua sendo o mês inteiro; o filtro só recorta a lista (research R6). |
 | 29 | Subtotais da fatura | A fatura sempre devolve `settlementSubtotals` ("Por pessoa", `tagId` nulo = sem tag de acerto) e a soma deles é o Total (SC-004, `InvoiceSettlementSubtotalsTests`). | Dá a cobrança por pessoa sem tela nova (004 FR-011). |
 
+### Feature 008 (assistente no Claude)
+
+Mesma regra: quando uma feature futura mexer em um destes pontos, atualize a lista.
+
+| # | Tema | O que foi feito | Por quê |
+|---|---|---|---|
+| 30 | Nomes das ferramentas (§12) | O desfazer se chama `undo_creation` (não `undo_last`): recebe o `id` de um item criado e desfaz também o grupo criado junto (parcelas, partes da divisão). Só vale para o que o Claude criou há ≤ 10 min (`created_via = claude`); senão `undo_not_allowed`. | Desfazer um item específico é mais seguro do que "o último", que podia pegar outro lançamento. |
+| 31 | Confirmação (§12) | `confirmed` é opcional nas 4 ferramentas destrutivas; sem `true` nada muda e vem `requiresConfirmation` + `preview`. | O preview é a própria resposta da ferramenta; o Claude mostra e chama de novo só após o "sim" (SC-003, `McpConfirmationTests`). |
+| 32 | Erros de ferramenta | Erro de regra vira resultado com `isError: true` e `{ code, message }` (os mesmos `code` da API REST, mais `ambiguous_or_not_found`, `card_required` e `undo_not_allowed`). Id de outro Espaço responde `not_found` e nome de outro Espaço não resolve, como no REST. | O Claude precisa ler o motivo e as opções para perguntar à pessoa; isolamento provado por `McpIsolationTests`. |
+| 33 | Tag nova pelo Claude | Tag **comum** citada num lançamento e inexistente é criada no Espaço de quem pediu (004 US1.2); tag de **acerto** inexistente vira `ambiguous_or_not_found`. | Cadastros não são feitos pelo Claude, exceto esta tag comum (spec 008). |
+| 34 | OAuth do conector | OpenIddict com tabelas globais (autorizações, tokens, `oauth_consent_tickets`, `oauth_authorization_usage`); token com `sub`, `tid` e `channel=claude`; validação consulta a autorização a cada chamada, então desconectar ou redefinir a senha bloqueia o Claude de imediato (SC-004). Redirects do registro dinâmico limitados por `Mcp:AllowedRedirectUris`. | Revogação imediata e conector só com os retornos do Claude (research R2). |
+| 35 | Skill e validação manual | `integrations/claude/` guarda a skill, o README de publicação (HTTPS obrigatório) e o roteiro de 30 pedidos. A parte com o Claude de verdade (adicionar o conector, enviar a skill, rodar o roteiro) é manual, antes de liberar. | Depende de HTTPS público e de uma conta do Claude; não há como automatizar no CI. |

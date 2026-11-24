@@ -10,12 +10,13 @@ Stack: .NET 10 · PostgreSQL 17 · Angular (PWA) · Docker Compose.
 
 | O quê | Onde |
 |---|---|
-| Specs por feature (spec-kit): `spec.md`, `plan.md`, `tasks.md`, `quickstart.md`, `contracts/` | [`specs/`](specs/README.md) (001 a 004 prontas; a próxima é a [`005-recorrencias`](specs/005-recorrencias/)) |
+| Specs por feature (spec-kit): `spec.md`, `plan.md`, `tasks.md`, `quickstart.md`, `contracts/` | [`specs/`](specs/README.md) (001 a 004 e 008 prontas; a próxima é a [`005-recorrencias`](specs/005-recorrencias/)) |
 | Constituição: princípios, glossário, regras transversais | [`.specify/memory/constitution.md`](.specify/memory/constitution.md) |
 | Arquitetura técnica (normativa) e desvios registrados | [`docs/arquitetura.md`](docs/arquitetura.md) |
 | Modelo de dados | [`docs/modelo-de-dados.md`](docs/modelo-de-dados.md) |
 | Backend (`FinMy.Api`, `Application`, `Domain`, `Infrastructure`) e testes | [`backend/`](backend/) · guia dos testes em [`backend/tests/README.md`](backend/tests/README.md) |
 | Front-end Angular e e2e (Playwright) | [`frontend/`](frontend/) · e2e em [`frontend/e2e/`](frontend/e2e/README.md) |
+| Integração com o Claude (conector MCP em `/mcp`, skill, publicação com HTTPS e roteiro de testes) | [`integrations/claude/`](integrations/claude/README.md) |
 | Vetores de teste compartilhados (front e back) | [`shared/`](shared/README.md) |
 | CI | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
 
