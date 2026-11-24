@@ -219,6 +219,12 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
             "PUT /api/v1/recurrences/{id}",
             "POST /api/v1/recurrences/{id}/end",
             "DELETE /api/v1/recurrences/{id}",
+            "GET /api/v1/years/{year}/panel",
+            "GET /api/v1/now",
+            "GET /api/v1/onboarding",
+            "PUT /api/v1/onboarding/steps/{step}",
+            "POST /api/v1/onboarding/dismiss",
+            "GET /api/v1/exports/entries.csv",
         ];
         esperadas.ShouldBeSubsetOf(operations.Select(o => o.Key));
     }
@@ -347,6 +353,51 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
         }
 
         (await SnapshotOfAAsync(a)).ShouldBe(before);
+        b.Http.Dispose();
+    }
+
+    [Fact]
+    public async Task Painel_agora_guia_e_exportacao_de_B_nao_enxergam_nem_alteram_o_Espaco_de_A()
+    {
+        var a = await CreateAAsync();
+        using var asA = NewHttp().WithBearer(a.Account.AccessToken);
+        (await asA.PutAsJsonAsync("/api/v1/onboarding/steps/wallets", new { state = "done" })).EnsureSuccessStatusCode();
+        var before = await SnapshotOfAAsync(a);
+        var b = await NewCallerAsync("Beto Isolado");
+
+        // Controle: A enxerga os próprios dados nas mesmas rotas (a ausência em B não é por rota vazia).
+        (await asA.GetStringAsync("/api/v1/now")).ShouldContain("Azul Segredo da Alice");
+        (await asA.GetStringAsync("/api/v1/exports/entries.csv?from=2026-03&to=2026-03")).ShouldContain("Tim Segredo da Alice");
+
+        var painel = await b.Http.GetFromJsonAsync<JsonElement>("/api/v1/years/2026/panel");
+        painel.GetProperty("totals").GetProperty("actual").GetProperty("incomeCents").GetInt64().ShouldBe(0);
+        painel.GetProperty("totals").GetProperty("actual").GetProperty("expenseCents").GetInt64().ShouldBe(0);
+        painel.GetProperty("totals").GetProperty("planned").GetProperty("incomeCents").GetInt64().ShouldBe(0);
+        painel.GetProperty("totals").GetProperty("planned").GetProperty("expenseCents").GetInt64().ShouldBe(0);
+
+        var agora = await b.Http.GetFromJsonAsync<JsonElement>("/api/v1/now");
+        agora.GetProperty("wallets").GetArrayLength().ShouldBe(0);
+        agora.GetProperty("invoices").GetArrayLength().ShouldBe(0);
+        agora.GetProperty("settlements").GetArrayLength().ShouldBe(0);
+        agora.GetProperty("pending").GetProperty("count").GetInt32().ShouldBe(0);
+        agora.GetProperty("totalBalanceCents").GetInt64().ShouldBe(0);
+
+        // O progresso do guia é por Espaço: o passo concluído por A não aparece para B, e dispensar em B não toca A.
+        var guia = await b.Http.GetFromJsonAsync<JsonElement>("/api/v1/onboarding");
+        guia.GetProperty("steps").TryGetProperty("wallets", out var etapaDeB).ShouldBeFalse(etapaDeB.ToString());
+        (await b.Http.PostAsync("/api/v1/onboarding/dismiss", null)).EnsureSuccessStatusCode();
+
+        var csv = await b.Http.GetStringAsync("/api/v1/exports/entries.csv?from=2026-01&to=2026-12");
+        foreach (var secret in a.Secrets)
+        {
+            csv.ShouldNotContain(secret, Case.Insensitive);
+        }
+
+        csv.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length.ShouldBe(1, "só o cabeçalho");
+        (await SnapshotOfAAsync(a)).ShouldBe(before);
+        var guiaDeA = await asA.GetFromJsonAsync<JsonElement>("/api/v1/onboarding");
+        guiaDeA.GetProperty("dismissed").GetBoolean().ShouldBeFalse();
+        guiaDeA.GetProperty("steps").GetProperty("wallets").GetString().ShouldBe("done");
         b.Http.Dispose();
     }
 
