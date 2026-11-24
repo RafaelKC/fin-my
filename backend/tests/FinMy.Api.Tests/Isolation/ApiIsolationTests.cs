@@ -25,7 +25,7 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
 
     private sealed record Caller(HttpClient Http, string AccessToken, string RefreshToken, string Email, string Password);
 
-    private sealed record ContaDeA(TestAccount Account, string SecondAccessToken, Guid SessionId, IReadOnlyList<string> Secrets, IReadOnlyList<Guid> Ids, Guid WalletA, Guid WalletA2, Guid CardA);
+    private sealed record ContaDeA(TestAccount Account, string SecondAccessToken, Guid SessionId, IReadOnlyList<string> Secrets, IReadOnlyList<Guid> Ids, Guid WalletA, Guid WalletA2, Guid CardA, Guid BrunaA, Guid IfoodA);
 
     private async Task<string> OpenApiJsonAsync()
     {
@@ -82,19 +82,36 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
         var fatura = await CreateJsonAsync(asA, $"/api/v1/credit-cards/{cartaoId}/invoices/2026-03/payments", new { amount = "10,00", date = "2026-03-25", walletId = azulId });
         var pagamentoId = fatura.GetProperty("payments")[0].GetProperty("id").GetGuid();
 
+        // Tags de A (004): uma de acerto e uma comum, em lançamento e compra, e uma divisão. Ids de tag de A em rotas
+        // de tags/acertos e em `tagIds`/partes de B batem em linhas reais.
+        var bruna = await CreateJsonAsync(asA, "/api/v1/tags", new { name = "Bruna Segredo da Alice", isSettlement = true });
+        var ifood = await CreateJsonAsync(asA, "/api/v1/tags", new { name = "Ifood Segredo da Alice", isSettlement = false });
+        var brunaId = bruna.GetProperty("id").GetGuid();
+        var ifoodId = ifood.GetProperty("id").GetGuid();
+        var comTags = await CreateJsonAsync(asA, "/api/v1/entries", new { kind = "expense", description = "Jantar Segredo da Alice", amount = "30,00", date = "2026-03-11", walletId = azulId, tagIds = new[] { brunaId, ifoodId } });
+        var compraComTags = await CreateJsonAsync(asA, "/api/v1/card-purchases", new { description = "Mercado Segredo da Alice", amount = "20,00", date = "2026-03-11", creditCardId = cartaoId, tagIds = new[] { brunaId, ifoodId } });
+        var dividida = await CreateJsonAsync(asA, "/api/v1/entries/split", new
+        {
+            kind = "expense", description = "Dividida Segredo da Alice", amount = "50,00", date = "2026-03-12", walletId = azulId,
+            split = new { mode = "equal", parts = new object[] { new { settlementTagId = (Guid?)null }, new { settlementTagId = (Guid?)brunaId } } },
+        });
+
         var secrets = new[]
         {
             a.Email, "Alice Isolada Segredo", "Espaço Secreto da Alice", a.AccessToken, second.AccessToken,
             "Azul Segredo da Alice", "Verde Segredo da Alice", "Tim Segredo da Alice", "Nota Secreta da Alice", "Salário Segredo da Alice", "Reserva Segredo da Alice",
             "Cartão Segredo da Alice", "Casa Segredo da Alice", "Nota do Cartão da Alice",
+            "Bruna Segredo da Alice", "Ifood Segredo da Alice", "Jantar Segredo da Alice", "Mercado Segredo da Alice", "Dividida Segredo da Alice",
         };
         var ids = new[]
         {
             a.Session.User.Id, a.Session.Tenant.Id, sessionId, Guid.Parse(JwtClaims.Get(second.AccessToken, "sid")!),
             azulId, verdeId, entry.GetProperty("id").GetGuid(), outra.GetProperty("id").GetGuid(), transfer.GetProperty("id").GetGuid(), batchId,
             cartaoId, compraId, planoId, pagamentoId,
+            brunaId, ifoodId, comTags.GetProperty("id").GetGuid(), compraComTags.GetProperty("purchases")[0].GetProperty("id").GetGuid(),
         };
-        return new ContaDeA(a, second.AccessToken, sessionId, secrets, ids, azulId, verdeId, cartaoId);
+        _ = dividida;
+        return new ContaDeA(a, second.AccessToken, sessionId, secrets, ids, azulId, verdeId, cartaoId, brunaId, ifoodId);
     }
 
     private static async Task<JsonElement> CreateJsonAsync(HttpClient http, string path, object body)
@@ -171,6 +188,17 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
             "DELETE /api/v1/entries/{id}",
             "POST /api/v1/entries/{id}/duplicate",
             "GET /api/v1/months/{month}",
+            "GET /api/v1/tags",
+            "POST /api/v1/tags",
+            "PUT /api/v1/tags/{id}",
+            "DELETE /api/v1/tags/{id}",
+            "POST /api/v1/tags/{id}/archive",
+            "POST /api/v1/tags/{id}/unarchive",
+            "POST /api/v1/tags/{id}/merge",
+            "GET /api/v1/settlements/{month}",
+            "GET /api/v1/settlements/{month}/tags/{tagId}/items",
+            "POST /api/v1/entries/split",
+            "POST /api/v1/card-purchases/split",
         ];
         esperadas.ShouldBeSubsetOf(operations.Select(o => o.Key));
     }
@@ -255,8 +283,21 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
         var ownCardId = ownCard.GetProperty("id").GetGuid();
         await CreateJsonAsync(b.Http, "/api/v1/card-purchases", new { description = "Uber do Beto", amount = "12,95", date = "2026-03-10", creditCardId = ownCardId });
 
+        var ownTag = await CreateJsonAsync(b.Http, "/api/v1/tags", new { name = "Bruna do Beto", isSettlement = true });
+        var ownTagId = ownTag.GetProperty("id").GetGuid();
+
         var respostas = new Dictionary<string, HttpResponseMessage>
         {
+            ["POST /entries (tagIds de A)"] = await b.Http.PostAsJsonAsync("/api/v1/entries", new { kind = "expense", description = "Tim", amount = "1", date = "2026-03-10", walletId = ownId, tagIds = new[] { a.IfoodA } }),
+            ["POST /entries (tag de acerto de A em tagIds)"] = await b.Http.PostAsJsonAsync("/api/v1/entries", new { kind = "expense", description = "Tim", amount = "1", date = "2026-03-10", walletId = ownId, tagIds = new[] { a.BrunaA } }),
+            ["POST /card-purchases (tagIds de A)"] = await b.Http.PostAsJsonAsync("/api/v1/card-purchases", new { description = "Uber", amount = "12,95", date = "2026-03-10", creditCardId = ownCardId, tagIds = new[] { a.IfoodA } }),
+            ["POST /entries/split (parte de A)"] = await b.Http.PostAsJsonAsync("/api/v1/entries/split", new { kind = "expense", description = "Dividida", amount = "10,00", date = "2026-03-10", walletId = ownId, split = new { mode = "equal", parts = new object[] { new { settlementTagId = (Guid?)null }, new { settlementTagId = (Guid?)a.BrunaA } } } }),
+            ["POST /entries/split (tagIds de A)"] = await b.Http.PostAsJsonAsync("/api/v1/entries/split", new { kind = "expense", description = "Dividida", amount = "10,00", date = "2026-03-10", walletId = ownId, tagIds = new[] { a.IfoodA }, split = new { mode = "equal", parts = new object[] { new { settlementTagId = (Guid?)null }, new { settlementTagId = (Guid?)ownTagId } } } }),
+            ["POST /card-purchases/split (parte de A)"] = await b.Http.PostAsJsonAsync("/api/v1/card-purchases/split", new { description = "Dividida", amount = "10,00", date = "2026-03-10", creditCardId = ownCardId, split = new { mode = "equal", parts = new object[] { new { settlementTagId = (Guid?)null }, new { settlementTagId = (Guid?)a.BrunaA } } } }),
+            ["POST /tags/{id}/merge (destino de A)"] = await b.Http.PostAsJsonAsync($"/api/v1/tags/{ownTagId}/merge", new { targetTagId = a.IfoodA }),
+            ["GET /settlements/{mes}/tags/{tag}/items (tag de A)"] = await b.Http.GetAsync($"/api/v1/settlements/2026-03/tags/{a.BrunaA}/items"),
+            ["GET /entries/search (tag de A)"] = await b.Http.GetAsync($"/api/v1/entries/search?tagIds={a.BrunaA}"),
+            ["GET /months (tag de A)"] = await b.Http.GetAsync($"/api/v1/months/2026-03?tagIds={a.BrunaA}"),
             ["POST /entries"] = await b.Http.PostAsJsonAsync("/api/v1/entries", new { kind = "expense", description = "Tim", amount = "1", date = "2026-03-10", walletId = a.WalletA }),
             ["POST /transfers (origem de A)"] = await b.Http.PostAsJsonAsync("/api/v1/transfers", new { fromWalletId = a.WalletA, toWalletId = ownId, amount = "1", date = "2026-03-10" }),
             ["POST /transfers (destino de A)"] = await b.Http.PostAsJsonAsync("/api/v1/transfers", new { fromWalletId = ownId, toWalletId = a.WalletA2, amount = "1", date = "2026-03-10" }),
@@ -270,8 +311,8 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
         {
             using (response)
             {
-                // O filtro do mês (contracts: só 200/422) trata carteira desconhecida como filtro vazio: 200 sem dado de A.
-                var aceitos = label.StartsWith("GET /months", StringComparison.Ordinal) ? new[] { 200 } : new[] { 404, 422 };
+                // Os filtros (mês e busca; contracts: só 200/422) tratam carteira ou tag desconhecida como filtro vazio: 200 sem dado de A.
+                var aceitos = label.StartsWith("GET /months", StringComparison.Ordinal) || label.StartsWith("GET /entries/search", StringComparison.Ordinal) ? new[] { 200 } : new[] { 404, 422 };
                 ((int)response.StatusCode).ShouldBeOneOf(aceitos, $"{label}: status inesperado {(int)response.StatusCode}.");
                 var text = await response.Content.ReadAsStringAsync();
                 foreach (var secret in a.Secrets)
