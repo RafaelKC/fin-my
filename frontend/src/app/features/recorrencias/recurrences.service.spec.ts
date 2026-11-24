@@ -72,4 +72,20 @@ describe('RecurrencesService', () => {
     expect(del.request.method).toBe('DELETE');
     del.flush({ deletedCount: 3, unlinkedCount: 2 });
   });
+
+  it('repete todo mês a partir de um lançamento, com a chave de idempotência', () => {
+    service
+      .fromItem({ type: 'entry', id: 'e1', endType: 'after_count', occurrenceLimit: 6 }, 'chave-2')
+      .subscribe();
+    const req = http.expectOne('/api/v1/recurrences/from-item');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('chave-2');
+    expect(req.request.body).toEqual({
+      type: 'entry',
+      id: 'e1',
+      endType: 'after_count',
+      occurrenceLimit: 6,
+    });
+    req.flush(recorrencia());
+  });
 });

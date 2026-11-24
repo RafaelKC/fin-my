@@ -27,6 +27,11 @@ export class EntriesService {
   /** Emite cada lançamento editado ou com a situação trocada (FR-016). */
   readonly alterados$ = this.alteradosSubject.asObservable();
 
+  /** Avisa as telas que o lançamento ganhou ocorrências (ex.: "Repetir todo mês"). */
+  avisarAlteracao(entry: Entry): void {
+    this.alteradosSubject.next(entry);
+  }
+
   /** `idempotencyKey`: uma por formulário, reaproveitada em reenvios (research R2, R12). */
   create(input: EntryCreate, idempotencyKey: string): Observable<Entry> {
     return this.api

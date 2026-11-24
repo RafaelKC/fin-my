@@ -24,6 +24,11 @@ export class CardPurchasesService {
   /** Emite depois de editar ou excluir uma compra, para a visão do mês recarregar (FR-016). */
   readonly alteradas$ = this.alteradasSubject.asObservable();
 
+  /** Avisa as telas que a compra ganhou ocorrências (ex.: "Repetir todo mês"). */
+  avisarAlteracao(): void {
+    this.alteradasSubject.next();
+  }
+
   /** `idempotencyKey`: uma por formulário, reaproveitada só em reenvio idêntico (research R2). */
   create(input: CardPurchaseCreate, idempotencyKey: string): Observable<CardPurchaseResult> {
     return this.api
