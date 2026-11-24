@@ -71,6 +71,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ICardPurchaseStore, CardPurchaseStore>();
         services.AddScoped<IMonthReader, MonthReader>();
         services.AddScoped<INowReader, NowReader>();
+        services.AddScoped<IOnboardingStore, OnboardingStore>();
         services.AddScoped<ISettlementReader, SettlementReader>();
         services.AddScoped<IIdempotencyStore, IdempotencyStore>();
         services.AddScoped<IEntryStore, EntryStore>();
