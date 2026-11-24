@@ -29,7 +29,7 @@ description: "Tarefas da feature 004 — Tags e acerto de contas"
 
 ## Phase 4: US4 — Dividir
 
-- [ ] T008 [US4] API `POST /entries/split` e `POST /card-purchases/split` (research R5; idempotência); testes HTTP de US4.1–US4.5 (inclui compra parcelada dividida). Depende de T003
+- [x] T008 [US4] API `POST /entries/split` e `POST /card-purchases/split` (research R5; idempotência); testes HTTP de US4.1–US4.5 (inclui compra parcelada dividida). Depende de T003
 - [ ] T009 [US4] "Dividir" no formulário rápido (Saída e Cartão) e selo "Dividida em N" com as outras partes (contracts/ui-rotas.md); e2e `dividir.spec.ts`. Depende de T004, T008
 
 ## Phase 5: Polish
