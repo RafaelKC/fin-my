@@ -54,6 +54,7 @@ describe('Shell', () => {
     // fora da barra principal: só dentro do painel de "Mais"
     expect(nav.querySelector(':scope > a[href="/carteiras"]')).toBeNull();
     const painel = nav.querySelector('#mais-painel')!;
+    expect(painel.querySelector('a[href="/painel"]')?.textContent).toContain('Painel');
     expect(painel.querySelector('a[href="/carteiras"]')?.textContent).toContain('Carteiras');
     expect(painel.querySelector('a[href="/recorrencias"]')?.textContent).toContain('Recorrências');
     expect(painel.querySelector('a[href="/busca"]')?.textContent).toContain('Busca');

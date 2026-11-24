@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { ApiClient } from '../../core/api/api-client';
+import { DevicePrefsService, HomeScreen } from '../../core/prefs/device-prefs.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { TenantDto, UserDto } from '../../core/auth/session';
 import { asProblem, problemMessage } from '../../core/errors/problem-details';
@@ -25,6 +26,7 @@ export class PerfilPage {
   private readonly api = inject(ApiClient);
   private readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder).nonNullable;
+  private readonly prefs = inject(DevicePrefsService);
 
   protected readonly email = this.auth.user()?.email ?? '';
   protected readonly nomeMax = NOME_MAX;
@@ -60,6 +62,14 @@ export class PerfilPage {
   protected readonly errosSenhaServidor = signal<Partial<Record<CampoSenha, string>>>({});
 
   protected readonly saindo = signal(false);
+
+  /** Tela inicial do aparelho (006 FR-006): fica só neste aparelho. */
+  protected readonly telaInicial = signal<HomeScreen>(this.prefs.homeScreen());
+
+  protected escolherTelaInicial(tela: HomeScreen): void {
+    this.prefs.setHomeScreen(tela);
+    this.telaInicial.set(tela);
+  }
 
   protected alternarSenha(): void {
     this.senhaVisivel.update((v) => !v);

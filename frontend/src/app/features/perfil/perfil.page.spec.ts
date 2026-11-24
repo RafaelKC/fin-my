@@ -49,6 +49,19 @@ describe('PerfilPage', () => {
     expect(el.querySelector<HTMLInputElement>('#espaco')!.value).toBe('Espaço da Ana');
   });
 
+  it('tela inicial: Mês por padrão; escolher Painel grava a preferência do aparelho (FR-006)', () => {
+    localStorage.removeItem('finmy.prefs.v1');
+    const mes = el.querySelector<HTMLInputElement>('[data-testid="tela-inicial-mes"]')!;
+    const painel = el.querySelector<HTMLInputElement>('[data-testid="tela-inicial-painel"]')!;
+    expect(mes.checked).toBe(true);
+    painel.click();
+    fixture.detectChanges();
+    expect(painel.checked).toBe(true);
+    expect(JSON.parse(localStorage.getItem('finmy.prefs.v1')!).homeScreen).toBe('painel');
+    mes.click();
+    expect(JSON.parse(localStorage.getItem('finmy.prefs.v1')!).homeScreen).toBe('mes');
+  });
+
   it('nome vazio explica o problema e não chama a API', () => {
     preencher('#nome', '   ');
     el.querySelector<HTMLInputElement>('#nome')!.value = '';

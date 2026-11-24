@@ -1,0 +1,222 @@
+<div class="pagina">
+  <section class="agora" aria-labelledby="titulo-agora" data-testid="agora">
+    <h2 id="titulo-agora">Agora</h2>
+    @if (erroAgora(); as mensagem) {
+      <p class="erro" role="alert" data-testid="erro-agora">{{ mensagem }}</p>
+    } @else if (agora(); as a) {
+      <div class="blocos">
+        <section class="bloco" aria-labelledby="agora-carteiras" data-testid="agora-carteiras">
+          <h3 id="agora-carteiras">Carteiras</h3>
+          <ul class="lista">
+            @for (w of a.wallets; track w.id) {
+              <li data-testid="agora-carteira">
+                <span class="cor" [style.background]="w.color" aria-hidden="true"></span>
+                <span class="nome">{{ w.name }}</span>
+                <strong [class.negativo]="w.currentBalanceCents < 0">{{
+                  w.currentBalanceCents | brl
+                }}</strong>
+              </li>
+            }
+            @if (a.archivedWalletsBalanceCents !== 0) {
+              <li data-testid="agora-arquivadas">
+                <span class="nome">Arquivadas</span>
+                <strong [class.negativo]="a.archivedWalletsBalanceCents < 0">{{
+                  a.archivedWalletsBalanceCents | brl
+                }}</strong>
+              </li>
+            }
+            <li class="total" data-testid="agora-total">
+              <span class="nome">Total</span>
+              <strong [class.negativo]="a.totalBalanceCents < 0">{{
+                a.totalBalanceCents | brl
+              }}</strong>
+            </li>
+          </ul>
+        </section>
+
+        <section class="bloco" aria-labelledby="agora-faturas" data-testid="agora-faturas">
+          <h3 id="agora-faturas">Faturas nos próximos 30 dias</h3>
+          @if (a.invoices.length === 0) {
+            <p class="vazio" data-testid="agora-sem-faturas">Nenhuma fatura a vencer.</p>
+          } @else {
+            <ul class="lista">
+              @for (f of a.invoices; track f.creditCardId + f.dueMonth) {
+                <li data-testid="agora-fatura">
+                  <a
+                    class="nome"
+                    [routerLink]="['/cartoes', f.creditCardId, 'faturas', f.dueMonth]"
+                  >
+                    {{ f.creditCardName }}
+                  </a>
+                  <span class="nota">
+                    vence {{ formatarData(f.dueDate) }} · {{ rotuloSituacao[f.status] }}
+                  </span>
+                  <strong>{{ f.remainingCents | brl }}</strong>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
+        <section class="bloco" aria-labelledby="agora-pendencias" data-testid="agora-pendencias">
+          <h3 id="agora-pendencias">Pendências</h3>
+          @if (a.pending.count === 0) {
+            <p class="vazio">Nenhuma pendência.</p>
+          } @else {
+            <p>
+              <strong data-testid="agora-pendencias-qtd">{{ a.pending.count }}</strong>
+              {{ a.pending.count === 1 ? 'pendência' : 'pendências' }}: a receber
+              <span data-testid="agora-pendencias-receber">{{
+                a.pending.toReceiveCents | brl
+              }}</span>
+              · a pagar
+              <span data-testid="agora-pendencias-pagar">{{ a.pending.toPayCents | brl }}</span>
+            </p>
+            <a [routerLink]="['/mes', mesAtual()]" data-testid="agora-ver-pendencias"
+              >Ver no mês de hoje</a
+            >
+          }
+        </section>
+
+        <section class="bloco" aria-labelledby="agora-acertos" data-testid="agora-acertos">
+          <h3 id="agora-acertos">Acertos</h3>
+          @if (a.settlements.length === 0) {
+            <p class="vazio">Ninguém te deve nada agora.</p>
+          } @else {
+            <ul class="lista">
+              @for (s of a.settlements; track s.tagId) {
+                <li data-testid="agora-acerto">
+                  @if (ehCredito(s.accumulatedCents)) {
+                    <span>Crédito da {{ s.tagName }}: {{ abs(s.accumulatedCents) | brl }}</span>
+                  } @else {
+                    <span>{{ s.tagName }} te deve {{ s.accumulatedCents | brl }}</span>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      </div>
+    } @else {
+      <p role="status">Carregando…</p>
+    }
+  </section>
+
+  <header class="cabecalho">
+    <button
+      type="button"
+      class="seta"
+      aria-label="Ano anterior"
+      data-testid="painel-anterior"
+      [disabled]="noMinimo()"
+      (click)="ir(-1)"
+    >
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">chevron_left</mat-icon>
+    </button>
+    <h1 class="titulo" data-testid="painel-titulo">{{ ano() }}</h1>
+    <button
+      type="button"
+      class="seta"
+      aria-label="Próximo ano"
+      data-testid="painel-seguinte"
+      [disabled]="noMaximo()"
+      (click)="ir(1)"
+    >
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">chevron_right</mat-icon>
+    </button>
+  </header>
+
+  <div class="leitura" role="group" aria-label="Leitura">
+    <button
+      type="button"
+      class="chip"
+      data-testid="leitura-previsto"
+      [attr.aria-pressed]="leitura() === 'planned'"
+      (click)="trocarLeitura('planned')"
+    >
+      Previsto
+    </button>
+    <button
+      type="button"
+      class="chip"
+      data-testid="leitura-realizado"
+      [attr.aria-pressed]="leitura() === 'actual'"
+      (click)="trocarLeitura('actual')"
+    >
+      Realizado
+    </button>
+  </div>
+
+  @if (erro(); as mensagem) {
+    <p class="erro" role="alert" data-testid="erro-painel">{{ mensagem }}</p>
+  } @else if (painel() !== null) {
+    <div class="visao">
+      <div class="tabela-rolavel">
+        <table class="tabela" data-testid="painel-tabela">
+          <caption class="so-leitor">
+            Painel de
+            {{
+              ano()
+            }}
+            ({{
+              leitura() === 'planned' ? 'Previsto' : 'Realizado'
+            }})
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Mês</th>
+              <th scope="col">Entradas</th>
+              <th scope="col">Saídas</th>
+              <th scope="col">Resultado</th>
+              <th scope="col">Saldo final</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (l of linhas(); track l.month) {
+              <tr
+                data-testid="painel-mes"
+                [attr.data-mes]="l.month"
+                [class.hoje]="l.month === mesDeHoje()"
+                [attr.aria-current]="l.month === mesDeHoje() ? 'date' : null"
+                (click)="abrirMes(l.month, $event)"
+              >
+                <th scope="row">
+                  <a [routerLink]="['/mes', l.month]" data-testid="painel-mes-link">{{
+                    l.rotulo
+                  }}</a>
+                </th>
+                <td data-testid="entradas">{{ l.incomeCents | brl }}</td>
+                <td data-testid="saidas">{{ l.expenseCents | brl }}</td>
+                <td data-testid="resultado" [class.negativo]="l.resultCents < 0">
+                  {{ l.resultCents | brl }}
+                </td>
+                <td data-testid="saldo" [class.negativo]="l.finalBalanceCents < 0">
+                  {{ l.finalBalanceCents | brl }}
+                </td>
+              </tr>
+            }
+          </tbody>
+          @if (totais(); as t) {
+            <tfoot>
+              <tr data-testid="painel-total">
+                <th scope="row">Total</th>
+                <td data-testid="entradas">{{ t.incomeCents | brl }}</td>
+                <td data-testid="saidas">{{ t.expenseCents | brl }}</td>
+                <td data-testid="resultado" [class.negativo]="t.resultCents < 0">
+                  {{ t.resultCents | brl }}
+                </td>
+                <td data-testid="saldo" [class.negativo]="t.finalBalanceCents < 0">
+                  {{ t.finalBalanceCents | brl }}
+                </td>
+              </tr>
+            </tfoot>
+          }
+        </table>
+      </div>
+
+      <app-chart-anual [pontos]="pontos()" [descricao]="descricaoGrafico()" />
+    </div>
+  } @else {
+    <p role="status">Carregando…</p>
+  }
+</div>

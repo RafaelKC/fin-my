@@ -1,11 +1,12 @@
 import { expect, type Page } from '@playwright/test';
 
-/** Vai para um item da navegação principal; no celular, "Carteiras", "Recorrências" e "Perfil" ficam em "Mais". */
+/** Vai para um item da navegação principal; no celular, "Painel", "Carteiras", "Recorrências" e "Perfil" ficam em "Mais". */
 export async function irPara(page: Page, rotulo: string): Promise<void> {
   const nav = page.getByRole('navigation', { name: 'Principal' });
   const mais = nav.getByTestId('mais');
   if (
-    (rotulo === 'Carteiras' ||
+    (rotulo === 'Painel' ||
+      rotulo === 'Carteiras' ||
       rotulo === 'Recorrências' ||
       rotulo === 'Busca' ||
       rotulo === 'Tags' ||

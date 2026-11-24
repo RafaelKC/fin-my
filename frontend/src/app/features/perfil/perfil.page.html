@@ -129,6 +129,35 @@
     </form>
   </section>
 
+  <section class="secao" aria-labelledby="titulo-tela-inicial">
+    <h2 id="titulo-tela-inicial">Tela inicial</h2>
+    <p class="ajuda">Vale só para este aparelho.</p>
+    <div class="opcoes" role="radiogroup" aria-labelledby="titulo-tela-inicial">
+      <label class="opcao">
+        <input
+          type="radio"
+          name="tela-inicial"
+          value="mes"
+          data-testid="tela-inicial-mes"
+          [checked]="telaInicial() === 'mes'"
+          (change)="escolherTelaInicial('mes')"
+        />
+        Mês
+      </label>
+      <label class="opcao">
+        <input
+          type="radio"
+          name="tela-inicial"
+          value="painel"
+          data-testid="tela-inicial-painel"
+          [checked]="telaInicial() === 'painel'"
+          (change)="escolherTelaInicial('painel')"
+        />
+        Painel
+      </label>
+    </div>
+  </section>
+
   <app-aplicativos-conectados />
 
   <section class="secao">
