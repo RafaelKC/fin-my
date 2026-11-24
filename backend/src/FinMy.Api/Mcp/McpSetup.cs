@@ -23,7 +23,8 @@ public static class McpSetup
             .WithTools<CatalogTools>()
             .WithTools<MonthTools>()
             .WithTools<InvoiceTools>()
-            .WithTools<CreationTools>();
+            .WithTools<CreationTools>()
+            .WithTools<ConfirmationTools>();
 
         services.AddScoped<McpIdempotency>();
 
