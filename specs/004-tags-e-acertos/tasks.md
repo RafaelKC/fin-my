@@ -34,7 +34,7 @@ description: "Tarefas da feature 004 — Tags e acerto de contas"
 
 ## Phase 5: Polish
 
-- [ ] T010 Validação: isolamento (rotas e `tagIds` de outro Espaço), quickstart contra a stack real nos dois viewports (registrar no PR), `docs/modelo-de-dados.md`/`docs/arquitetura.md` §14/README atualizados. Depende de todas
+- [x] T010 Validação: isolamento (rotas e `tagIds` de outro Espaço), quickstart contra a stack real nos dois viewports (registrar no PR), `docs/modelo-de-dados.md`/`docs/arquitetura.md` §14/README atualizados. Depende de todas
 
 ## Dependências (resumo)
 
