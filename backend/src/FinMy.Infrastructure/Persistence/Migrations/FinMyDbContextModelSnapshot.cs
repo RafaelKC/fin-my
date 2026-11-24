@@ -515,6 +515,10 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("due_month");
 
+                    b.Property<long?>("EstimateCents")
+                        .HasColumnType("bigint")
+                        .HasColumnName("estimate_cents");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
@@ -561,6 +565,8 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_invoices_due_date", "due_date BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
 
                             t.HasCheckConstraint("ck_invoices_due_month", "extract(day from due_month) = 1 AND due_month BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
+
+                            t.HasCheckConstraint("ck_invoices_estimate_cents", "estimate_cents IS NULL OR (estimate_cents > 0 AND estimate_cents <= 999999999)");
                         });
                 });
 

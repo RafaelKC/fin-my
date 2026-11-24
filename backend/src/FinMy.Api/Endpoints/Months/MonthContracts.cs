@@ -62,7 +62,9 @@ public sealed record MonthInvoiceDto(
     long RemainingCents,
     string CreditCardName,
     long PlannedCents,
-    long ActualCents);
+    long ActualCents,
+    long? EstimateCents,
+    bool EstimateActive);
 
 public sealed record PendingDto(int Count, long ToReceiveCents, long ToPayCents);
 
@@ -142,7 +144,9 @@ public sealed record MonthViewDto(
         i.RemainingCents,
         i.CreditCardName,
         i.PlannedCents,
-        i.ActualCents);
+        i.ActualCents,
+        i.EstimateCents,
+        i.EstimateActive);
 
     private static string SnakeCase(string name) => name.ToLowerInvariant();
 }

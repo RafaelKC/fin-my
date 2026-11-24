@@ -58,7 +58,9 @@ public sealed class InvoiceStore(FinMyDbContext db) : IInvoiceStore
         var remaining = total - paid;
 
         return new InvoiceDetailView(
-            new InvoiceSummaryView(card.Id, dueMonth, row.ClosingDate, row.DueDate, row.Id, status, total, paid, remaining),
+            new InvoiceSummaryView(
+                card.Id, dueMonth, row.ClosingDate, row.DueDate, row.Id, status, total, paid, remaining,
+                row.EstimateCents, InvoiceForecast.EstimateActive(row.EstimateCents, today, row.ClosingDate)),
             reconciled,
             today >= row.ClosingDate && remaining != 0, // FR-020
             shown.ConvertAll(p => CardPurchaseStore.ToView(

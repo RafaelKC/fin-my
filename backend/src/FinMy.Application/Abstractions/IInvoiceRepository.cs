@@ -13,4 +13,7 @@ public interface IInvoiceRepository
     /// </summary>
     /// <exception cref="InvalidOperationException">O cartão não existe no Espaço do contexto.</exception>
     Task<Invoice> GetOrCreateAsync(Guid creditCardId, YearMonth dueMonth, CancellationToken cancellationToken);
+
+    /// <summary>A fatura rastreada do cartão no mês, ou <c>null</c> se a linha ainda não existe.</summary>
+    Task<Invoice?> FindAsync(Guid creditCardId, YearMonth dueMonth, CancellationToken cancellationToken);
 }

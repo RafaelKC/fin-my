@@ -27,7 +27,9 @@ public sealed record InvoiceSummaryView(
     InvoiceStatus Status,
     long TotalCents,
     long PaidCents,
-    long RemainingCents);
+    long RemainingCents,
+    long? EstimateCents = null,
+    bool EstimateActive = false);
 
 /// <summary>Cartão com fatura atual, próxima, faturas passadas em aberto e limite disponível (research R10, FR-025/FR-026).</summary>
 public sealed record CreditCardOverviewView(

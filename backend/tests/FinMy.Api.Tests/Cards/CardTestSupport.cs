@@ -10,7 +10,7 @@ namespace FinMy.Api.Tests.Cards;
 
 internal sealed record InvoiceSummaryDto(
     Guid CreditCardId, string DueMonth, DateOnly ClosingDate, DateOnly DueDate, Guid? Id, string Status,
-    long TotalCents, long PaidCents, long RemainingCents);
+    long TotalCents, long PaidCents, long RemainingCents, long? EstimateCents = null, bool EstimateActive = false);
 
 internal sealed record CreditCardDto(
     Guid Id, string Name, int ClosingDay, int DueDay, Guid PaymentWalletId, string Color, long? LimitCents,

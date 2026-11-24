@@ -61,7 +61,9 @@ public sealed record MonthInvoiceItem(
     long PaidCents,
     long RemainingCents,
     long PlannedCents,
-    long ActualCents);
+    long ActualCents,
+    long? EstimateCents = null,
+    bool EstimateActive = false);
 
 /// <summary>O que o banco devolve para montar a visão do mês; o resumo é calculado pelo <see cref="MonthSummaryCalculator"/>.</summary>
 public sealed record MonthData(

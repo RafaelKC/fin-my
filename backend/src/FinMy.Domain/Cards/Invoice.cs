@@ -33,6 +33,12 @@ public sealed class Invoice : TenantEntity
 
     public YearMonth DueYearMonth => YearMonth.From(DueMonth);
 
+    /// <summary>
+    /// Estimativa de gasto da fatura (007 FR-009, research R1): só entra no Previsto até o fechamento
+    /// (<see cref="InvoiceForecast"/>); nunca em limite, acertos, Total/Restante nem saldos (FR-012).
+    /// </summary>
+    public long? EstimateCents { get; private set; }
+
     public static Invoice Create(Guid creditCardId, YearMonth dueMonth, DateOnly closingDate, DateOnly dueDate) =>
         new(creditCardId, dueMonth, closingDate, dueDate);
 
@@ -40,5 +46,11 @@ public sealed class Invoice : TenantEntity
     {
         ClosingDate = Rules.Date(closingDate, "closingDate");
         DueDate = Rules.Date(dueDate, "dueDate");
+    }
+
+    /// <summary>Define a estimativa (valor entre 1 e <see cref="Money.MaxCents"/>) ou a remove (<c>null</c>).</summary>
+    public void SetEstimate(Money? estimate)
+    {
+        EstimateCents = estimate is { } value ? Rules.EntryAmount(value, "amount") : null;
     }
 }

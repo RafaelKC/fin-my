@@ -196,7 +196,8 @@ public sealed class CreditCardStore(FinMyDbContext db) : ICreditCardStore
         var paidCents = paid.GetValueOrDefault(invoice.Id);
         var status = InvoiceStatusRule.Evaluate(total, paidCents, today, invoice.ClosingDate, invoice.DueDate);
         return new InvoiceSummaryView(
-            invoice.CreditCardId, invoice.DueYearMonth, invoice.ClosingDate, invoice.DueDate, invoice.Id, status, total, paidCents, total - paidCents);
+            invoice.CreditCardId, invoice.DueYearMonth, invoice.ClosingDate, invoice.DueDate, invoice.Id, status, total, paidCents, total - paidCents,
+            invoice.EstimateCents, InvoiceForecast.EstimateActive(invoice.EstimateCents, today, invoice.ClosingDate));
     }
 
     private sealed class CardTransaction(IDbContextTransaction transaction) : ICardTransaction
