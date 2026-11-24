@@ -10,7 +10,7 @@ Stack: .NET 10 · PostgreSQL 17 · Angular (PWA) · Docker Compose.
 
 | O quê | Onde |
 |---|---|
-| Specs por feature (spec-kit): `spec.md`, `plan.md`, `tasks.md`, `quickstart.md`, `contracts/` | [`specs/`](specs/README.md) (001 e 002 prontas; a 003 é a [`003-cartoes-e-faturas`](specs/003-cartoes-e-faturas/)) |
+| Specs por feature (spec-kit): `spec.md`, `plan.md`, `tasks.md`, `quickstart.md`, `contracts/` | [`specs/`](specs/README.md) (001 a 004 prontas; a próxima é a [`005-recorrencias`](specs/005-recorrencias/)) |
 | Constituição: princípios, glossário, regras transversais | [`.specify/memory/constitution.md`](.specify/memory/constitution.md) |
 | Arquitetura técnica (normativa) e desvios registrados | [`docs/arquitetura.md`](docs/arquitetura.md) |
 | Modelo de dados | [`docs/modelo-de-dados.md`](docs/modelo-de-dados.md) |
@@ -126,11 +126,13 @@ Telas (Angular; as públicas são `/entrar`, `/criar-conta`, `/esqueci-senha` e 
 | `/mes/:mes` (`/` e `/mes` abrem o mês atual) | Visão do mês: resumo Previsto x Realizado, lançamentos, transferências, filtro por carteira e pendências |
 | `/carteiras`, `/carteiras/nova`, `/carteiras/:id` | Lista, cadastro e edição de carteiras (arquivar, tornar principal, excluir) |
 | `/cartoes`, `/cartoes/novo`, `/cartoes/:id/editar`, `/cartoes/:id/faturas/:mes` | Lista de cartões com fatura atual, próxima e limite; cadastro e edição; tela da fatura (compras, pagamentos, levar restante) |
-| `/busca` | Busca de lançamentos e transferências por texto, sem acento nem caixa |
+| `/busca` | Busca de lançamentos e transferências por texto, sem acento nem caixa (e por tag) |
+| `/acertos`, `/acertos/:mes` | Acertos do mês por tag de acerto: Gasto, Cobrado, Recebido, A cobrar e Saldo acumulado; "Gerar cobrança" |
+| `/tags` | Gerenciar tags: criar, renomear, cor, marcar como de acerto, arquivar, excluir e juntar |
 | `/perfil` | Nome do usuário e do Espaço, troca de senha, sair |
 
 API (`/api/v1`, tudo com sessão; contrato em
-[`specs/002-carteiras-e-lancamentos/contracts/openapi.yaml`](specs/002-carteiras-e-lancamentos/contracts/openapi.yaml) e [`specs/003-cartoes-e-faturas/contracts/openapi.yaml`](specs/003-cartoes-e-faturas/contracts/openapi.yaml)).
+[`specs/002-carteiras-e-lancamentos/contracts/openapi.yaml`](specs/002-carteiras-e-lancamentos/contracts/openapi.yaml) e [`specs/003-cartoes-e-faturas/contracts/openapi.yaml`](specs/003-cartoes-e-faturas/contracts/openapi.yaml) e [`specs/004-tags-e-acertos/contracts/openapi.yaml`](specs/004-tags-e-acertos/contracts/openapi.yaml)).
 Os `POST` de criação aceitam `Idempotency-Key`:
 
 | Recurso | Rotas |
@@ -141,7 +143,10 @@ Os `POST` de criação aceitam `Idempotency-Key`:
 | Cartões | `GET/POST /credit-cards`, `GET/PUT/DELETE /credit-cards/{id}`, `POST /credit-cards/{id}/archive`, `/unarchive`, `GET /credit-cards/{id}/invoice-for?date=` |
 | Faturas | `GET /credit-cards/{id}/invoices/{yyyy-MM}`, `POST/DELETE .../payments`, `POST .../carry-over`, `PUT/DELETE /invoice-payments/{id}` |
 | Compras no cartão | `POST /card-purchases`, `GET/PUT/DELETE /card-purchases/{id}`, `PATCH /card-purchases/{id}/reconciled`, `POST /card-purchases/{id}/move`, `PUT /installment-plans/{id}` |
-| Mês | `GET /months/{yyyy-MM}?walletIds=` (inclui as faturas com vencimento no mês) |
+| Mês | `GET /months/{yyyy-MM}?walletIds=&tagIds=` (inclui as faturas com vencimento no mês) |
+| Tags | `GET/POST /tags`, `PUT/DELETE /tags/{id}`, `POST /tags/{id}/archive`, `/unarchive`, `/merge` |
+| Acertos | `GET /settlements/{yyyy-MM}`, `GET /settlements/{yyyy-MM}/tags/{tagId}/items` |
+| Dividir | `POST /entries/split`, `POST /card-purchases/split` |
 | Desfazer exclusão | `POST /deletions/{batchId}/restore` (até 10 min) |
 
 ## Migrações (EF Core)
