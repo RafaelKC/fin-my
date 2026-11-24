@@ -284,7 +284,7 @@ public class CreditCardsMigrationTests(PostgresFixture postgres)
     [InlineData("UPDATE installment_plans SET purchase_date = DATE '1999-12-31'", "ck_installment_plans_purchase_date")]
     [InlineData("UPDATE installment_plans SET first_invoice_due_month = DATE '2026-03-02'", "ck_installment_plans_first_invoice_due_month")]
     [InlineData("UPDATE card_purchases SET nature = 'refund'", "ck_card_purchases_nature")]
-    [InlineData("UPDATE card_purchases SET origin = 'recurrence'", "ck_card_purchases_origin")]
+    [InlineData("UPDATE card_purchases SET origin = 'inexistente'", "ck_card_purchases_origin")]
     [InlineData("UPDATE card_purchases SET amount_cents = 0", "ck_card_purchases_amount_cents")]
     [InlineData("UPDATE card_purchases SET amount_cents = 1000000000", "ck_card_purchases_amount_cents")]
     [InlineData("UPDATE card_purchases SET purchase_date = DATE '2101-01-01'", "ck_card_purchases_purchase_date")]

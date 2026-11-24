@@ -1,5 +1,6 @@
 using FinMy.Domain.Cards;
 using FinMy.Domain.Identity;
+using FinMy.Domain.Recurrences;
 using FinMy.Domain.Tags;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -39,6 +40,13 @@ internal sealed class CardPurchaseConfiguration : IEntityTypeConfiguration<CardP
             t.HasCheckConstraint(
                 "ck_card_purchases_carry_over_pair",
                 "(origin = 'carry_over') = (carry_over_pair_id IS NOT NULL)");
+
+            // A origem "recurrence" existe se, e somente se, há recorrência (005).
+            t.HasCheckConstraint(
+                "ck_card_purchases_recurrence",
+                "(recurrence_id IS NULL) = (recurrence_month IS NULL) "
+                + "AND (recurrence_month IS NULL OR extract(day from recurrence_month) = 1) "
+                + "AND ((origin = 'recurrence') = (recurrence_id IS NOT NULL))");
         });
 
         builder.HasKey(p => p.Id);
@@ -60,6 +68,7 @@ internal sealed class CardPurchaseConfiguration : IEntityTypeConfiguration<CardP
         builder.Property(p => p.Reconciled).IsRequired();
         builder.Property(p => p.ManuallyMoved).IsRequired();
         builder.Property(p => p.Notes).HasMaxLength(500);
+        builder.Property(p => p.RecurrenceModified).HasDefaultValue(false).IsRequired();
         builder.Property(p => p.InstallmentNumber).HasColumnType("smallint");
         builder.Property(p => p.InstallmentTotal).HasColumnType("smallint");
         builder.Ignore(p => p.Amount);
@@ -87,6 +96,15 @@ internal sealed class CardPurchaseConfiguration : IEntityTypeConfiguration<CardP
             .HasPrincipalKey(nameof(Tag.TenantId), nameof(Tag.Id))
             .OnDelete(DeleteBehavior.Restrict);
 
+        // FK composta opcional (recorrência de origem).
+        builder.HasOne<Recurrence>().WithMany()
+            .HasForeignKey(nameof(CardPurchase.TenantId), nameof(CardPurchase.RecurrenceId))
+            .HasPrincipalKey(nameof(Recurrence.TenantId), nameof(Recurrence.Id))
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(p => new { p.TenantId, p.RecurrenceId, p.RecurrenceMonth })
+            .IsUnique()
+            .HasFilter("deleted_at IS NULL AND recurrence_id IS NOT NULL");
         builder.HasIndex(p => new { p.TenantId, p.SettlementTagId });
         builder.HasIndex(p => new { p.TenantId, p.SplitGroupId }).HasFilter("split_group_id IS NOT NULL");
         builder.HasIndex(p => new { p.TenantId, p.InvoiceId });

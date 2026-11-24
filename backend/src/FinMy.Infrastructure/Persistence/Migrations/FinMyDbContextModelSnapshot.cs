@@ -120,6 +120,20 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("reconciled");
 
+                    b.Property<Guid?>("RecurrenceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recurrence_id");
+
+                    b.Property<bool>("RecurrenceModified")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("recurrence_modified");
+
+                    b.Property<DateOnly?>("RecurrenceMonth")
+                        .HasColumnType("date")
+                        .HasColumnName("recurrence_month");
+
                     b.Property<Guid?>("SettlementTagId")
                         .HasColumnType("uuid")
                         .HasColumnName("settlement_tag_id");
@@ -183,6 +197,11 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                     b.HasIndex("TenantId", "InvoiceId", "CreditCardId")
                         .HasDatabaseName("ix_card_purchases_tenant_id_invoice_id_credit_card_id");
 
+                    b.HasIndex("TenantId", "RecurrenceId", "RecurrenceMonth")
+                        .IsUnique()
+                        .HasDatabaseName("ix_card_purchases_tenant_id_recurrence_id_recurrence_month")
+                        .HasFilter("deleted_at IS NULL AND recurrence_id IS NOT NULL");
+
                     b.ToTable("card_purchases", null, t =>
                         {
                             t.HasCheckConstraint("ck_card_purchases_amount_cents", "amount_cents > 0 AND amount_cents <= 999999999");
@@ -199,9 +218,11 @@ namespace FinMy.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_card_purchases_nature", "nature IN ('debit', 'credit')");
 
-                            t.HasCheckConstraint("ck_card_purchases_origin", "origin IN ('manual', 'installment', 'carry_over')");
+                            t.HasCheckConstraint("ck_card_purchases_origin", "origin IN ('manual', 'installment', 'recurrence', 'carry_over')");
 
                             t.HasCheckConstraint("ck_card_purchases_purchase_date", "purchase_date BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
+
+                            t.HasCheckConstraint("ck_card_purchases_recurrence", "(recurrence_id IS NULL) = (recurrence_month IS NULL) AND (recurrence_month IS NULL OR extract(day from recurrence_month) = 1) AND ((origin = 'recurrence') = (recurrence_id IS NOT NULL))");
                         });
                 });
 
@@ -694,6 +715,20 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("notes");
 
+                    b.Property<Guid?>("RecurrenceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recurrence_id");
+
+                    b.Property<bool>("RecurrenceModified")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("recurrence_modified");
+
+                    b.Property<DateOnly?>("RecurrenceMonth")
+                        .HasColumnType("date")
+                        .HasColumnName("recurrence_month");
+
                     b.Property<DateOnly>("ReferenceMonth")
                         .HasColumnType("date")
                         .HasColumnName("reference_month");
@@ -760,6 +795,11 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                     b.HasIndex("TenantId", "WalletId")
                         .HasDatabaseName("ix_entries_tenant_id_wallet_id");
 
+                    b.HasIndex("TenantId", "RecurrenceId", "RecurrenceMonth")
+                        .IsUnique()
+                        .HasDatabaseName("ix_entries_tenant_id_recurrence_id_recurrence_month")
+                        .HasFilter("deleted_at IS NULL AND recurrence_id IS NOT NULL");
+
                     b.HasIndex("TenantId", "Status", "ReferenceMonth")
                         .HasDatabaseName("ix_entries_tenant_id_status_reference_month");
 
@@ -770,6 +810,8 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_entries_entry_date", "entry_date BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
 
                             t.HasCheckConstraint("ck_entries_kind", "kind IN ('income', 'expense')");
+
+                            t.HasCheckConstraint("ck_entries_recurrence_month", "(recurrence_id IS NULL) = (recurrence_month IS NULL) AND (recurrence_month IS NULL OR extract(day from recurrence_month) = 1)");
 
                             t.HasCheckConstraint("ck_entries_reference_month", "extract(day from reference_month) = 1 AND reference_month BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
 
@@ -1171,6 +1213,189 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_users_email_normalized");
 
                     b.ToTable("users", (string)null);
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Recurrences.Recurrence", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<long>("AmountCents")
+                        .HasColumnType("bigint")
+                        .HasColumnName("amount_cents");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("CreatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("created_via");
+
+                    b.Property<Guid?>("CreditCardId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("credit_card_id");
+
+                    b.Property<short>("DayOfMonth")
+                        .HasColumnType("smallint")
+                        .HasColumnName("day_of_month");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid?>("DeletionBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deletion_batch_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("DescriptionNormalized")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("description_normalized");
+
+                    b.Property<DateOnly?>("EndMonth")
+                        .HasColumnType("date")
+                        .HasColumnName("end_month");
+
+                    b.Property<string>("EndType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("end_type");
+
+                    b.Property<DateOnly?>("GeneratedUntilMonth")
+                        .HasColumnType("date")
+                        .HasColumnName("generated_until_month");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("kind");
+
+                    b.Property<short?>("OccurrenceLimit")
+                        .HasColumnType("smallint")
+                        .HasColumnName("occurrence_limit");
+
+                    b.Property<string>("ReferenceMonthRule")
+                        .HasColumnType("text")
+                        .HasColumnName("reference_month_rule");
+
+                    b.Property<Guid?>("SettlementTagId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("settlement_tag_id");
+
+                    b.Property<DateOnly>("StartMonth")
+                        .HasColumnType("date")
+                        .HasColumnName("start_month");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("UpdatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("updated_via");
+
+                    b.Property<Guid?>("WalletId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("wallet_id");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_recurrences");
+
+                    b.HasAlternateKey("TenantId", "Id")
+                        .HasName("ak_recurrence_tenant_id_id");
+
+                    b.HasIndex("TenantId", "CreditCardId")
+                        .HasDatabaseName("ix_recurrences_tenant_id_credit_card_id");
+
+                    b.HasIndex("TenantId", "SettlementTagId")
+                        .HasDatabaseName("ix_recurrences_tenant_id_settlement_tag_id");
+
+                    b.HasIndex("TenantId", "WalletId")
+                        .HasDatabaseName("ix_recurrences_tenant_id_wallet_id");
+
+                    b.ToTable("recurrences", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_recurrences_amount_cents", "amount_cents > 0 AND amount_cents <= 999999999");
+
+                            t.HasCheckConstraint("ck_recurrences_day_of_month", "day_of_month BETWEEN 1 AND 31");
+
+                            t.HasCheckConstraint("ck_recurrences_end_month", "end_month IS NULL OR (extract(day from end_month) = 1 AND end_month >= start_month AND end_month <= DATE '2100-12-31')");
+
+                            t.HasCheckConstraint("ck_recurrences_end_month_by_type", "(end_type = 'none') = (end_month IS NULL)");
+
+                            t.HasCheckConstraint("ck_recurrences_end_type", "end_type IN ('none', 'until_month', 'after_count')");
+
+                            t.HasCheckConstraint("ck_recurrences_generated_until_month", "generated_until_month IS NULL OR extract(day from generated_until_month) = 1");
+
+                            t.HasCheckConstraint("ck_recurrences_kind", "kind IN ('income', 'expense', 'card_purchase')");
+
+                            t.HasCheckConstraint("ck_recurrences_occurrence_limit", "(end_type = 'after_count' AND occurrence_limit BETWEEN 1 AND 360) OR (end_type <> 'after_count' AND occurrence_limit IS NULL)");
+
+                            t.HasCheckConstraint("ck_recurrences_reference_month_rule", "reference_month_rule IS NULL OR reference_month_rule IN ('same_month', 'next_month')");
+
+                            t.HasCheckConstraint("ck_recurrences_start_month", "extract(day from start_month) = 1 AND start_month BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
+
+                            t.HasCheckConstraint("ck_recurrences_target", "(kind = 'card_purchase' AND credit_card_id IS NOT NULL AND wallet_id IS NULL AND reference_month_rule IS NULL) OR (kind <> 'card_purchase' AND wallet_id IS NOT NULL AND credit_card_id IS NULL AND reference_month_rule IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Recurrences.RecurrenceTag", b =>
+                {
+                    b.Property<Guid>("RecurrenceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recurrence_id");
+
+                    b.Property<Guid>("TagId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tag_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("RecurrenceId", "TagId")
+                        .HasName("pk_recurrence_tags");
+
+                    b.HasIndex("TenantId", "RecurrenceId")
+                        .HasDatabaseName("ix_recurrence_tags_tenant_id_recurrence_id");
+
+                    b.HasIndex("TenantId", "TagId")
+                        .HasDatabaseName("ix_recurrence_tags_tenant_id_tag_id");
+
+                    b.ToTable("recurrence_tags", (string)null);
                 });
 
             modelBuilder.Entity("FinMy.Domain.Tags.CardPurchaseTag", b =>
@@ -1848,6 +2073,13 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_card_purchases_installment_plan_tenant_id_installment_plan_");
 
+                    b.HasOne("FinMy.Domain.Recurrences.Recurrence", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "RecurrenceId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_card_purchases_recurrence_tenant_id_recurrence_id");
+
                     b.HasOne("FinMy.Domain.Tags.Tag", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "SettlementTagId")
@@ -1953,6 +2185,13 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_entries_tenant_tenant_id");
 
+                    b.HasOne("FinMy.Domain.Recurrences.Recurrence", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "RecurrenceId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_entries_recurrence_tenant_id_recurrence_id");
+
                     b.HasOne("FinMy.Domain.Tags.Tag", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "SettlementTagId")
@@ -2024,6 +2263,63 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_tenant_members_user_user_id");
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Recurrences.Recurrence", b =>
+                {
+                    b.HasOne("FinMy.Domain.Identity.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_recurrences_tenant_tenant_id");
+
+                    b.HasOne("FinMy.Domain.Cards.CreditCard", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "CreditCardId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_recurrences_credit_cards_tenant_id_credit_card_id");
+
+                    b.HasOne("FinMy.Domain.Tags.Tag", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "SettlementTagId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_recurrences_tag_tenant_id_settlement_tag_id");
+
+                    b.HasOne("FinMy.Domain.Wallets.Wallet", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "WalletId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_recurrences_wallet_tenant_id_wallet_id");
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Recurrences.RecurrenceTag", b =>
+                {
+                    b.HasOne("FinMy.Domain.Identity.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_recurrence_tags_tenant_tenant_id");
+
+                    b.HasOne("FinMy.Domain.Recurrences.Recurrence", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "RecurrenceId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_recurrence_tags_recurrences_tenant_id_recurrence_id");
+
+                    b.HasOne("FinMy.Domain.Tags.Tag", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "TagId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_recurrence_tags_tag_tenant_id_tag_id");
                 });
 
             modelBuilder.Entity("FinMy.Domain.Tags.CardPurchaseTag", b =>

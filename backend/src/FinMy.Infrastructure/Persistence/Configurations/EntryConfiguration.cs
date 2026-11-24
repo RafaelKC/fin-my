@@ -1,5 +1,6 @@
 using FinMy.Domain.Entries;
 using FinMy.Domain.Identity;
+using FinMy.Domain.Recurrences;
 using FinMy.Domain.Tags;
 using FinMy.Domain.Wallets;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,10 @@ internal sealed class EntryConfiguration : IEntityTypeConfiguration<Entry>
             t.HasCheckConstraint(
                 "ck_entries_reference_month",
                 "extract(day from reference_month) = 1 AND reference_month BETWEEN DATE '2000-01-01' AND DATE '2100-12-31'");
+            t.HasCheckConstraint(
+                "ck_entries_recurrence_month",
+                "(recurrence_id IS NULL) = (recurrence_month IS NULL) "
+                + "AND (recurrence_month IS NULL OR extract(day from recurrence_month) = 1)");
         });
 
         builder.HasKey(e => e.Id);
@@ -39,6 +44,7 @@ internal sealed class EntryConfiguration : IEntityTypeConfiguration<Entry>
             .IsRequired();
         builder.Property(e => e.WalletId).IsRequired();
         builder.Property(e => e.Notes).HasMaxLength(500);
+        builder.Property(e => e.RecurrenceModified).HasDefaultValue(false).IsRequired();
         builder.Ignore(e => e.Amount);
         builder.Ignore(e => e.ReferenceYearMonth);
 
@@ -52,6 +58,16 @@ internal sealed class EntryConfiguration : IEntityTypeConfiguration<Entry>
             .HasPrincipalKey(nameof(Tag.TenantId), nameof(Tag.Id))
             .OnDelete(DeleteBehavior.Restrict);
 
+        // FK composta opcional (recorrência de origem).
+        builder.HasOne<Recurrence>().WithMany()
+            .HasForeignKey(nameof(Entry.TenantId), nameof(Entry.RecurrenceId))
+            .HasPrincipalKey(nameof(Recurrence.TenantId), nameof(Recurrence.Id))
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Uma ocorrência por mês e recorrência (005 research R2); excluída não conta.
+        builder.HasIndex(e => new { e.TenantId, e.RecurrenceId, e.RecurrenceMonth })
+            .IsUnique()
+            .HasFilter("deleted_at IS NULL AND recurrence_id IS NOT NULL");
         builder.HasIndex(e => new { e.TenantId, e.SettlementTagId });
         builder.HasIndex(e => new { e.TenantId, e.SplitGroupId }).HasFilter("split_group_id IS NOT NULL");
         builder.HasIndex(e => new { e.TenantId, e.DescriptionNormalized });

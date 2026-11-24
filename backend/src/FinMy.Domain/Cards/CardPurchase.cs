@@ -74,7 +74,31 @@ public sealed class CardPurchase : TenantEntity
     /// <summary>Mesmo valor nas partes de uma divisão (004 FR-014).</summary>
     public Guid? SplitGroupId { get; private set; }
 
+    /// <summary>Recorrência de origem (005); nula em compras comuns.</summary>
+    public Guid? RecurrenceId { get; private set; }
+
+    /// <summary>Mês da ocorrência na recorrência (dia 1); nulo se <see cref="RecurrenceId"/> é nulo.</summary>
+    public DateOnly? RecurrenceMonth { get; private set; }
+
+    /// <summary>Ocorrência alterada à mão (005 FR-005): a recorrência não a sobrescreve.</summary>
+    public bool RecurrenceModified { get; private set; }
+
     public Money Amount => new(AmountCents);
+
+    /// <summary>Compra à vista, débito, gerada por uma recorrência (005 research R2).</summary>
+    public static CardPurchase CreateFromRecurrence(
+        Guid creditCardId,
+        Guid invoiceId,
+        string description,
+        Money amount,
+        DateOnly purchaseDate,
+        Guid recurrenceId,
+        YearMonth month) =>
+        new(creditCardId, invoiceId, description, amount, PurchaseNature.Debit, purchaseDate, PurchaseOrigin.Recurrence, null)
+        {
+            RecurrenceId = recurrenceId,
+            RecurrenceMonth = month.FirstDay,
+        };
 
     /// <summary>Descrição exibida: base + " k/N" quando é parcela.</summary>
     public string DisplayDescription =>
