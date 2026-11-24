@@ -122,4 +122,55 @@ public class InvoiceWalletSplitTests
         april.Planned.OpeningBalanceCents.ShouldBe(30000);
         april.Actual.OpeningBalanceCents.ShouldBe(35000);
     }
+
+    private static InvoiceFigure Estimated(long total, long estimate, params (Guid Wallet, long Cents)[] paid) =>
+        new(March, total, Azul, paid.ToDictionary(p => p.Wallet, p => p.Cents), estimate);
+
+    [Fact]
+    public void FR_011_estimativa_vigente_vai_inteira_para_a_carteira_de_pagamento_do_cartao()
+    {
+        var invoice = Estimated(20553, 80000);
+        var all = AllWallets.ToHashSet();
+
+        invoice.Planned(all).ShouldBe(80000);
+        invoice.Planned(Only(Azul)).ShouldBe(80000);
+        invoice.Planned(Only(Verde)).ShouldBe(0);
+        invoice.Planned(Only(Poupanca)).ShouldBe(0);
+        AllWallets.Sum(w => invoice.Planned(Only(w))).ShouldBe(invoice.Planned(all));
+        invoice.Actual(all).ShouldBe(0);
+    }
+
+    [Fact]
+    public void FR_011_a_diferenca_e_atribuida_a_carteira_de_pagamento_e_o_pago_fica_com_quem_pagou()
+    {
+        var invoice = Estimated(20000, 80000, (Verde, 5000), (Azul, 10000));
+
+        invoice.Planned(Only(Azul)).ShouldBe(10000 + 80000 - 15000);
+        invoice.Planned(Only(Verde)).ShouldBe(5000);
+        invoice.Planned(AllWallets.ToHashSet()).ShouldBe(80000);
+        invoice.Actual(AllWallets.ToHashSet()).ShouldBe(15000);
+    }
+
+    [Fact]
+    public void Estimativa_menor_que_o_total_nao_altera_o_previsto()
+    {
+        var invoice = Estimated(91240, 80000);
+
+        invoice.Planned(AllWallets.ToHashSet()).ShouldBe(91240);
+        invoice.EstimateLiftCents.ShouldBe(0);
+    }
+
+    [Fact]
+    public void Resumo_do_mes_usa_a_estimativa_no_Previsto_e_nao_no_Realizado()
+    {
+        var wallets = new[] { new WalletOpening(Azul, 200000, new DateOnly(2026, 1, 1)) };
+        var invoices = new[] { Estimated(20553, 80000) };
+
+        var summary = MonthSummaryCalculator.Calculate(March, wallets, [], [], invoices);
+
+        summary.Planned.ExpenseCents.ShouldBe(80000);
+        summary.Planned.FinalBalanceCents.ShouldBe(120000);
+        summary.Actual.ExpenseCents.ShouldBe(0);
+        summary.Actual.FinalBalanceCents.ShouldBe(200000);
+    }
 }
