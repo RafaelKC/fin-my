@@ -442,7 +442,7 @@ PK `(tenant_id, key)` (`key uuid`, o valor do cabeçalho `Idempotency-Key`); `us
 |---|---|---|---|
 | [padrão] | | | soft delete não usado (fatura não é excluída) |
 | credit_card_id | uuid | não | FK → credit_cards; `UNIQUE (tenant_id, id, credit_card_id)` para FK das compras |
-| due_month | date | não | dia 1; `UNIQUE (credit_card_id, due_month)` |
+| due_month | date | não | dia 1; `UNIQUE (tenant_id, credit_card_id, due_month)` (uma fatura por cartão e mês; alvo do `ON CONFLICT` do get-or-create); índice `(tenant_id, due_month)` para a visão do mês |
 | closing_date | date | não | gravada na criação (003 FR-004); recalculada só se `closing_date > hoje` quando os dias do cartão mudam |
 | due_date | date | não | 003 FR-003 |
 | estimate_cents | bigint | sim | `> 0` (007) |
