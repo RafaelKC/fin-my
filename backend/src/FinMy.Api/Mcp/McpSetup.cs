@@ -22,7 +22,10 @@ public static class McpSetup
             .WithHttpTransport(options => options.Stateless = true)
             .WithTools<CatalogTools>()
             .WithTools<MonthTools>()
-            .WithTools<InvoiceTools>();
+            .WithTools<InvoiceTools>()
+            .WithTools<CreationTools>();
+
+        services.AddScoped<McpIdempotency>();
 
         return services;
     }
