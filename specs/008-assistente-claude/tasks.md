@@ -20,7 +20,7 @@ Normas: `docs/arquitetura.md` §12, constituição, research da 002–004.
 
 - [x] T003 [US3] Servidor MCP em `/mcp` (SDK oficial, stateless, 401 com `resource_metadata`), `CatalogResolver` e as ferramentas de consulta `list_catalog`, `get_wallet_balances`, `get_month_summary`, `list_pending`, `list_invoices`, `get_invoice`, `get_settlements`, `search_entries` (contracts/mcp-tools.md); `McpToolContractTests` dessas ferramentas e `McpParityTests` (SC-002). Depende de T001
 - [x] T004 [US2] Ferramentas de criação `create_entry`, `create_card_purchase`, `create_transfer` e `undo_creation` (padrões FR-005, tags e divisão, fatura na resposta, `requestId` como idempotência, research R4) chamando os handlers existentes; testes de contrato de US2.1–US2.5 e do erro `ambiguous_or_not_found`. Depende de T003
-- [ ] T005 [US4] Ferramentas com confirmação `set_entry_status`, `pay_invoice`, `generate_settlement_charge`, `delete_entry` (preview sem `confirmed`, `destructiveHint`); `McpConfirmationTests` (SC-003) e testes de US4.1–US4.3. Depende de T003
+- [x] T005 [US4] Ferramentas com confirmação `set_entry_status`, `pay_invoice`, `generate_settlement_charge`, `delete_entry` (preview sem `confirmed`, `destructiveHint`); `McpConfirmationTests` (SC-003) e testes de US4.1–US4.3. Depende de T003
 - [ ] T006 [P] [US2] Selo "via Claude" (research R5): `createdVia` nas respostas REST de entradas, compras e transferências e selo no mês, na fatura e no formulário; testes de unidade e e2e simples (lançamento criado pelo banco com `created_via = claude`). Depende de T001
 
 ## Phase 3: Skill e entrega
