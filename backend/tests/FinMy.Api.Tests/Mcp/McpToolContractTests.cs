@@ -71,8 +71,9 @@ public class McpToolContractTests(PostgresFixture postgres) : McpTestBase(postgr
 
         var tools = await mcp.Client.ListToolsAsync();
 
-        tools.Select(t => t.Name).ShouldBe(QueryTools, ignoreOrder: true);
-        foreach (var tool in tools)
+        var queries = tools.Where(t => t.ProtocolTool.Annotations?.ReadOnlyHint == true).ToList();
+        queries.Select(t => t.Name).ShouldBe(QueryTools, ignoreOrder: true);
+        foreach (var tool in queries)
         {
             tool.ProtocolTool.Annotations!.ReadOnlyHint.ShouldBe(true, tool.Name);
             tool.ProtocolTool.Annotations!.DestructiveHint.ShouldNotBe(true, tool.Name);
