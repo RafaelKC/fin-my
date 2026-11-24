@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { dispensarGuiaSeAberto } from './espaco-novo';
 
 const sessao = {
   accessToken: 'token',
@@ -153,7 +154,7 @@ test('fecha e reabre o navegador e continua logado (stack real)', async ({ brows
   await a.getByLabel('E-mail').fill(email);
   await a.getByLabel('Senha', { exact: true }).fill(senha);
   await a.getByRole('button', { name: 'Criar conta' }).click();
-  await expect(a).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
+  await dispensarGuiaSeAberto(a);
 
   // Sai e entra de novo pela tela de login (cobre o POST /auth/login real).
   await primeiro.clearCookies();

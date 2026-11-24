@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { dispensarGuiaSeAberto } from './espaco-novo';
 
 // Roteiro manual do quickstart §3 que ainda não tinha cobertura contra a stack real
 // (passos 1, 2, 3 e 6). Os passos 4, 5 e 7 estão em `perfil.spec.ts`, `recuperar-senha.spec.ts` e
@@ -29,7 +30,8 @@ test('passos 1 e 2: cria a conta e vê o Espaço; o mesmo e-mail em maiúsculas 
   const email = `ana+${Date.now()}@exemplo.com`;
 
   await criarConta(page, 'Ana', email, 'segredo123');
-  await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
+  // Espaço novo, sem carteiras: abre o guia de primeiros passos (006 FR-007)
+  await expect(page).toHaveURL(/\/primeiros-passos\/carteiras$/);
   await expect(page.getByTestId('nome-do-espaco')).toHaveText('Finanças de Ana');
   await semRolagemHorizontal(page);
 
@@ -52,7 +54,7 @@ test('passo 3: cinco senhas erradas e a sexta tentativa mostra o bloqueio de 15 
   const senha = 'segredo123';
 
   await criarConta(page, 'Bia', email, senha);
-  await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
+  await dispensarGuiaSeAberto(page);
   await page.context().clearCookies();
 
   await page.goto('/entrar');
@@ -82,7 +84,7 @@ test('passo 6: e-mail inexistente em /esqueci-senha recebe a mesma mensagem e ne
   const confirmacao = 'Se houver conta com este e-mail, enviaremos um link';
 
   await criarConta(page, 'Carla', existente, 'segredo123');
-  await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
+  await dispensarGuiaSeAberto(page);
   await page.context().clearCookies();
 
   for (const email of [inexistente, existente]) {
