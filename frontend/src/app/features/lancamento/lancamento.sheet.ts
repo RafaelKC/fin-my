@@ -51,6 +51,9 @@ import {
 } from './card-purchase.models';
 import { CardPurchasesService } from './card-purchases.service';
 import { PARCELAS_MAX, parseValorCartao, previaCompra } from './compra-cartao-logic';
+import { OCORRENCIAS_MAX, RecurrenceEndType } from '../recorrencias/recurrence.models';
+import { RecurrenceFromItem } from '../recorrencias/recurrence.models';
+import { RecurrencesService } from '../recorrencias/recurrences.service';
 import { EntriesService } from './entries.service';
 import { TransfersService } from './transfers.service';
 import { ExclusaoService } from './exclusao.service';
@@ -158,6 +161,7 @@ export class LancamentoSheet {
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly exclusao = inject(ExclusaoService);
+  private readonly recorrencias = inject(RecurrencesService);
   private readonly tagsApi = inject(TagsService);
   private readonly dados = inject<LancamentoSheetData | null>(MAT_DIALOG_DATA, { optional: true });
   private readonly edicao = this.dados?.entry ?? null;
@@ -228,6 +232,15 @@ export class LancamentoSheet {
   protected readonly dataDuplicada = signal('');
   protected readonly erroDuplicar = signal<string | null>(null);
   private chaveDuplicar = novaChaveIdempotencia();
+
+  // "Repetir todo mês" (005 US4): só na edição de Entrada/Saída/Compra à vista que ainda não é recorrência
+  protected readonly repetindo = signal(false);
+  protected readonly repetirFim = signal<RecurrenceEndType>('none');
+  protected readonly repetirMes = signal('');
+  protected readonly repetirQtd = signal('12');
+  protected readonly erroRepetir = signal<string | null>(null);
+  private chaveRepetir = novaChaveIdempotencia();
+  protected readonly ocorrenciasMax = OCORRENCIAS_MAX;
 
   // criar carteira inline (nenhuma cadastrada)
   protected readonly criandoCarteira = signal(false);
@@ -1109,6 +1122,89 @@ export class LancamentoSheet {
     this.erroDuplicar.set(null);
     this.dataDuplicada.set(this.hoje());
     this.chaveDuplicar = novaChaveIdempotencia();
+  }
+
+  /** Compra à vista (não parcelada nem crédito) ou lançamento comum, ainda fora de recorrência. */
+  protected get podeRepetir(): boolean {
+    const compra = this.compraAtual;
+    if (compra !== null) {
+      return (
+        !compra.recurrenceId &&
+        compra.nature === 'debit' &&
+        !compra.installmentPlanId &&
+        (compra.installmentTotal ?? 1) <= 1
+      );
+    }
+    return this.atual !== null && !this.atual.recurrenceId;
+  }
+
+  protected abrirRepetir(): void {
+    const origem = this.compraAtual?.date ?? this.atual?.date ?? this.hoje();
+    this.repetindo.set(true);
+    this.erroRepetir.set(null);
+    this.repetirFim.set('none');
+    this.repetirMes.set(origem.slice(0, 7));
+    this.repetirQtd.set('12');
+    this.chaveRepetir = novaChaveIdempotencia();
+  }
+
+  protected cancelarRepetir(): void {
+    this.repetindo.set(false);
+  }
+
+  /** FR-010: cria a recorrência a partir do lançamento salvo; ele vira a ocorrência do seu mês. */
+  protected confirmarRepetir(): void {
+    const compra = this.compraAtual;
+    const origem = this.atual;
+    if ((compra === null && origem === null) || this.ocupado()) return;
+    const fim = this.repetirFim();
+    const corpo: RecurrenceFromItem = {
+      type: compra !== null ? 'card_purchase' : 'entry',
+      id: compra?.id ?? origem!.id,
+      endType: fim,
+    };
+    if (fim === 'until_month') {
+      const mes = this.repetirMes();
+      const inicio = (compra?.date ?? origem!.date).slice(0, 7);
+      if (!isYearMonth(mes) || mes < inicio) {
+        this.erroRepetir.set('Informe um mês de término a partir do mês do lançamento.');
+        return;
+      }
+      corpo.endMonth = mes;
+    } else if (fim === 'after_count') {
+      const n = Number(this.repetirQtd());
+      if (!Number.isInteger(n) || n < 1 || n > OCORRENCIAS_MAX) {
+        this.erroRepetir.set(`Informe de 1 a ${OCORRENCIAS_MAX} ocorrências.`);
+        return;
+      }
+      corpo.occurrenceLimit = n;
+    }
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      this.avisarSemConexao();
+      return;
+    }
+    this.ocupado.set(true);
+    this.erroRepetir.set(null);
+    this.recorrencias.fromItem(corpo, this.chaveRepetir).subscribe({
+      next: () => {
+        this.ocupado.set(false);
+        this.snackBar.open('Agora este lançamento se repete todo mês.', undefined, {
+          duration: 4000,
+          verticalPosition: 'top',
+        });
+        if (compra !== null) this.compras.avisarAlteracao();
+        else this.entries.avisarAlteracao(origem!);
+        this.ref.close(origem ?? undefined);
+      },
+      error: (error: unknown) => {
+        this.ocupado.set(false);
+        if (this.semConexao(error)) {
+          this.avisarSemConexao();
+          return;
+        }
+        this.erroRepetir.set(problemMessage(error));
+      },
+    });
   }
 
   protected cancelarDuplicar(): void {

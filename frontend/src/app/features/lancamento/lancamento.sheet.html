@@ -555,6 +555,64 @@
         </button>
       </div>
     }
+
+    @if (repetindo()) {
+      <div class="mini" role="group" aria-label="Repetir todo mês" data-testid="repetir-painel">
+        <p class="ajuda">
+          Este lançamento passa a ser a ocorrência do mês dele e os próximos meses são criados.
+        </p>
+        <label for="repetir-fim">Término</label>
+        <select
+          id="repetir-fim"
+          data-testid="repetir-fim"
+          (change)="repetirFim.set($any($event.target).value)"
+        >
+          <option value="none" [selected]="repetirFim() === 'none'">Sem fim</option>
+          <option value="until_month" [selected]="repetirFim() === 'until_month'">
+            Até um mês
+          </option>
+          <option value="after_count" [selected]="repetirFim() === 'after_count'">
+            Após N ocorrências
+          </option>
+        </select>
+        @if (repetirFim() === 'until_month') {
+          <label for="repetir-mes">Último mês</label>
+          <input
+            id="repetir-mes"
+            type="month"
+            data-testid="repetir-mes"
+            [value]="repetirMes()"
+            (input)="repetirMes.set($any($event.target).value)"
+          />
+        }
+        @if (repetirFim() === 'after_count') {
+          <label for="repetir-qtd">Quantas ocorrências</label>
+          <input
+            id="repetir-qtd"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            [attr.max]="ocorrenciasMax"
+            data-testid="repetir-qtd"
+            [value]="repetirQtd()"
+            (input)="repetirQtd.set($any($event.target).value)"
+          />
+        }
+        @if (erroRepetir(); as mensagem) {
+          <p class="erro" role="alert" data-testid="erro-repetir">{{ mensagem }}</p>
+        }
+        <button
+          type="button"
+          class="botao principal"
+          data-testid="repetir-confirmar"
+          [disabled]="ocupado()"
+          (click)="confirmarRepetir()"
+        >
+          Repetir todo mês
+        </button>
+        <button type="button" class="botao secundario" (click)="cancelarRepetir()">Cancelar</button>
+      </div>
+    }
   </div>
 
   <footer class="rodape">
@@ -587,6 +645,17 @@
           (click)="abrirDuplicar()"
         >
           Duplicar
+        </button>
+      }
+      @if (podeRepetir && !repetindo()) {
+        <button
+          type="button"
+          class="botao secundario"
+          data-testid="repetir"
+          [disabled]="ocupado()"
+          (click)="abrirRepetir()"
+        >
+          Repetir todo mês
         </button>
       }
       <button

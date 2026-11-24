@@ -279,4 +279,48 @@ test.describe('recorrências (005) — stack real', () => {
     await expect(page).toHaveURL(/\/recorrencias$/);
     await expect(page.getByTestId('lista-vazia')).toBeVisible();
   });
+
+  test('repete todo mês um lançamento: ele vira a ocorrência do mês e as seguintes aparecem', async ({
+    page,
+  }) => {
+    const espaco = await criarEspacoReal(page);
+    const m0 = mesDaquiA(0);
+    const m1 = mesDaquiA(1);
+    const m2 = mesDaquiA(2);
+    const m3 = mesDaquiA(3);
+    await espaco.entrada('expense', 'Seguro Vida', '25,99', `${m0}-10`);
+    const seguro = () => page.getByTestId('lancamento').filter({ hasText: 'Seguro Vida' });
+
+    await page.goto(`/mes/${m0}`);
+    await expect(seguro().getByTestId('selo-recorrencia')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Seguro Vida' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Editar lançamento' })).toBeVisible();
+    await page.getByTestId('repetir').click();
+    await page.getByTestId('repetir-fim').selectOption('until_month');
+    await page.getByTestId('repetir-mes').fill(m2);
+    await page.getByTestId('repetir-confirmar').click();
+    await expect(page.getByRole('heading', { name: 'Editar lançamento' })).toBeHidden();
+
+    // o original é a ocorrência de m0 (sem duplicar) e m1 e m2 ganharam as seguintes
+    await expect(seguro()).toHaveCount(1);
+    await expect(seguro().getByTestId('selo-recorrencia')).toBeVisible();
+    await expect(seguro().getByTestId('selo-alterada')).toHaveCount(0);
+    await page.goto(`/mes/${m1}`);
+    await expect(seguro()).toContainText('R$ 25,99');
+    await expect(seguro().getByTestId('selo-recorrencia')).toBeVisible();
+    await page.goto(`/mes/${m2}`);
+    await expect(seguro()).toHaveCount(1);
+    await page.goto(`/mes/${m3}`);
+    await expect(seguro()).toHaveCount(0);
+
+    // a recorrência aparece na tela de recorrências e a ocorrência não oferece repetir de novo
+    await page.goto('/recorrencias');
+    await expect(page.getByTestId('recorrencia').filter({ hasText: 'Seguro Vida' })).toContainText(
+      'Dia 10',
+    );
+    await page.goto(`/mes/${m1}`);
+    await page.getByRole('button', { name: 'Seguro Vida' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Editar lançamento' })).toBeVisible();
+    await expect(page.getByTestId('repetir')).toHaveCount(0);
+  });
 });

@@ -44,6 +44,15 @@ export interface RecurrenceInput {
   referenceMonthRule?: ReferenceMonthRule | null;
 }
 
+/** Corpo de `POST /recurrences/from-item` (FR-010): o lançamento a repetir e o término. */
+export interface RecurrenceFromItem {
+  type: 'entry' | 'card_purchase';
+  id: string;
+  endType: RecurrenceEndType;
+  endMonth?: string | null;
+  occurrenceLimit?: number | null;
+}
+
 /** Corpo de `PUT /recurrences/{id}`: o modelo completo, `fromMonth` e a `version` lida. */
 export interface RecurrenceUpdate extends RecurrenceInput {
   fromMonth: string;

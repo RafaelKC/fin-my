@@ -5,6 +5,7 @@ import {
   Recurrence,
   RecurrenceDeleted,
   RecurrenceEnded,
+  RecurrenceFromItem,
   RecurrenceInput,
   RecurrenceList,
   RecurrenceStatus,
@@ -28,6 +29,13 @@ export class RecurrencesService {
   /** `idempotencyKey`: uma por formulário, reaproveitada em reenvios. */
   create(input: RecurrenceInput, idempotencyKey: string): Observable<Recurrence> {
     return this.api.post<Recurrence>('/recurrences', input, { 'Idempotency-Key': idempotencyKey });
+  }
+
+  /** "Repetir todo mês" a partir de um lançamento (US4); uma `idempotencyKey` por tentativa. */
+  fromItem(input: RecurrenceFromItem, idempotencyKey: string): Observable<Recurrence> {
+    return this.api.post<Recurrence>('/recurrences/from-item', input, {
+      'Idempotency-Key': idempotencyKey,
+    });
   }
 
   update(id: string, input: RecurrenceUpdate): Observable<RecurrenceUpdated> {
