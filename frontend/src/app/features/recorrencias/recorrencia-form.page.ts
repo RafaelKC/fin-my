@@ -58,7 +58,8 @@ export class RecorrenciaFormPage {
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly fb = inject(FormBuilder).nonNullable;
-  private readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id');
+  private readonly rota = inject(ActivatedRoute).snapshot;
+  private readonly id = this.rota.paramMap.get('id');
   /** Uma chave por formulário, reaproveitada em reenvios (a criação é idempotente). */
   private readonly chaveIdempotencia = crypto.randomUUID();
 
@@ -102,6 +103,7 @@ export class RecorrenciaFormPage {
 
   constructor() {
     this.carregarOpcoes();
+    if (!this.id) this.preencherDaGrade();
     if (this.id) {
       this.recurrences
         .get(this.id)
@@ -121,6 +123,25 @@ export class RecorrenciaFormPage {
           },
         });
     }
+  }
+
+  /**
+   * "Transformar em recorrência" da grade do ano (007 US1.9): a grade abre o cadastro com tipo,
+   * descrição, valor, dia, carteira e mês inicial já preenchidos (query params), para a pessoa revisar.
+   */
+  private preencherDaGrade(): void {
+    const q = this.rota.queryParamMap;
+    if (!q?.has('description')) return;
+    const tipo = q.get('kind');
+    if (tipo === 'income' || tipo === 'expense') this.kind.set(tipo);
+    const mes = q.get('startMonth');
+    this.form.patchValue({
+      description: q.get('description') ?? '',
+      amount: q.get('amount') ?? '',
+      dayOfMonth: q.get('dayOfMonth') ?? this.form.controls.dayOfMonth.value,
+      startMonth: mes !== null && isYearMonth(mes) ? mes : this.form.controls.startMonth.value,
+    });
+    this.walletId.set(q.get('walletId') ?? '');
   }
 
   protected escolherTipo(tipo: RecurrenceKind): void {
