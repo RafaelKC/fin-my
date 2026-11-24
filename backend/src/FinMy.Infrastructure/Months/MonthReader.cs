@@ -21,10 +21,8 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
     public async Task<MonthData> ReadAsync(
         YearMonth month, IReadOnlyCollection<Guid>? walletIds, IReadOnlyCollection<Guid> tagIds, DateOnly today, CancellationToken cancellationToken)
     {
-        var wallets = await db.Set<Wallet>().AsNoTracking()
-            .Where(w => walletIds == null || walletIds.Contains(w.Id))
-            .Select(w => new WalletOpening(w.Id, w.InitialBalanceCents, w.InitialBalanceDate))
-            .ToListAsync(cancellationToken);
+        var aggregates = await ReadAggregatesAsync(month, walletIds, today, cancellationToken);
+        var wallets = aggregates.Wallets;
         var selected = wallets.Select(w => w.WalletId).ToList();
 
         var first = month.FirstDay;
@@ -34,24 +32,7 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
         var entries = db.Set<Entry>().AsNoTracking().Where(e => selected.Contains(e.WalletId));
         var transfers = db.Set<Transfer>().AsNoTracking()
             .Where(t => selected.Contains(t.FromWalletId) || selected.Contains(t.ToWalletId));
-
-        var entryTotals = (await entries
-                .Where(e => e.ReferenceMonth <= first)
-                .GroupBy(e => new { e.ReferenceMonth, e.Kind, e.Status })
-                .Select(g => new { g.Key.ReferenceMonth, g.Key.Kind, g.Key.Status, Cents = g.Sum(e => e.AmountCents) })
-                .ToListAsync(cancellationToken))
-            .Select(r => new EntryTotal(YearMonth.From(r.ReferenceMonth), r.Kind, r.Status, r.Cents))
-            .ToList();
-
-        var transferTotals = (await transfers
-                .Where(t => t.TransferDate <= last)
-                .GroupBy(t => new { t.TransferDate.Year, t.TransferDate.Month, t.FromWalletId, t.ToWalletId })
-                .Select(g => new { g.Key.Year, g.Key.Month, g.Key.FromWalletId, g.Key.ToWalletId, Cents = g.Sum(t => t.AmountCents) })
-                .ToListAsync(cancellationToken))
-            .Select(r => new TransferTotal(YearMonth.Of(r.Year, r.Month), r.FromWalletId, r.ToWalletId, r.Cents))
-            .ToList();
-
-        var invoices = await ReadInvoicesAsync(first, month, selected, filtered: walletIds is not null, today, cancellationToken);
+        var invoices = aggregates.Invoices;
 
         // RT-12: data crescente; empate pela ordem de criação (o id é UUIDv7, também cronológico).
         var listed = entries.Where(e => e.ReferenceMonth == first);
@@ -99,8 +80,8 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
 
         return new MonthData(
             wallets,
-            entryTotals,
-            transferTotals,
+            aggregates.EntryTotals,
+            aggregates.TransferTotals,
             invoices.Figures,
             entryItems,
             transferItems,
@@ -110,6 +91,55 @@ public sealed class MonthReader(FinMyDbContext db) : IMonthReader
                 pending.Where(p => p.Kind == EntryKind.Income).Sum(p => p.Cents),
                 pending.Where(p => p.Kind == EntryKind.Expense).Sum(p => p.Cents)),
             purchaseItems);
+    }
+
+    /// <summary>
+    /// Painel do ano (006 research R1): as mesmas consultas agregadas do mês, uma vez só, até dezembro de <paramref name="year"/>;
+    /// o <see cref="MonthSummaryCalculator"/> compõe os 12 meses. Sem filtro de Carteiras.
+    /// </summary>
+    public async Task<YearData> ReadYearAsync(int year, DateOnly today, CancellationToken cancellationToken)
+    {
+        var aggregates = await ReadAggregatesAsync(YearMonth.Of(year, 12), null, today, cancellationToken);
+        return new YearData(aggregates.Wallets, aggregates.EntryTotals, aggregates.TransferTotals, aggregates.Invoices.Figures);
+    }
+
+    private sealed record Aggregates(
+        IReadOnlyList<WalletOpening> Wallets,
+        IReadOnlyList<EntryTotal> EntryTotals,
+        IReadOnlyList<TransferTotal> TransferTotals,
+        InvoiceRead Invoices);
+
+    /// <summary>Agregados que alimentam o <see cref="MonthSummaryCalculator"/> para meses até <paramref name="month"/>.</summary>
+    private async Task<Aggregates> ReadAggregatesAsync(
+        YearMonth month, IReadOnlyCollection<Guid>? walletIds, DateOnly today, CancellationToken cancellationToken)
+    {
+        var wallets = await db.Set<Wallet>().AsNoTracking()
+            .Where(w => walletIds == null || walletIds.Contains(w.Id))
+            .Select(w => new WalletOpening(w.Id, w.InitialBalanceCents, w.InitialBalanceDate))
+            .ToListAsync(cancellationToken);
+        var selected = wallets.Select(w => w.WalletId).ToList();
+
+        var first = month.FirstDay;
+        var last = month.LastDay;
+
+        var entryTotals = (await db.Set<Entry>().AsNoTracking()
+                .Where(e => selected.Contains(e.WalletId) && e.ReferenceMonth <= first)
+                .GroupBy(e => new { e.ReferenceMonth, e.Kind, e.Status })
+                .Select(g => new { g.Key.ReferenceMonth, g.Key.Kind, g.Key.Status, Cents = g.Sum(e => e.AmountCents) })
+                .ToListAsync(cancellationToken))
+            .Select(r => new EntryTotal(YearMonth.From(r.ReferenceMonth), r.Kind, r.Status, r.Cents))
+            .ToList();
+
+        var transferTotals = (await db.Set<Transfer>().AsNoTracking()
+                .Where(t => (selected.Contains(t.FromWalletId) || selected.Contains(t.ToWalletId)) && t.TransferDate <= last)
+                .GroupBy(t => new { t.TransferDate.Year, t.TransferDate.Month, t.FromWalletId, t.ToWalletId })
+                .Select(g => new { g.Key.Year, g.Key.Month, g.Key.FromWalletId, g.Key.ToWalletId, Cents = g.Sum(t => t.AmountCents) })
+                .ToListAsync(cancellationToken))
+            .Select(r => new TransferTotal(YearMonth.Of(r.Year, r.Month), r.FromWalletId, r.ToWalletId, r.Cents))
+            .ToList();
+
+        var invoices = await ReadInvoicesAsync(first, month, selected, filtered: walletIds is not null, today, cancellationToken);
+        return new Aggregates(wallets, entryTotals, transferTotals, invoices);
     }
 
     /// <summary>Compras das faturas que vencem em <paramref name="month"/> com qualquer das tags, na ordem RT-12.</summary>
