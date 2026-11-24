@@ -71,6 +71,47 @@ describe('FaturaPage (US5.2–US5.5, US6.2, US7)', () => {
 
   afterEach(() => http.verify());
 
+  it('FR-011: bloco "Por pessoa" com subtotais por Tag de acerto e "Sem tag de acerto" somando o Total', async () => {
+    launcher = { abrirCompra: vi.fn() };
+    TestBed.configureTestingModule({
+      imports: [FaturaPage],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: { paramMap: of(convertToParamMap({ id: 'c-azul', mes: '2026-03' })) },
+        },
+      ],
+    });
+    http = TestBed.inject(HttpTestingController);
+    fixture = TestBed.createComponent(FaturaPage);
+    el = fixture.nativeElement;
+    fixture.detectChanges();
+    http.expectOne('/api/v1/wallets?archived=all').flush([carteira()]);
+    http.expectOne('/api/v1/credit-cards/c-azul').flush(cartao());
+    http.expectOne(BASE).flush(
+      faturaDetalhada({
+        settlementSubtotals: [
+          { tagId: 't-bruna', cents: 15000 },
+          { tagId: null, cents: 5000 },
+        ],
+      }),
+    );
+    http.match('/api/v1/tags?archived=all').forEach((r) => r.flush([bruna, ifood]));
+    await atualizar();
+    const linhas = Array.from(el.querySelectorAll('[data-testid="subtotal-pessoa"]')).map((l) =>
+      l.textContent!.replace(/\s+/g, ' ').trim(),
+    );
+    expect(linhas).toEqual(['Bruna R$ 150,00', 'Sem tag de acerto R$ 50,00']);
+  });
+
+  it('sem subtotais o bloco "Por pessoa" não aparece', async () => {
+    await abrir();
+    expect(el.querySelector('[data-testid="por-pessoa"]')).toBeNull();
+  });
+
   it('mostra datas, situação, totais e "Conferido" da fatura do exemplo (US5.2, US6.2, FR-027)', async () => {
     await abrir(
       faturaDetalhada({

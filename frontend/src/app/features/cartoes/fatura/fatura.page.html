@@ -60,6 +60,25 @@
       Conferido {{ f.reconciledCents | brl }} de {{ f.totalCents | brl }}
     </p>
 
+    @if (porPessoa().length > 0) {
+      <section class="por-pessoa" aria-labelledby="titulo-por-pessoa" data-testid="por-pessoa">
+        <h2 id="titulo-por-pessoa">Por pessoa</h2>
+        <ul>
+          @for (p of porPessoa(); track p.rotulo) {
+            <li data-testid="subtotal-pessoa">
+              <span class="pessoa">
+                @if (p.cor) {
+                  <span class="cor" [style.background]="p.cor" aria-hidden="true"></span>
+                }
+                {{ p.rotulo }}
+              </span>
+              <strong>{{ p.cents | brl }}</strong>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
     @if (aviso(); as mensagem) {
       <div class="aviso" role="alert" data-testid="aviso-fatura">{{ mensagem }}</div>
     }

@@ -12,6 +12,12 @@ export interface InvoicePayment {
   version: number;
 }
 
+/** Subtotal por Tag de acerto da fatura (FR-011); `tagId` nulo = "Sem tag de acerto". */
+export interface SettlementSubtotal {
+  tagId: string | null;
+  cents: number;
+}
+
 /** `Invoice` do contrato: resumo + conferido, compras, pagamentos e meses vizinhos. */
 export interface Invoice extends InvoiceSummary {
   reconciledCents: number;
@@ -22,6 +28,8 @@ export interface Invoice extends InvoiceSummary {
   nextMonth: string;
   /** Só com filtro de tags: Débitos − Créditos das compras listadas (004 research R6). */
   filteredTotalCents?: number | null;
+  /** Bloco "Por pessoa": sempre soma o Total da fatura, com ou sem filtro (SC-004). */
+  settlementSubtotals?: SettlementSubtotal[];
 }
 
 /** Corpo de `POST .../payments`; vazio = padrões (FR-017). */
