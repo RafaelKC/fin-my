@@ -1,0 +1,104 @@
+<div class="guia">
+  <header class="topo">
+    <h1>Primeiros passos</h1>
+    <p class="progresso" data-testid="progresso">Etapa {{ indice() + 1 }} de {{ etapas.length }}</p>
+    <ol class="trilha" aria-label="Etapas do guia">
+      @for (e of etapas; track e.chave; let i = $index) {
+        <li
+          [class.atual]="i === indice()"
+          [class.feita]="estado()?.steps?.[e.chave] === 'done'"
+          [class.pulada]="estado()?.steps?.[e.chave] === 'skipped'"
+          [attr.aria-current]="i === indice() ? 'step' : null"
+          data-testid="etapa-trilha"
+        >
+          {{ e.titulo }}
+        </li>
+      }
+    </ol>
+  </header>
+
+  <section class="etapa" [attr.aria-labelledby]="'titulo-etapa'" data-testid="etapa">
+    <h2 id="titulo-etapa" data-testid="etapa-titulo">{{ etapa().titulo }}</h2>
+    <p class="explicacao" data-testid="etapa-explicacao">{{ etapa().explicacao }}</p>
+
+    @if (contar(etapa().chave) > 0) {
+      <p class="sucesso" role="status" data-testid="etapa-cadastrados">
+        {{ contar(etapa().chave) }}
+        {{ contar(etapa().chave) === 1 ? 'item cadastrado' : 'itens cadastrados' }} nesta etapa.
+        Cadastre mais ou toque em "Continuar".
+      </p>
+    }
+
+    @switch (etapa().chave) {
+      @case ('wallets') {
+        @if (formularioVisivel()) {
+          <app-carteira-form-page [embutido]="true" (salvou)="cadastrou()" />
+        }
+      }
+      @case ('cards') {
+        @if (formularioVisivel()) {
+          <app-cartao-form-page [embutido]="true" (salvou)="cadastrou()" />
+        }
+      }
+      @case ('settlement_tags') {
+        @if (nomesDePessoas().length > 0) {
+          <ul class="pessoas" data-testid="pessoas-cadastradas">
+            @for (nome of nomesDePessoas(); track $index) {
+              <li>{{ nome }}</li>
+            }
+          </ul>
+        }
+        <app-pessoa-form (salvou)="cadastrou($event)" />
+      }
+      @case ('installments') {
+        <button
+          type="button"
+          class="secundario"
+          data-testid="abrir-parcelamento"
+          (click)="abrirParcelamento()"
+        >
+          Cadastrar parcelamento em andamento
+        </button>
+      }
+      @case ('recurrences') {
+        @if (formularioVisivel()) {
+          <app-recorrencia-form-page [embutido]="true" (salvou)="cadastrou()" />
+        }
+      }
+    }
+  </section>
+
+  @if (erro(); as mensagem) {
+    <div class="aviso" role="alert" data-testid="erro-guia">{{ mensagem }}</div>
+  }
+
+  <footer class="acoes">
+    <button
+      type="button"
+      class="principal"
+      data-testid="continuar"
+      [disabled]="ocupado()"
+      (click)="continuar()"
+    >
+      {{ ultima() ? 'Concluir' : 'Continuar' }}
+    </button>
+    <button
+      type="button"
+      class="secundario"
+      data-testid="pular"
+      [disabled]="ocupado()"
+      (click)="pular()"
+    >
+      Pular
+    </button>
+    <button
+      type="button"
+      class="link"
+      data-testid="dispensar"
+      [disabled]="ocupado()"
+      (click)="dispensar()"
+    >
+      Dispensar guia
+    </button>
+  </footer>
+</div>
