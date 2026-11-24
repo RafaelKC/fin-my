@@ -181,3 +181,11 @@
     font: var(--mat-sys-title-medium);
   }
 }
+.selo-divisao {
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font: var(--mat-sys-label-small);
+}
