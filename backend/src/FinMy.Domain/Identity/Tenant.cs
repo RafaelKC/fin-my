@@ -31,6 +31,13 @@ public sealed class Tenant : IEntity, IAudited
 
     public DateTimeOffset? OnboardingDismissedAt { get; private set; }
 
+    /// <summary>Registra o estado de uma etapa do guia (<c>done</c> ou <c>skipped</c>); a etapa já validada em <see cref="OnboardingSteps"/>.</summary>
+    public void SetOnboardingStep(string step, string state) =>
+        OnboardingSteps = new Dictionary<string, string>(OnboardingSteps) { [step] = state };
+
+    /// <summary>Dispensa o guia; repetir não muda a data original.</summary>
+    public void DismissOnboarding(DateTimeOffset now) => OnboardingDismissedAt ??= now;
+
     public DateTimeOffset CreatedAt { get; internal set; }
 
     public Guid CreatedBy { get; internal set; }
