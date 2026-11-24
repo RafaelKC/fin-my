@@ -10,7 +10,7 @@ Stack: .NET 10 · PostgreSQL 17 · Angular (PWA) · Docker Compose.
 
 | O quê | Onde |
 |---|---|
-| Specs por feature (spec-kit): `spec.md`, `plan.md`, `tasks.md`, `quickstart.md`, `contracts/` | [`specs/`](specs/README.md) (001 a 006 e 008 prontas; a próxima é a [`007-planejamento-anual`](specs/007-planejamento-anual/)) |
+| Specs por feature (spec-kit): `spec.md`, `plan.md`, `tasks.md`, `quickstart.md`, `contracts/` | [`specs/`](specs/README.md) (001 a 008 prontas) |
 | Constituição: princípios, glossário, regras transversais | [`.specify/memory/constitution.md`](.specify/memory/constitution.md) |
 | Arquitetura técnica (normativa) e desvios registrados | [`docs/arquitetura.md`](docs/arquitetura.md) |
 | Modelo de dados | [`docs/modelo-de-dados.md`](docs/modelo-de-dados.md) |
@@ -131,11 +131,12 @@ Telas (Angular; as públicas são `/entrar`, `/criar-conta`, `/esqueci-senha` e 
 | `/acertos`, `/acertos/:mes` | Acertos do mês por tag de acerto: Gasto, Cobrado, Recebido, A cobrar e Saldo acumulado; "Gerar cobrança" |
 | `/tags` | Gerenciar tags: criar, renomear, cor, marcar como de acerto, arquivar, excluir e juntar |
 | `/painel`, `/painel/:ano` | Painel do ano (aba Home da planilha): "Agora" (saldos, faturas próximas, pendências, acertos), tabela Previsto/Realizado dos 12 meses e gráfico; cartão "Continuar configuração" |
+| `/planejamento`, `/planejamento/:ano` | Grade do ano (linhas por descrição, colunas por mês) com edição inline, "Nova linha", "Preencher meses", "Transformar em recorrência" e "Copiar do ano anterior" (computador); no celular, rolagem horizontal e edição da célula por diálogo |
 | `/primeiros-passos/:etapa` | Guia de 5 etapas (carteiras, cartões, tags de acerto, parcelamentos em andamento, recorrências); abre sozinho na conta nova |
 | `/perfil` | Nome do usuário e do Espaço, troca de senha, tela inicial (Mês ou Painel), exportar lançamentos (CSV), sair |
 
 API (`/api/v1`, tudo com sessão; contrato em
-[`specs/002-carteiras-e-lancamentos/contracts/openapi.yaml`](specs/002-carteiras-e-lancamentos/contracts/openapi.yaml) e [`specs/003-cartoes-e-faturas/contracts/openapi.yaml`](specs/003-cartoes-e-faturas/contracts/openapi.yaml) e [`specs/004-tags-e-acertos/contracts/openapi.yaml`](specs/004-tags-e-acertos/contracts/openapi.yaml)).
+[`specs/002-carteiras-e-lancamentos/contracts/openapi.yaml`](specs/002-carteiras-e-lancamentos/contracts/openapi.yaml) e [`specs/003-cartoes-e-faturas/contracts/openapi.yaml`](specs/003-cartoes-e-faturas/contracts/openapi.yaml) e [`specs/004-tags-e-acertos/contracts/openapi.yaml`](specs/004-tags-e-acertos/contracts/openapi.yaml); a 007 em [`specs/007-planejamento-anual/contracts/api.md`](specs/007-planejamento-anual/contracts/api.md)).
 Os `POST` de criação aceitam `Idempotency-Key`:
 
 | Recurso | Rotas |
@@ -151,6 +152,8 @@ Os `POST` de criação aceitam `Idempotency-Key`:
 | Acertos | `GET /settlements/{yyyy-MM}`, `GET /settlements/{yyyy-MM}/tags/{tagId}/items` |
 | Dividir | `POST /entries/split`, `POST /card-purchases/split` |
 | Painel e agora | `GET /years/{yyyy}/panel`, `GET /now` |
+| Planejamento do ano | `GET /years/{yyyy}/planning`, `PUT /years/{yyyy}/planning/cells`, `POST /years/{yyyy}/planning/fill`, `GET /years/{yyyy}/planning/copy-candidates`, `POST /years/{yyyy}/planning/copy` |
+| Estimativa de fatura | `PUT /credit-cards/{id}/invoices/{yyyy-MM}/estimate` (`amount: null` remove) |
 | Primeiros passos | `GET /onboarding`, `PUT /onboarding/steps/{step}`, `POST /onboarding/dismiss` |
 | Exportar | `GET /exports/entries.csv?from=&to=` (CSV com BOM, `;`, até 120 meses) |
 | Desfazer exclusão | `POST /deletions/{batchId}/restore` (até 10 min) |

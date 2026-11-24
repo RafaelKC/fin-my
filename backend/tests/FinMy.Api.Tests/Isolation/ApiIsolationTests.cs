@@ -107,6 +107,10 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
         var recSaidaId = recSaida.GetProperty("id").GetGuid();
         var recCompraId = recCompra.GetProperty("id").GetGuid();
 
+        // Estimativa de fatura de A (007): o cartão e o mês dela entram na grade, na cópia e na visão do mês.
+        using var estimativa = await asA.PutAsJsonAsync($"/api/v1/credit-cards/{cartaoId}/invoices/2026-04/estimate", new { amount = "800" });
+        estimativa.EnsureSuccessStatusCode();
+
         var secrets = new[]
         {
             a.Email, "Alice Isolada Segredo", "Espaço Secreto da Alice", a.AccessToken, second.AccessToken,
@@ -225,6 +229,12 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
             "PUT /api/v1/onboarding/steps/{step}",
             "POST /api/v1/onboarding/dismiss",
             "GET /api/v1/exports/entries.csv",
+            "GET /api/v1/years/{year}/planning",
+            "PUT /api/v1/years/{year}/planning/cells",
+            "POST /api/v1/years/{year}/planning/fill",
+            "GET /api/v1/years/{year}/planning/copy-candidates",
+            "POST /api/v1/years/{year}/planning/copy",
+            "PUT /api/v1/credit-cards/{id}/invoices/{month}/estimate",
         ];
         esperadas.ShouldBeSubsetOf(operations.Select(o => o.Key));
     }
@@ -398,6 +408,78 @@ public class ApiIsolationTests(PostgresFixture postgres) : ApiTestBase(postgres)
         var guiaDeA = await asA.GetFromJsonAsync<JsonElement>("/api/v1/onboarding");
         guiaDeA.GetProperty("dismissed").GetBoolean().ShouldBeFalse();
         guiaDeA.GetProperty("steps").GetProperty("wallets").GetString().ShouldBe("done");
+        b.Http.Dispose();
+    }
+
+    [Fact]
+    public async Task Grade_do_ano_copia_e_estimativa_de_B_nao_enxergam_nem_alteram_o_Espaco_de_A()
+    {
+        var a = await CreateAAsync();
+        using var asA = NewHttp().WithBearer(a.Account.AccessToken);
+        var before = await SnapshotOfAAsync(a);
+        var b = await NewCallerAsync("Beto Isolado");
+
+        // Controle: A enxerga as próprias linhas, a estimativa e os candidatos a cópia (a ausência em B não é por rota vazia).
+        var gradeDeA = await asA.GetStringAsync("/api/v1/years/2026/planning");
+        gradeDeA.ShouldContain("Tim Segredo da Alice", Case.Insensitive);
+        gradeDeA.ShouldContain("Cartão Segredo da Alice", Case.Insensitive);
+        gradeDeA.ShouldContain("\"estimateCents\":80000");
+        (await asA.GetStringAsync("/api/v1/years/2027/planning/copy-candidates")).ShouldContain("Tim Segredo da Alice", Case.Insensitive);
+
+        var grade = await b.Http.GetFromJsonAsync<JsonElement>("/api/v1/years/2026/planning");
+        grade.GetProperty("incomeRows").GetArrayLength().ShouldBe(0);
+        grade.GetProperty("expenseRows").GetArrayLength().ShouldBe(0);
+        grade.GetProperty("invoiceRows").GetArrayLength().ShouldBe(0);
+        foreach (var mes in grade.GetProperty("totals").GetProperty("months").EnumerateArray())
+        {
+            mes.GetProperty("incomeCents").GetInt64().ShouldBe(0);
+            mes.GetProperty("expenseCents").GetInt64().ShouldBe(0);
+        }
+
+        var candidatos = await b.Http.GetFromJsonAsync<JsonElement>("/api/v1/years/2027/planning/copy-candidates");
+        candidatos.GetProperty("rows").GetArrayLength().ShouldBe(0);
+        candidatos.GetProperty("estimates").GetArrayLength().ShouldBe(0);
+
+        var own = await CreateJsonAsync(b.Http, "/api/v1/wallets", new { name = "Azul do Beto", type = "checking", color = "#1E88E5", initialBalance = "0", initialBalanceDate = "2026-03-01" });
+        var ownWalletId = own.GetProperty("id").GetGuid();
+        var mesDeB = await b.Http.GetStringAsync("/api/v1/months/2026-04");
+        mesDeB.ShouldNotContain("800", Case.Insensitive);
+
+        // Cartão de A em corpo ou rota de B: 404/422, sem gravar nada em A.
+        string[] meses = ["2026-06"];
+        string[] chaves = ["expense:tim segredo da alice"];
+        var respostas = new Dictionary<string, HttpResponseMessage>
+        {
+            ["PUT /planning/cells (fatura, cartão de A)"] = await b.Http.PutAsJsonAsync("/api/v1/years/2026/planning/cells", new { kind = "invoice", creditCardId = a.CardA, month = "2026-05", value = "900" }),
+            ["PUT /planning/cells (remover estimativa de A)"] = await b.Http.PutAsJsonAsync("/api/v1/years/2026/planning/cells", new { kind = "invoice", creditCardId = a.CardA, month = "2026-04", value = "" }),
+            ["PUT /planning/cells (carteira de A)"] = await b.Http.PutAsJsonAsync("/api/v1/years/2026/planning/cells", new { kind = "expense", description = "Natal", month = "2026-12", value = "1200", walletId = a.WalletA, day = 20 }),
+            ["POST /planning/fill (fatura, cartão de A)"] = await b.Http.PostAsJsonAsync("/api/v1/years/2026/planning/fill", new { kind = "invoice", creditCardId = a.CardA, amount = "800", months = meses }),
+            ["POST /planning/fill (carteira de A)"] = await b.Http.PostAsJsonAsync("/api/v1/years/2026/planning/fill", new { kind = "expense", description = "Natal", amount = "100", months = meses, walletId = a.WalletA, day = 20 }),
+            ["PUT /credit-cards/{id}/invoices/{mes}/estimate (cartão de A)"] = await b.Http.PutAsJsonAsync($"/api/v1/credit-cards/{a.CardA}/invoices/2026-04/estimate", new { amount = "1" }),
+            ["PUT /credit-cards/{id}/invoices/{mes}/estimate (remover, cartão de A)"] = await b.Http.PutAsJsonAsync($"/api/v1/credit-cards/{a.CardA}/invoices/2026-04/estimate", new { amount = (string?)null }),
+        };
+        foreach (var (label, response) in respostas)
+        {
+            using (response)
+            {
+                ((int)response.StatusCode).ShouldBeOneOf([404, 422], $"{label}: status inesperado {(int)response.StatusCode}.");
+                var text = await response.Content.ReadAsStringAsync();
+                foreach (var secret in a.Secrets)
+                {
+                    text.ShouldNotContain(secret, Case.Insensitive, $"{label} expôs dado de A.");
+                }
+            }
+        }
+
+        // Chave de linha de A em B: nada para copiar (o ano anterior de B está vazio) e nada gravado em A.
+        using var copia = await b.Http.PostAsJsonAsync("/api/v1/years/2027/planning/copy", new { rowKeys = chaves, copyEstimates = true });
+        ((int)copia.StatusCode).ShouldBeOneOf([200, 404, 422]);
+        (await copia.Content.ReadAsStringAsync()).ShouldNotContain("Segredo da Alice", Case.Insensitive);
+        _ = ownWalletId;
+
+        (await SnapshotOfAAsync(a)).ShouldBe(before);
+        var estimativaDeA = await asA.GetFromJsonAsync<JsonElement>($"/api/v1/credit-cards/{a.CardA}/invoices/2026-04");
+        estimativaDeA.GetProperty("estimateCents").GetInt64().ShouldBe(80000);
         b.Http.Dispose();
     }
 
