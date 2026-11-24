@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Routing;
 
 namespace FinMy.Api.Tests.OAuth;
 
-/// <summary>Sonda de teste sob <c>/mcp</c> (o servidor MCP real é da T003): expõe o <see cref="ICurrentContext"/> visto por um token do conector.</summary>
+/// <summary>Sonda de teste sob <c>/mcp/test</c> (o servidor MCP real, em <c>/mcp</c>, é testado em <c>Mcp/</c>): expõe o <see cref="ICurrentContext"/> visto por um token do conector.</summary>
 public sealed class OAuthProbeEndpoints : IEndpointModule
 {
     public const string WhoAmIPath = "/mcp/test/whoami";

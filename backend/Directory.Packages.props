@@ -24,6 +24,8 @@
     <!-- OAuth 2.1 do conector do Claude (008): servidor + validação (OpenIddict) com as tabelas no EF Core -->
     <PackageVersion Include="OpenIddict.AspNetCore" Version="7.9.0" />
     <PackageVersion Include="OpenIddict.EntityFrameworkCore" Version="7.9.0" />
+    <!-- Servidor MCP do conector do Claude (008): SDK oficial para C# (Streamable HTTP) -->
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="1.1.0" />
     <!-- OpenAPI gerado pela própria API (docs/arquitetura.md §2); a suíte de isolamento descobre as operações por ele -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.15" />
     <!-- Testes -->

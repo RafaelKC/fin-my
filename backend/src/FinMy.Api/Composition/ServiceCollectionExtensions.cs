@@ -1,5 +1,6 @@
 using FinMy.Api.Endpoints;
 using FinMy.Api.Errors;
+using FinMy.Api.Mcp;
 using FinMy.Application;
 using FinMy.Application.Auth;
 using FinMy.Infrastructure;
@@ -28,6 +29,7 @@ public static class ServiceCollectionExtensions
         services.AddApplication();
         services.AddFinMyInfrastructure(configuration);
         services.AddFinMyAuthentication(configuration);
+        services.AddFinMyMcp();
 
         // URL pública do app (links dos e-mails); APP_URL vem do compose.
         // Lida na primeira vez que alguém precisa dela (a configuração dos testes só fica completa na construção do host).
