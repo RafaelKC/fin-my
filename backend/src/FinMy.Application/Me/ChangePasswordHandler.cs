@@ -27,9 +27,10 @@ public sealed class ChangePasswordValidator : AbstractValidator<ChangePasswordCo
 
 /// <summary>
 /// Troca a senha informando a atual (US5, FR-013): renova o <c>security_stamp</c> e encerra as OUTRAS sessões
-/// (<c>revoked_reason = password_changed</c>), pelo <see cref="IRefreshTokenStore"/> para invalidar o cache de sessões.
+/// (<c>revoked_reason = password_changed</c>), pelo <see cref="IRefreshTokenStore"/> para invalidar o cache de sessões,
+/// e revoga todas as autorizações OAuth (conectores, 008 FR-003).
 /// </summary>
-public sealed class ChangePasswordHandler(IProfileStore profiles, IPasswordHasher hasher, IRefreshTokenStore sessions, ICurrentContext context, IClock clock)
+public sealed class ChangePasswordHandler(IProfileStore profiles, IPasswordHasher hasher, IRefreshTokenStore sessions, IOAuthAuthorizationRevoker oauth, ICurrentContext context, IClock clock)
 {
     public const string CurrentPasswordIncorrectCode = "current_password_incorrect";
 
@@ -54,5 +55,6 @@ public sealed class ChangePasswordHandler(IProfileStore profiles, IPasswordHashe
 
         await profiles.ChangePasswordAsync(userId, hasher.Hash(command.NewPassword!), clock.UtcNow, cancellationToken);
         await sessions.RevokeUserSessionsAsync(userId, RefreshTokenRevocationReason.PasswordChanged, cancellationToken, command.CurrentSessionId);
+        await oauth.RevokeAllAsync(userId, cancellationToken);
     }
 }

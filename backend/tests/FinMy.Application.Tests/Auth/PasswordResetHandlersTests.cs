@@ -24,6 +24,7 @@ public class PasswordResetHandlersTests(PostgresFixture postgres) : IAsyncLifeti
     private readonly FakeEmailSender _emails = new();
     private readonly PasswordHasherAdapter _hasher = new();
     private FinMyDbContext _db = null!;
+    private readonly RecordingOAuthRevoker _oauth = new();
     private RefreshTokenStore _sessions = null!;
 
     public Task InitializeAsync()
@@ -40,7 +41,7 @@ public class PasswordResetHandlersTests(PostgresFixture postgres) : IAsyncLifeti
             new PasswordResetMailer(new PasswordResetStore(_db), _emails, _clock, App),
             NullLogger<InlinePasswordResetDispatcher>.Instance));
 
-    private ConfirmPasswordResetHandler NewConfirm() => new(new PasswordResetStore(_db), _hasher, _sessions, _clock);
+    private ConfirmPasswordResetHandler NewConfirm() => new(new PasswordResetStore(_db), _hasher, _sessions, _oauth, _clock);
 
     private async Task<User> SeedUserAsync(string? email = null)
     {
@@ -184,6 +185,9 @@ public class PasswordResetHandlersTests(PostgresFixture postgres) : IAsyncLifeti
         (await _sessions.RotateAsync(phone.Token, CancellationToken.None)).Status.ShouldBe(Application.Abstractions.RefreshRotationStatus.Revoked);
         (await _sessions.RotateAsync(laptop.Token, CancellationToken.None)).Status.ShouldBe(Application.Abstractions.RefreshRotationStatus.Revoked);
         (await _sessions.RotateAsync(others.Token, CancellationToken.None)).Status.ShouldBe(Application.Abstractions.RefreshRotationStatus.Rotated);
+
+        // Os conectores (OAuth, 008) também precisam ser autorizados de novo, só os de quem redefiniu.
+        _oauth.Revoked.ShouldBe([user.Id]);
     }
 
     [Fact]
