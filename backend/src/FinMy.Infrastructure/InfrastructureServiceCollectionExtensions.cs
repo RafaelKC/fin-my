@@ -70,6 +70,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IInvoiceStore, InvoiceStore>();
         services.AddScoped<ICardPurchaseStore, CardPurchaseStore>();
         services.AddScoped<IMonthReader, MonthReader>();
+        services.AddScoped<INowReader, NowReader>();
         services.AddScoped<ISettlementReader, SettlementReader>();
         services.AddScoped<IIdempotencyStore, IdempotencyStore>();
         services.AddScoped<IEntryStore, EntryStore>();
