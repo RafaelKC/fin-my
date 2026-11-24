@@ -14,7 +14,7 @@
     @if (recorrencia(); as r) {
       <p class="situacao">
         <span class="selo" [class.cinza]="r.status === 'ended'" data-testid="situacao">{{
-          r.status === 'ended' ? 'Encerrada' : 'Ativa'
+          r.status === 'ended' ? 'Encerrada' : r.endMonth ? 'Ativa até ' + r.endMonth : 'Ativa'
         }}</span>
         @if (r.needsReview) {
           <span class="revisar" data-testid="revisar">{{
