@@ -479,6 +479,102 @@ describe('PlanejamentoPage', () => {
     expect(el.querySelector('[data-linha="invoice:c-azul"] [data-testid="linha-menu"]')).toBeNull();
   });
 
+  describe('Copiar do ano anterior (US3, FR-013)', () => {
+    const candidatos = {
+      rows: [
+        {
+          key: 'expense:natal',
+          kind: 'expense',
+          description: 'Natal',
+          cells: [{ month: '2026-12', plannedCents: 120000, itemCount: 1 }],
+        },
+        {
+          key: 'income:13o salario',
+          kind: 'income',
+          description: '13º salário',
+          cells: [{ month: '2026-12', plannedCents: 150000, itemCount: 1 }],
+        },
+        {
+          key: 'expense:mercado:t-lia',
+          kind: 'expense',
+          description: 'Mercado',
+          settlementTagName: 'Lia',
+          cells: [{ month: '2026-03', plannedCents: 30000, itemCount: 1 }],
+        },
+      ],
+      estimates: [
+        {
+          creditCardId: 'c-azul',
+          creditCardName: 'Azul',
+          months: [{ month: '2026-05', estimateCents: 80000 }],
+        },
+      ],
+    };
+
+    async function abrirDialogo() {
+      const ctx = await abrir();
+      (ctx.el.querySelector('[data-testid="copiar-ano-anterior"]') as HTMLElement).click();
+      await ctx.atualizar();
+      http.expectOne('/api/v1/years/2027/planning/copy-candidates').flush(candidatos);
+      await ctx.atualizar();
+      return ctx;
+    }
+    const doc = (id: string) => document.querySelector(`[data-testid="${id}"]`) as HTMLElement;
+
+    it('US3.1: lista as linhas do ano anterior com valores por mês e a tag de acerto', async () => {
+      await abrirDialogo();
+      const txt = (e: Element | null) => e?.textContent?.replace(/\s+/g, ' ').trim();
+      const nomes = Array.from(document.querySelectorAll('[data-testid="copiar-linha"] label')).map(
+        txt,
+      );
+      expect(nomes).toEqual(['Saída · Natal', 'Entrada · 13º salário', 'Saída · Mercado (Lia)']);
+      const valores = Array.from(document.querySelectorAll('[data-testid="copiar-valores"]')).map(
+        txt,
+      );
+      expect(valores).toEqual(['DEZ R$ 1.200,00', 'DEZ R$ 1.500,00', 'MAR R$ 300,00']);
+      expect(document.body.textContent).toContain('Copiar de 2026 para 2027');
+      expect(doc('copiar-confirmar').hasAttribute('disabled')).toBe(true);
+    });
+
+    it('US3.2/US3.4: nada é criado sem confirmar; confirma só as marcadas e as estimativas', async () => {
+      const { el, limpo, atualizar, aguardarFechar } = await abrirDialogo();
+      const marcar = document.querySelectorAll<HTMLInputElement>('[data-testid="copiar-marcar"]');
+      marcar[0].click();
+      marcar[1].click();
+      (doc('copiar-estimativas') as HTMLInputElement).click();
+      await atualizar();
+      doc('copiar-confirmar').click();
+      await atualizar();
+
+      const req = http.expectOne('/api/v1/years/2027/planning/copy');
+      expect(req.request.headers.get('Idempotency-Key')).toMatch(/^[0-9a-f-]{36}$/);
+      expect(req.request.body).toEqual({
+        rowKeys: ['expense:natal', 'income:13o salario'],
+        copyEstimates: true,
+      });
+      req.flush({ created: 3, skipped: 1 });
+      await aguardarFechar();
+      // recarrega a grade e informa o que foi pulado
+      http.expectOne('/api/v1/years/2027/planning').flush(grade2027());
+      await atualizar();
+      expect(limpo(el.querySelector('[data-testid="aviso-planejamento"]'))).toBe(
+        '3 itens copiados; 1 já tinha valor e foi pulado.',
+      );
+    });
+
+    it('cancelar não chama a API de cópia', async () => {
+      const { aguardarFechar } = await abrirDialogo();
+      doc('cancelar').click();
+      await aguardarFechar();
+      http.expectNone('/api/v1/years/2027/planning/copy');
+    });
+
+    it('celular: o botão fica escondido', async () => {
+      const { el } = await abrir(grade2027(), true);
+      expect(el.querySelector('[data-testid="copiar-ano-anterior"]')).toBeNull();
+    });
+  });
+
   it('trocar o ano navega para /planejamento/:ano', async () => {
     const { el } = await abrir();
     const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);

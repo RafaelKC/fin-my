@@ -287,6 +287,82 @@ test.describe('planejamento do ano (US1) — API simulada', () => {
     await expect(total(page, 'saidas', '2027-12')).toContainText('1.200,00');
   });
 
+  test('US3: Copiar do ano anterior lista as linhas, copia as marcadas e informa os pulados', async ({
+    page,
+  }, info) => {
+    test.skip(info.project.name === 'mobile', '"Copiar do ano anterior" é do computador');
+    const itens: Item[] = [item('e9', 'expense', 'Natal', 12, 100000)];
+    await simular(page, itens);
+    const origem = [
+      { key: 'expense:natal', kind: 'expense', description: 'Natal', cents: 120000 },
+      { key: 'income:13o salario', kind: 'income', description: '13º salário', cents: 150000 },
+      { key: 'expense:ipva', kind: 'expense', description: 'IPVA', cents: 90000 },
+    ];
+    let corpo: { rowKeys: string[]; copyEstimates: boolean } | null = null;
+    await page.route('**/api/v1/years/2027/planning/copy-candidates', (route) =>
+      route.fulfill({
+        json: {
+          rows: origem.map((o) => ({
+            key: o.key,
+            kind: o.kind,
+            description: o.description,
+            cells: [{ month: '2026-12', plannedCents: o.cents, itemCount: 1 }],
+          })),
+          estimates: [],
+        },
+      }),
+    );
+    await page.route('**/api/v1/years/2027/planning/copy', (route) => {
+      corpo = route.request().postDataJSON();
+      let created = 0;
+      let skipped = 0;
+      for (const o of origem.filter((x) => corpo!.rowKeys.includes(x.key))) {
+        const ocupado = itens.some(
+          (i) => i.kind === o.kind && normalizar(i.description) === normalizar(o.description),
+        );
+        if (ocupado) skipped++;
+        else {
+          created++;
+          itens.push({
+            id: `c-${created}`,
+            kind: o.kind as Item['kind'],
+            description: o.description,
+            month: '2027-12',
+            cents: o.cents,
+            status: 'planned',
+          });
+        }
+      }
+      return route.fulfill({ json: { created, skipped } });
+    });
+
+    await page.goto('/planejamento/2027');
+    await page.getByTestId('copiar-ano-anterior').click();
+    await expect(page.getByTestId('copiar-linha')).toHaveCount(3);
+    await expect(page.getByTestId('copiar-confirmar')).toBeDisabled();
+    await page
+      .locator('[data-testid="copiar-linha"][data-chave="expense:natal"]')
+      .getByTestId('copiar-marcar')
+      .check();
+    await page
+      .locator('[data-testid="copiar-linha"][data-chave="income:13o salario"]')
+      .getByTestId('copiar-marcar')
+      .check();
+    await page.getByTestId('copiar-confirmar').click();
+
+    await expect(page.getByTestId('aviso-planejamento')).toHaveText(
+      '1 item copiado; 1 já tinha valor e foi pulado.',
+    );
+    expect(corpo).toEqual({
+      rowKeys: ['expense:natal', 'income:13o salario'],
+      copyEstimates: false,
+    });
+    await expect(celula(page, 'income:13º salario', '2027-12')).toContainText('1.500,00');
+    // o Natal de 2027 já existia e não foi alterado; o IPVA não foi marcado
+    await expect(celula(page, 'expense:natal', '2027-12')).toContainText('1.000,00');
+    await expect(page.locator('[data-linha="expense:ipva"]')).toHaveCount(0);
+  });
+
   test('US1.3, US1.4 e US1.6: alterar com expressão, apagar e desfazer', async ({ page }, info) => {
     test.skip(info.project.name === 'mobile', 'edição inline é do computador');
     await simular(page, [item('e2', 'expense', 'Tim', 3, 4499)]);

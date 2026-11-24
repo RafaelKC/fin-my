@@ -29,6 +29,7 @@ import { EntriesService } from '../lancamento/entries.service';
 import { ExclusaoService } from '../lancamento/exclusao.service';
 import { LancamentoLauncher } from '../lancamento/lancamento.launcher';
 import { ANO_MAXIMO, ANO_MINIMO, lerAno } from '../painel/painel-logic';
+import { CopiarData, CopiarDialog, CopiarResultado } from './copiar.dialog';
 import { CelulaData, CelulaDialog, CelulaResultado } from './celula.dialog';
 import { ItensCelulaData, ItensCelulaDialog, ItensCelulaResultado } from './itens-celula.dialog';
 import { NovaLinhaData, NovaLinhaDialog, NovaLinhaResultado } from './nova-linha.dialog';
@@ -519,6 +520,20 @@ export class PlanejamentoPage {
       });
   }
 
+  /** US3: diálogo "Copiar do ano anterior"; nada é criado sem confirmação (FR-013). */
+  protected copiarDoAnoAnterior(): void {
+    this.dialog
+      .open<CopiarDialog, CopiarData, CopiarResultado>(CopiarDialog, {
+        data: { ano: this.ano() },
+      })
+      .afterClosed()
+      .subscribe((r) => {
+        if (!r) return;
+        this.aviso.set(textoDaCopia(r.created, r.skipped));
+        this.recarregar();
+      });
+  }
+
   /** US1.9: abre o cadastro de recorrência (005) com os dados da linha. */
   protected transformarEmRecorrencia(linha: LinhaTabela): void {
     const row = linha.entrada;
@@ -589,4 +604,10 @@ function textoDoPreenchimento(criados: number, pulados: number): string {
   const criou = criados === 1 ? '1 mês preenchido' : `${criados} meses preenchidos`;
   if (pulados === 0) return `${criou}.`;
   return `${criou}; ${pulados === 1 ? '1 mês já tinha' : `${pulados} meses já tinham`} valor e foi pulado.`;
+}
+
+function textoDaCopia(criados: number, pulados: number): string {
+  const criou = criados === 1 ? '1 item copiado' : `${criados} itens copiados`;
+  if (pulados === 0) return `${criou}.`;
+  return `${criou}; ${pulados === 1 ? '1 já tinha' : `${pulados} já tinham`} valor e foi pulado.`;
 }

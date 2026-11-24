@@ -105,3 +105,34 @@ export interface PlanningCellItem {
 }
 
 export const CELULA_NAO_EDITAVEL = 'planning.cell_not_editable';
+
+/** Linha candidata à cópia (`GET .../planning/copy-candidates`, US3.1). */
+export interface CopyCandidateRow {
+  key: string;
+  kind: PlanningKind;
+  description: string;
+  settlementTagName?: string | null;
+  cells: { month: string; plannedCents: number; itemCount: number }[];
+}
+
+export interface CopyEstimateCard {
+  creditCardId: string;
+  creditCardName: string;
+  months: { month: string; estimateCents: number }[];
+}
+
+export interface CopyCandidates {
+  rows: CopyCandidateRow[];
+  estimates: CopyEstimateCard[];
+}
+
+/** Corpo de `POST .../planning/copy`. */
+export interface PlanningCopyInput {
+  rowKeys: string[];
+  copyEstimates: boolean;
+}
+
+export interface PlanningCopyResult {
+  created: number;
+  skipped: number;
+}

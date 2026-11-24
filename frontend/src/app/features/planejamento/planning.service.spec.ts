@@ -51,4 +51,19 @@ describe('PlanningService', () => {
     expect(req.request.body).toEqual(input);
     req.flush({});
   });
+
+  it('lê os candidatos à cópia e copia com Idempotency-Key', () => {
+    service.copyCandidates(2027).subscribe();
+    const lista = http.expectOne('/api/v1/years/2027/planning/copy-candidates');
+    expect(lista.request.method).toBe('GET');
+    lista.flush({ rows: [], estimates: [] });
+
+    const input = { rowKeys: ['expense:natal'], copyEstimates: true };
+    service.copy(2027, input, 'chave-2').subscribe();
+    const req = http.expectOne('/api/v1/years/2027/planning/copy');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('chave-2');
+    expect(req.request.body).toEqual(input);
+    req.flush({ created: 2, skipped: 0 });
+  });
 });
