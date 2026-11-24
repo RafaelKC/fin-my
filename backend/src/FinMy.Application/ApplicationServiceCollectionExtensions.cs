@@ -15,7 +15,8 @@ public static class ApplicationServiceCollectionExtensions
             .AddScoped<Catalog.CreationDefaults>()
             .AddScoped<Recurrences.RecurrenceReviewer>()
             .AddScoped<Recurrences.RecurrenceViewBuilder>()
-            .AddScoped<Recurrences.RecurrenceGenerator>();
+            .AddScoped<Recurrences.RecurrenceGenerator>()
+            .AddScoped<Recurrences.RecurrenceOccurrenceLoader>();
 
     /// <summary>
     /// Registra por convenção, como escopo da requisição, toda classe concreta e pública cujo nome termina

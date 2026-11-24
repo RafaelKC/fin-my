@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using FinMy.Application.Recurrences;
 
 namespace FinMy.Api.Endpoints.Recurrences;
@@ -21,6 +22,38 @@ public sealed record RecurrenceRequest(
         Kind, Description, Amount, DayOfMonth, WalletId, CreditCardId, TagIds, StartMonth, EndType, EndMonth, OccurrenceLimit, ReferenceMonthRule);
 }
 
+/// <summary>
+/// Corpo de <c>PUT /recurrences/{id}</c>: o modelo completo + <c>fromMonth</c> (<c>AAAA-MM</c>, padrão o mês de hoje) + <c>version</c>.
+/// O tipo é conferido (não muda) e o mês inicial não é lido: ele nunca muda.
+/// </summary>
+public sealed record RecurrenceUpdateRequest(
+    string? Kind,
+    string? Description,
+    string? Amount,
+    int? DayOfMonth,
+    Guid? WalletId,
+    Guid? CreditCardId,
+    IReadOnlyList<Guid>? TagIds,
+    string? EndType,
+    string? EndMonth,
+    int? OccurrenceLimit,
+    string? ReferenceMonthRule,
+    string? FromMonth,
+    long? Version)
+{
+    public UpdateRecurrenceCommand ToCommand(Guid id) => new(
+        id, Kind, Description, Amount, DayOfMonth, WalletId, CreditCardId, TagIds, EndType, EndMonth, OccurrenceLimit, ReferenceMonthRule, FromMonth, Version);
+}
+
+/// <summary>Corpo de <c>POST /recurrences/{id}/end</c>.</summary>
+public sealed record RecurrenceEndRequest(string? FromMonth);
+
+/// <summary>Resposta de <c>POST /recurrences/{id}/end</c>.</summary>
+public sealed record RecurrenceEndResponse(RecurrenceResponse Recurrence, int DeletedCount, Guid DeletionBatchId);
+
+/// <summary>Resposta de <c>DELETE /recurrences/{id}</c>.</summary>
+public sealed record RecurrenceDeleteResponse(int DeletedCount, int UnlinkedCount);
+
 /// <summary>Recorrência na resposta (<c>Recurrence</c>); dinheiro em centavos.</summary>
 public sealed record RecurrenceResponse(
     Guid Id,
@@ -43,6 +76,10 @@ public sealed record RecurrenceResponse(
     string? ReviewReason,
     long Version)
 {
+    /// <summary>Quantas ocorrências a alteração alcançou; só vem na resposta de <c>PUT /recurrences/{id}</c>.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? AffectedCount { get; init; }
+
     public static RecurrenceResponse From(RecurrenceView r) => new(
         r.Id,
         RecurrenceInput.ToText(r.Kind),

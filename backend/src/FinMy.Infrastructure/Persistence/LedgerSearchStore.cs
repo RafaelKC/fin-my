@@ -1,6 +1,7 @@
 using FinMy.Application.Abstractions;
 using FinMy.Domain.Cards;
 using FinMy.Domain.Entries;
+using FinMy.Domain.Monetary;
 using FinMy.Domain.Tags;
 using FinMy.Domain.Transfers;
 using Microsoft.EntityFrameworkCore;
@@ -212,7 +213,8 @@ public sealed class LedgerSearchStore(FinMyDbContext db, ICardPurchaseStore purc
                 x.Entry.Id, x.Entry.Kind, x.Entry.Description, x.Entry.AmountCents, x.Entry.EntryDate, x.Entry.ReferenceYearMonth,
                 x.Entry.Status, x.Entry.WalletId, x.Entry.Notes, x.Entry.CreatedAt, x.Entry.CreatedVia, x.Version,
                 TagLinks.All(x.Entry.SettlementTagId, links, x.Entry.Id), x.Entry.SettlementTagId,
-                x.Entry.SplitGroupId, SplitCounts.Of(x.Entry.SplitGroupId, counts)));
+                x.Entry.SplitGroupId, SplitCounts.Of(x.Entry.SplitGroupId, counts),
+                x.Entry.RecurrenceId, x.Entry.RecurrenceMonth is { } month ? YearMonth.From(month) : null, x.Entry.RecurrenceModified));
     }
 
     private async Task<Dictionary<Guid, CardPurchaseView>> LoadPurchasesAsync(List<Guid> ids, CancellationToken cancellationToken)

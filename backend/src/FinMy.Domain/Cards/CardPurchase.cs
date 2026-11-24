@@ -85,6 +85,31 @@ public sealed class CardPurchase : TenantEntity
 
     public Money Amount => new(AmountCents);
 
+    /// <summary>Marca como "alterada" uma ocorrência de recorrência (005 FR-005); sem efeito em compras comuns.</summary>
+    public void MarkRecurrenceModified()
+    {
+        if (RecurrenceId is not null)
+        {
+            RecurrenceModified = true;
+        }
+    }
+
+    /// <summary>Desfaz o vínculo com a recorrência: a compra vira manual, como as demais compras comuns (005 FR-007).</summary>
+    public void UnlinkFromRecurrence()
+    {
+        Origin = PurchaseOrigin.Manual; // o CHECK liga origin = 'recurrence' a recurrence_id
+        RecurrenceId = null;
+        RecurrenceMonth = null;
+        RecurrenceModified = false;
+    }
+
+    /// <summary>
+    /// Valores cuja mudança torna a ocorrência "alterada" (005 research R3): tudo menos "conferida" (e as tags, que quem
+    /// chama compara).
+    /// </summary>
+    public (string Description, long AmountCents, PurchaseNature Nature, DateOnly Date, string? Notes, Guid CreditCardId, Guid InvoiceId, Guid? SettlementTagId) RecurrenceContent =>
+        (Description, AmountCents, Nature, PurchaseDate, Notes, CreditCardId, InvoiceId, SettlementTagId);
+
     /// <summary>Compra à vista, débito, gerada por uma recorrência (005 research R2).</summary>
     public static CardPurchase CreateFromRecurrence(
         Guid creditCardId,

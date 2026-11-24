@@ -73,6 +73,29 @@ public sealed class Entry : TenantEntity
         RecurrenceMonth = month.FirstDay;
     }
 
+    /// <summary>Marca como "alterada" uma ocorrência de recorrência (005 FR-005); sem efeito em lançamentos comuns.</summary>
+    public void MarkRecurrenceModified()
+    {
+        if (RecurrenceId is not null)
+        {
+            RecurrenceModified = true;
+        }
+    }
+
+    /// <summary>Desfaz o vínculo com a recorrência: o lançamento vira comum (005 FR-007).</summary>
+    public void UnlinkFromRecurrence()
+    {
+        RecurrenceId = null;
+        RecurrenceMonth = null;
+        RecurrenceModified = false;
+    }
+
+    /// <summary>
+    /// Valores cuja mudança torna a ocorrência "alterada" (005 research R3): tudo menos situação (e as tags, que quem chama compara).
+    /// </summary>
+    public (EntryKind Kind, string Description, long AmountCents, DateOnly Date, DateOnly ReferenceMonth, Guid WalletId, string? Notes, Guid? SettlementTagId) RecurrenceContent =>
+        (Kind, Description, AmountCents, EntryDate, ReferenceMonth, WalletId, Notes, SettlementTagId);
+
     public YearMonth ReferenceYearMonth => YearMonth.From(ReferenceMonth);
 
     /// <summary>

@@ -306,7 +306,10 @@ public sealed class EntryStore(FinMyDbContext db) : IEntryStore
         tagIds,
         e.SettlementTagId,
         e.SplitGroupId,
-        splitCount);
+        splitCount,
+        e.RecurrenceId,
+        e.RecurrenceMonth is { } month ? YearMonth.From(month) : null,
+        e.RecurrenceModified);
 
     internal static string EscapeLike(string text) =>
         text.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("%", "\\%", StringComparison.Ordinal).Replace("_", "\\_", StringComparison.Ordinal);

@@ -1,4 +1,5 @@
 using FinMy.Application.Abstractions;
+using FinMy.Application.Entries;
 using FinMy.Application.Tags;
 using FinMy.Domain.Cards;
 using FinMy.Domain.Common;
@@ -38,10 +39,12 @@ public sealed class UpdateCardPurchaseHandler(ICreditCardStore cards, ICardPurch
 
         purchases.ExpectVersion(purchase, version);
 
+        var currentTagIds = command.TagIds is null ? [] : await purchases.GetTagIdsAsync(purchase, cancellationToken);
         var selection = command.TagIds is null
             ? null
-            : await TagSelector.ResolveAsync(tags, command.TagIds, await purchases.GetTagIdsAsync(purchase, cancellationToken), cancellationToken);
+            : await TagSelector.ResolveAsync(tags, command.TagIds, currentTagIds, cancellationToken);
 
+        var contentBefore = purchase.RecurrenceContent;
         await using var transaction = await purchases.BeginTransactionAsync(cancellationToken);
         if (purchase.InstallmentPlanId is { } planId)
         {
@@ -50,6 +53,12 @@ public sealed class UpdateCardPurchaseHandler(ICreditCardStore cards, ICardPurch
         else
         {
             await UpdateSingleAsync(command, purchase, card, amount, nature, date, selection, cancellationToken);
+
+            // Qualquer mudança além de "conferida" marca a ocorrência como "alterada" (005 FR-005, research R3).
+            if (purchase.RecurrenceContent != contentBefore || UpdateEntryHandler.TagsChanged(currentTagIds, selection))
+            {
+                purchase.MarkRecurrenceModified();
+            }
         }
 
         await purchases.SaveAsync(cancellationToken);

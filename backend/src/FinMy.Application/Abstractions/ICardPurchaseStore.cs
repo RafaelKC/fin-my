@@ -29,7 +29,10 @@ public sealed record CardPurchaseView(
     IReadOnlyList<Guid> TagIds,
     Guid? SettlementTagId,
     Guid? SplitGroupId,
-    int SplitCount);
+    int SplitCount,
+    Guid? RecurrenceId = null,
+    YearMonth? RecurrenceMonth = null,
+    bool RecurrenceModified = false);
 
 /// <summary>Total (débitos − créditos) e pago de uma fatura (003 FR-005).</summary>
 public readonly record struct InvoiceTotals(long TotalCents, long PaidCents);

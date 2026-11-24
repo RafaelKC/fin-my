@@ -59,6 +59,7 @@ public sealed class UpdateEntryHandler(IEntryStore store, ITagStore tags)
             entry =>
             {
                 var monthBefore = entry.ReferenceYearMonth;
+                var contentBefore = entry.RecurrenceContent;
                 entry.ChangeKind(kind);
                 entry.ChangeDescription(command.Description!);
                 entry.ChangeAmount(amount);
@@ -75,10 +76,21 @@ public sealed class UpdateEntryHandler(IEntryStore store, ITagStore tags)
                 {
                     entry.ChangeSettlementTag(selection.SettlementTagId);
                 }
+
+                // Qualquer mudança além de situação marca a ocorrência como "alterada" (005 FR-005, research R3).
+                if (entry.RecurrenceContent != contentBefore || TagsChanged(current.TagIds, selection))
+                {
+                    entry.MarkRecurrenceModified();
+                }
             },
             selection?.CommonTagIds,
             cancellationToken);
 
         return updated ?? throw new DomainException(EntryErrors.NotFound);
     }
+
+    /// <summary>As tags pedidas (a de acerto e as comuns) diferem das que o lançamento já tinha?</summary>
+    internal static bool TagsChanged(IReadOnlyCollection<Guid> currentTagIds, TagSelection? selection) =>
+        selection is not null
+        && !currentTagIds.ToHashSet().SetEquals(selection.SettlementTagId is { } s ? [s, .. selection.CommonTagIds] : selection.CommonTagIds);
 }
