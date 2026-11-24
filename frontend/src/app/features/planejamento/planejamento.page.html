@@ -1,0 +1,243 @@
+<div class="pagina">
+  <header class="cabecalho">
+    <button
+      type="button"
+      class="seta"
+      aria-label="Ano anterior"
+      data-testid="planejamento-anterior"
+      [disabled]="noMinimo()"
+      (click)="ir(-1)"
+    >
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">chevron_left</mat-icon>
+    </button>
+    <h1 class="titulo" data-testid="planejamento-titulo">Planejamento {{ ano() }}</h1>
+    <button
+      type="button"
+      class="seta"
+      aria-label="Próximo ano"
+      data-testid="planejamento-seguinte"
+      [disabled]="noMaximo()"
+      (click)="ir(1)"
+    >
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">chevron_right</mat-icon>
+    </button>
+  </header>
+
+  <div class="acoes">
+    <button
+      type="button"
+      class="botao"
+      data-testid="nova-linha"
+      [disabled]="grade() === null"
+      (click)="novaLinha()"
+    >
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">add</mat-icon>
+      Nova linha
+    </button>
+  </div>
+
+  @if (erro(); as mensagem) {
+    <p class="erro" role="alert" data-testid="erro-planejamento">{{ mensagem }}</p>
+  }
+  @if (aviso(); as mensagem) {
+    <p class="aviso" role="status" data-testid="aviso-planejamento">{{ mensagem }}</p>
+  }
+
+  @if (grade() !== null) {
+    <div class="tabela-rolavel">
+      <table class="tabela" data-testid="planejamento-tabela">
+        <caption class="so-leitor">
+          Planejamento de
+          {{
+            ano()
+          }}
+          (Previsto)
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col" class="rotulo">Item</th>
+            @for (m of rotulosMeses(); track m.mes) {
+              <th scope="col" [class.hoje]="m.mes === mesDeHoje()" data-testid="mes-coluna">
+                {{ m.rotulo }}
+              </th>
+            }
+          </tr>
+        </thead>
+
+        @for (
+          bloco of [
+            { id: 'entradas', titulo: 'Entradas', linhas: entradas() },
+            { id: 'saidas', titulo: 'Saídas', linhas: saidas() },
+            { id: 'faturas', titulo: 'Faturas', linhas: faturas() },
+          ];
+          track bloco.id
+        ) {
+          <tbody [attr.data-testid]="'bloco-' + bloco.id">
+            <tr class="secao">
+              <th scope="colgroup" colspan="13">{{ bloco.titulo }}</th>
+            </tr>
+            @if (bloco.linhas.length === 0) {
+              <tr class="vazio">
+                <td colspan="13">Nenhuma linha.</td>
+              </tr>
+            }
+            @for (l of bloco.linhas; track l.id) {
+              <tr data-testid="linha" [attr.data-linha]="l.id">
+                <th scope="row" class="rotulo">
+                  <span class="nome" data-testid="linha-nome">
+                    {{ l.rotulo }}
+                    @if (l.arquivada) {
+                      <span class="nota">(arquivado)</span>
+                    }
+                  </span>
+                  @if (desktop() || l.entrada) {
+                    <button
+                      type="button"
+                      class="menu-linha"
+                      data-testid="linha-menu"
+                      [attr.aria-label]="'Ações de ' + l.rotulo"
+                      [matMenuTriggerFor]="menuLinha"
+                    >
+                      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true"
+                        >more_vert</mat-icon
+                      >
+                    </button>
+                    <mat-menu #menuLinha="matMenu">
+                      @if (desktop()) {
+                        <button
+                          mat-menu-item
+                          type="button"
+                          data-testid="menu-preencher"
+                          (click)="preencher(l)"
+                        >
+                          Preencher meses
+                        </button>
+                      }
+                      @if (l.entrada) {
+                        <button
+                          mat-menu-item
+                          type="button"
+                          data-testid="menu-recorrencia"
+                          (click)="transformarEmRecorrencia(l)"
+                        >
+                          Transformar em recorrência
+                        </button>
+                      }
+                    </mat-menu>
+                  }
+                </th>
+                @for (c of l.cells; track c.month) {
+                  <td
+                    class="celula"
+                    data-testid="celula"
+                    [attr.data-mes]="c.month"
+                    [class.hoje]="c.month === mesDeHoje()"
+                    [class.efetivado]="todosEfetivados(c)"
+                    [class.lista]="naoEditavel(c)"
+                  >
+                    @if (emEdicao(l, c.month)) {
+                      <input
+                        #campoCelula
+                        class="campo"
+                        type="text"
+                        inputmode="decimal"
+                        autocomplete="off"
+                        spellcheck="false"
+                        data-testid="celula-campo"
+                        placeholder="0,00"
+                        [attr.aria-label]="rotuloDaCelula(l, c.month)"
+                        [value]="editando()!.texto"
+                        (input)="digitar($event)"
+                        (keydown)="teclar($event, l, c.month)"
+                        (blur)="sairDoCampo(l, c.month)"
+                      />
+                    } @else {
+                      <button
+                        type="button"
+                        class="valor"
+                        data-testid="celula-valor"
+                        (click)="clicarCelula(l, c)"
+                      >
+                        <span class="so-leitor">{{ rotuloDaCelula(l, c.month) }}: </span>
+                        @let v = valorDaCelula(c);
+                        @if (v !== null) {
+                          <span>{{ v | brl }}</span>
+                        }
+                        @if (todosEfetivados(c)) {
+                          <mat-icon
+                            class="selo-efetivado"
+                            fontSet="material-symbols-outlined"
+                            aria-hidden="true"
+                            >check_circle</mat-icon
+                          >
+                          <span class="so-leitor"> (efetivado)</span>
+                        }
+                        @if (naoEditavel(c)) {
+                          <span class="so-leitor">
+                            (vários lançamentos ou efetivado: abrir lista)</span
+                          >
+                        }
+                        @if (temEstimativa(c)) {
+                          <small class="estimativa" data-testid="celula-estimativa"
+                            >est. {{ c.estimateCents | brl }}</small
+                          >
+                        }
+                      </button>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        }
+
+        @if (totais(); as t) {
+          <tfoot data-testid="planejamento-totais">
+            <tr data-testid="total-entradas">
+              <th scope="row" class="rotulo">Entradas</th>
+              @for (m of t.months; track m.month) {
+                <td [class.hoje]="m.month === mesDeHoje()" [attr.data-mes]="m.month">
+                  {{ m.incomeCents | brl }}
+                </td>
+              }
+            </tr>
+            <tr data-testid="total-saidas">
+              <th scope="row" class="rotulo">Saídas</th>
+              @for (m of t.months; track m.month) {
+                <td [class.hoje]="m.month === mesDeHoje()" [attr.data-mes]="m.month">
+                  {{ m.expenseCents | brl }}
+                </td>
+              }
+            </tr>
+            <tr data-testid="total-resultado">
+              <th scope="row" class="rotulo">Resultado</th>
+              @for (m of t.months; track m.month) {
+                <td
+                  [class.hoje]="m.month === mesDeHoje()"
+                  [class.negativo]="m.resultCents < 0"
+                  [attr.data-mes]="m.month"
+                >
+                  {{ m.resultCents | brl }}
+                </td>
+              }
+            </tr>
+            <tr data-testid="total-saldo">
+              <th scope="row" class="rotulo">Saldo final</th>
+              @for (m of t.months; track m.month) {
+                <td
+                  [class.hoje]="m.month === mesDeHoje()"
+                  [class.negativo]="m.finalBalanceCents < 0"
+                  [attr.data-mes]="m.month"
+                >
+                  {{ m.finalBalanceCents | brl }}
+                </td>
+              }
+            </tr>
+          </tfoot>
+        }
+      </table>
+    </div>
+  } @else if (erro() === null) {
+    <p role="status">Carregando…</p>
+  }
+</div>
