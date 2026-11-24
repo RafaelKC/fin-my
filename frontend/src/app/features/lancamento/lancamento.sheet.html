@@ -327,7 +327,140 @@
     }
 
     @if (!ehTransferencia()) {
-      <app-tag-picker [(ids)]="tagIds" (alterado)="aoAlterarTags()" />
+      <app-tag-picker
+        [(ids)]="tagIds"
+        [dividirDisponivel]="podeDividir()"
+        (alterado)="aoAlterarTags()"
+        (dividir)="abrirDividir()"
+      />
+    }
+
+    @if (podeDividir() && !dividindo()) {
+      <button type="button" class="botao secundario" data-testid="dividir" (click)="abrirDividir()">
+        Dividir
+      </button>
+    }
+    @if (dividindo()) {
+      <div class="mini" role="group" aria-label="Dividir" data-testid="dividir-painel">
+        <div class="divisao-topo">
+          <strong>Dividir</strong>
+          <button
+            type="button"
+            class="mais"
+            data-testid="dividir-cancelar"
+            (click)="fecharDividir()"
+          >
+            Não dividir
+          </button>
+        </div>
+        <div class="tipos" role="radiogroup" aria-label="Como dividir">
+          <button
+            type="button"
+            role="radio"
+            class="tipo"
+            data-testid="modo-equal"
+            [attr.aria-checked]="modoDivisao() === 'equal'"
+            (click)="escolherModoDivisao('equal')"
+          >
+            Partes iguais
+          </button>
+          <button
+            type="button"
+            role="radio"
+            class="tipo"
+            data-testid="modo-amounts"
+            [attr.aria-checked]="modoDivisao() === 'amounts'"
+            (click)="escolherModoDivisao('amounts')"
+          >
+            Valores informados
+          </button>
+        </div>
+        @if (tagsDeAcerto().length === 0) {
+          <p class="ajuda" data-testid="sem-tags-acerto">
+            Você ainda não tem tags de acerto. Marque uma tag como "de acerto" em Tags.
+          </p>
+        }
+        @for (parte of partes(); track $index; let i = $index) {
+          <div class="campo" data-testid="parte">
+            <label [for]="'parte-pessoa-' + i">Parte {{ i + 1 }}</label>
+            <select
+              [id]="'parte-pessoa-' + i"
+              (change)="escolherPessoaParte(i, $any($event.target).value)"
+            >
+              @for (p of pessoasDaParte(i); track p.id) {
+                <option [value]="p.id" [selected]="(parte.tagId ?? '') === p.id">
+                  {{ p.nome }}
+                </option>
+              }
+            </select>
+            @if (modoDivisao() === 'amounts') {
+              <input
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                data-testid="parte-valor"
+                [attr.aria-label]="'Valor da parte ' + (i + 1)"
+                [value]="parte.valor"
+                (input)="digitarValorParte(i, $any($event.target).value)"
+              />
+            } @else {
+              <span class="parte-valor" data-testid="parte-valor-calculado">{{
+                valorCalculado(i)
+              }}</span>
+            }
+            @if (partes().length > 2) {
+              <button
+                type="button"
+                class="mais"
+                [attr.aria-label]="'Remover parte ' + (i + 1)"
+                (click)="removerParte(i)"
+              >
+                Remover
+              </button>
+            }
+          </div>
+        }
+        @if (partes().length < partesMax) {
+          <button
+            type="button"
+            class="mais"
+            data-testid="parte-adicionar"
+            (click)="adicionarParte()"
+          >
+            Adicionar parte
+          </button>
+        }
+        @if (calculoDivisao().erro; as mensagem) {
+          <p class="erro" role="alert" data-testid="erro-divisao">{{ mensagem }}</p>
+        }
+      </div>
+    }
+
+    @if (seloDivisao > 0) {
+      <div class="campo">
+        <button
+          type="button"
+          class="selo"
+          data-testid="selo-divisao"
+          [attr.aria-expanded]="outrasPartesAbertas()"
+          (click)="alternarOutrasPartes()"
+        >
+          Dividida em {{ seloDivisao }}
+        </button>
+        @if (outrasPartesAbertas()) {
+          <ul class="outras-partes" data-testid="outras-partes" aria-label="Outras partes">
+            @if (carregandoPartes()) {
+              <li role="status">Carregando…</li>
+            }
+            @if (erroPartes(); as mensagem) {
+              <li class="erro" role="alert">{{ mensagem }}</li>
+            }
+            @for (o of outrasPartes(); track o.id) {
+              <li data-testid="outra-parte">{{ o.rotulo }} — {{ o.valor | brl }}</li>
+            }
+          </ul>
+        }
+      </div>
     }
 
     @if (!ehTransferencia() && !ehCartao()) {
@@ -428,7 +561,7 @@
       type="button"
       class="botao principal"
       data-testid="salvar"
-      [disabled]="ocupado()"
+      [disabled]="ocupado() || (dividindo() && calculoDivisao().erro !== null)"
       (click)="salvar(false)"
     >
       Salvar
@@ -438,7 +571,7 @@
         type="button"
         class="botao secundario"
         data-testid="salvar-outro"
-        [disabled]="ocupado()"
+        [disabled]="ocupado() || (dividindo() && calculoDivisao().erro !== null)"
         (click)="salvar(true)"
       >
         Salvar e lançar outro

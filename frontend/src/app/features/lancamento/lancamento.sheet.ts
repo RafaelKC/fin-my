@@ -16,9 +16,10 @@ import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dial
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
-import { Subject, catchError, of, switchMap, timer } from 'rxjs';
+import { Subject, catchError, forkJoin, map, of, switchMap, timer } from 'rxjs';
 import { asProblem, problemMessage } from '../../core/errors/problem-details';
 import {
+  BrlPipe,
   InstallmentMode,
   YearMonth,
   formatBrl,
@@ -31,6 +32,8 @@ import {
 import { DevicePrefsService, LancamentoKind } from '../../core/prefs/device-prefs.service';
 import { AmountInput } from '../../shared/amount-input/amount-input';
 import { TagPicker } from '../../shared/tag-picker/tag-picker';
+import { Tag } from '../../shared/tag-picker/tag.models';
+import { TagsService } from '../../shared/tag-picker/tags.service';
 import { WALLET_COLORS, Wallet } from '../carteiras/wallet.models';
 import { WalletsService } from '../carteiras/wallets.service';
 import { ConfirmarData, ConfirmarDialog, ConfirmarResultado } from '../carteiras/confirmar.dialog';
@@ -62,6 +65,16 @@ import {
   OBSERVACAO_MAX,
   TransferCreate,
 } from './entry.models';
+import {
+  ModoDivisao,
+  PARTES_MAX,
+  ParteDivisao,
+  ROTULO_EU,
+  calcularDivisao,
+  montarSplit,
+  partesIniciais,
+  totalDividido,
+} from './dividir-logic';
 import { centavosParaExpressao, novaChaveIdempotencia, situacaoPadrao } from './lancamento-logic';
 
 export const MENSAGEM_SEM_CONEXAO_LANCAMENTO =
@@ -127,7 +140,7 @@ interface Rascunho {
 @Component({
   selector: 'app-lancamento-sheet',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, MatIconModule, AmountInput, TagPicker],
+  imports: [FormsModule, MatIconModule, AmountInput, TagPicker, BrlPipe],
   templateUrl: './lancamento.sheet.html',
   styleUrl: './lancamento.sheet.scss',
 })
@@ -144,6 +157,7 @@ export class LancamentoSheet {
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly exclusao = inject(ExclusaoService);
+  private readonly tagsApi = inject(TagsService);
   private readonly dados = inject<LancamentoSheetData | null>(MAT_DIALOG_DATA, { optional: true });
   private readonly edicao = this.dados?.entry ?? null;
   private readonly preenchida = this.dados?.preencher ?? null;
@@ -330,6 +344,40 @@ export class LancamentoSheet {
     return this.toWalletId() === this.walletId() ? ERRO_MESMA_CARTEIRA : null;
   });
 
+  // Dividir (004 US4, FR-012): só em lançamento novo de Saída ou Cartão.
+  protected readonly dividirAberto = signal(false);
+  protected readonly modoDivisao = signal<ModoDivisao>('equal');
+  protected readonly partes = signal<ParteDivisao[]>([]);
+  private readonly catalogoTags = signal<Tag[]>([]);
+  protected readonly partesMax = PARTES_MAX;
+  protected readonly rotuloEu = ROTULO_EU;
+  protected readonly podeDividir = computed(() => {
+    if (this.editando) return false;
+    if (this.kind() === 'expense') return true;
+    return this.ehCartao() && !this.emAndamento() && !this.ehCredito();
+  });
+  protected readonly dividindo = computed(() => this.dividirAberto() && this.podeDividir());
+  protected readonly tagsDeAcerto = computed(() =>
+    this.catalogoTags().filter((t) => t.isSettlement && !t.archived),
+  );
+  protected readonly calculoDivisao = computed(() => {
+    const v = this.valor();
+    const total = v.ok
+      ? totalDividido(v.cents, this.ehCartao() ? this.parcelas() : 1, this.modoParcela())
+      : null;
+    return calcularDivisao(this.modoDivisao(), total, this.partes());
+  });
+
+  // Selo "Dividida em N" e as demais partes (FR-014).
+  protected readonly seloDivisao =
+    (this.edicao?.splitCount ?? this.compraAtual?.splitCount ?? 0) > 1
+      ? (this.edicao?.splitCount ?? this.compraAtual?.splitCount ?? 0)
+      : 0;
+  protected readonly outrasPartesAbertas = signal(false);
+  protected readonly outrasPartes = signal<{ id: string; rotulo: string; valor: number }[]>([]);
+  protected readonly carregandoPartes = signal(false);
+  protected readonly erroPartes = signal<string | null>(null);
+
   protected readonly termo$ = new Subject<string>();
   private chave = novaChaveIdempotencia();
   private ultimoCorpo = '';
@@ -395,6 +443,123 @@ export class LancamentoSheet {
     if (kind === 'card') this.carregarCartoes();
     if (!this.walletManual()) this.walletId.set(this.carteiraPadrao());
     this.resolverDestino();
+  }
+
+  protected abrirDividir(): void {
+    if (!this.podeDividir()) return;
+    this.dividirAberto.set(true);
+    this.modoDivisao.set('equal');
+    this.partes.set(partesIniciais(null));
+    this.carregarCatalogo((lista) => {
+      const acertos = lista.filter((t) => t.isSettlement && !t.archived);
+      // Uma tag de acerto já escolhida vira a pessoa da segunda parte (US1.4 → Dividir).
+      const escolhida = this.tagIds().find((id) => acertos.some((t) => t.id === id)) ?? null;
+      if (escolhida !== null) {
+        this.tagIds.update((l) => l.filter((id) => id !== escolhida));
+      }
+      const primeira = escolhida ?? acertos[0]?.id ?? null;
+      this.partes.set(partesIniciais(primeira));
+    });
+  }
+
+  protected fecharDividir(): void {
+    this.dividirAberto.set(false);
+  }
+
+  protected escolherModoDivisao(modo: ModoDivisao): void {
+    this.modoDivisao.set(modo);
+  }
+
+  protected escolherPessoaParte(indice: number, valor: string): void {
+    this.partes.update((l) => l.map((p, i) => (i === indice ? { ...p, tagId: valor || null } : p)));
+  }
+
+  protected digitarValorParte(indice: number, texto: string): void {
+    this.partes.update((l) => l.map((p, i) => (i === indice ? { ...p, valor: texto } : p)));
+  }
+
+  /** Pessoas ainda livres para a parte `indice` (sem repetir; "Eu" só uma vez). */
+  protected pessoasDaParte(indice: number): { id: string; nome: string }[] {
+    const usadas = new Set(
+      this.partes()
+        .filter((_, i) => i !== indice)
+        .map((p) => p.tagId),
+    );
+    const lista = this.tagsDeAcerto().map((t) => ({ id: t.id, nome: t.name }));
+    const eu = usadas.has(null) ? [] : [{ id: '', nome: ROTULO_EU }];
+    return [...eu, ...lista.filter((t) => !usadas.has(t.id))];
+  }
+
+  protected adicionarParte(): void {
+    if (this.partes().length >= PARTES_MAX) return;
+    const usadas = new Set(this.partes().map((p) => p.tagId));
+    const livre = this.tagsDeAcerto().find((t) => !usadas.has(t.id))?.id ?? null;
+    this.partes.update((l) => [...l, { tagId: livre, valor: '' }]);
+  }
+
+  protected removerParte(indice: number): void {
+    if (this.partes().length <= 2) return;
+    this.partes.update((l) => l.filter((_, i) => i !== indice));
+  }
+
+  protected valorCalculado(indice: number): string {
+    const v = this.calculoDivisao().valores[indice];
+    return v === null || v === undefined ? '' : formatBrl(v);
+  }
+
+  /** FR-014: tocar no selo mostra as demais partes (mesmo grupo, achadas pela busca da descrição/data). */
+  protected alternarOutrasPartes(): void {
+    if (this.outrasPartesAbertas()) {
+      this.outrasPartesAbertas.set(false);
+      return;
+    }
+    this.outrasPartesAbertas.set(true);
+    const origem = this.edicao ?? this.compraAtual;
+    if (origem === null || this.carregandoPartes()) return;
+    const grupo = origem.splitGroupId;
+    this.carregandoPartes.set(true);
+    this.erroPartes.set(null);
+    forkJoin([
+      this.entries.search({
+        q: origem.description,
+        from: origem.date,
+        to: origem.date,
+        limit: 100,
+      }),
+      this.tagsApi.list('all'),
+    ]).subscribe({
+      next: ([resultado, tags]) => {
+        const nomes = new Map(tags.map((t) => [t.id, t.name]));
+        const rotulo = (tagId?: string | null) =>
+          tagId ? (nomes.get(tagId) ?? 'Tag removida') : ROTULO_EU;
+        const outras = resultado.items.flatMap((item) => {
+          const parte = item.entry ?? item.purchase;
+          if (!parte || !grupo || parte.splitGroupId !== grupo || parte.id === origem.id) return [];
+          return [
+            { id: parte.id, rotulo: rotulo(parte.settlementTagId), valor: parte.amountCents },
+          ];
+        });
+        this.outrasPartes.set(outras);
+        this.carregandoPartes.set(false);
+      },
+      error: (error: unknown) => {
+        this.carregandoPartes.set(false);
+        this.erroPartes.set(problemMessage(error));
+      },
+    });
+  }
+
+  private carregarCatalogo(aoCarregar: (lista: Tag[]) => void): void {
+    this.tagsApi
+      .list('all')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (lista) => {
+          this.catalogoTags.set(lista);
+          aoCarregar(lista);
+        },
+        error: (error: unknown) => this.erro.set(problemMessage(error)),
+      });
   }
 
   protected aoAlterarTags(): void {
@@ -549,10 +714,12 @@ export class LancamentoSheet {
 
     const corpo = this.montarCorpo();
     if (corpo === null) return;
+    const split = this.montarDivisao();
+    if (split === undefined) return;
 
     // Mesma chave só para reenvio idêntico: outra chave com o mesmo corpo seria um lançamento novo,
     // e a mesma chave com corpo diferente é recusada (422 `idempotency.key_reused`).
-    const serial = JSON.stringify(corpo);
+    const serial = JSON.stringify(split ? { ...corpo, split } : corpo);
     if (serial !== this.ultimoCorpo) {
       this.chave = novaChaveIdempotencia();
       this.ultimoCorpo = serial;
@@ -564,10 +731,19 @@ export class LancamentoSheet {
     }
 
     this.ocupado.set(true);
-    this.entries.create(corpo, this.chave).subscribe({
-      next: (entry) => {
+    const pedido$ = split
+      ? this.entries.createSplit({ ...corpo, split }, this.chave)
+      : this.entries.create(corpo, this.chave).pipe(map((e) => [e]));
+    pedido$.subscribe({
+      next: (criadas) => {
         this.ocupado.set(false);
-        this.aoSalvar(entry.kind, entry.walletId, lancarOutro, entry);
+        this.aoSalvar(
+          criadas[0].kind,
+          criadas[0].walletId,
+          lancarOutro,
+          criadas[0],
+          split ? `Lançamento dividido em ${criadas.length}.` : 'Lançamento salvo.',
+        );
       },
       error: (error: unknown) => {
         this.ocupado.set(false);
@@ -585,13 +761,22 @@ export class LancamentoSheet {
     });
   }
 
+  /** `null` = sem divisão; `undefined` = divisão inválida (a tela mostra o motivo; não salva). */
+  private montarDivisao() {
+    if (!this.dividindo()) return null;
+    if (this.calculoDivisao().erro !== null) return undefined;
+    return montarSplit(this.modoDivisao(), this.partes());
+  }
+
   /** US2–US4: cria a compra (à vista, parcelas ou em andamento); 409 de fatura paga pede confirmação (R5). */
   private salvarCompra(lancarOutro: boolean, confirmarFaturaPaga: boolean): void {
     const corpo = this.montarCorpoCompra(confirmarFaturaPaga);
     if (corpo === null) return;
+    const split = this.montarDivisao();
+    if (split === undefined) return;
 
     // Mesma regra de chave das demais criações: o corpo mudou (ex.: confirmação) → chave nova.
-    const serial = JSON.stringify(corpo);
+    const serial = JSON.stringify(split ? { ...corpo, split } : corpo);
     if (serial !== this.ultimoCorpo) {
       this.chave = novaChaveIdempotencia();
       this.ultimoCorpo = serial;
@@ -603,7 +788,10 @@ export class LancamentoSheet {
     }
 
     this.ocupado.set(true);
-    this.compras.create(corpo, this.chave).subscribe({
+    const pedido$ = split
+      ? this.compras.createSplit({ ...corpo, split }, this.chave)
+      : this.compras.create(corpo, this.chave);
+    pedido$.subscribe({
       next: (resultado) => {
         this.ocupado.set(false);
         const credito = resultado.warnings.includes(AVISO_CREDITO);
@@ -612,7 +800,11 @@ export class LancamentoSheet {
           corpo.creditCardId,
           lancarOutro,
           undefined,
-          credito ? `${AVISO_ESTORNO}.` : 'Lançamento salvo.',
+          split
+            ? `Compra dividida em ${split.parts.length}.`
+            : credito
+              ? `${AVISO_ESTORNO}.`
+              : 'Lançamento salvo.',
         );
       },
       error: (error: unknown) => {
@@ -1034,7 +1226,8 @@ export class LancamentoSheet {
       creditCardId: this.cardId(),
     };
     if (notas !== '') corpo.notes = notas;
-    if (this.tagIds().length > 0) corpo.tagIds = [...this.tagIds()];
+    const tagsEnviadas = this.tagsEnviadas();
+    if (tagsEnviadas.length > 0) corpo.tagIds = tagsEnviadas;
     if (this.emAndamento()) {
       corpo.installments = {
         total: this.parcelas(),
@@ -1121,8 +1314,20 @@ export class LancamentoSheet {
     const ref = this.refManual();
     if (ref !== null && ref !== '' && ref !== monthOfDate(this.date())) corpo.referenceMonth = ref;
     if (notas !== '') corpo.notes = notas;
-    if (this.tagIds().length > 0) corpo.tagIds = [...this.tagIds()];
+    const tagsEnviadas = this.tagsEnviadas();
+    if (tagsEnviadas.length > 0) corpo.tagIds = tagsEnviadas;
     return corpo;
+  }
+
+  /** Na divisão cada parte define a sua tag de acerto: `tagIds` leva só as tags comuns (R5). */
+  private tagsEnviadas(): string[] {
+    if (!this.dividindo()) return [...this.tagIds()];
+    const acerto = new Set(
+      this.catalogoTags()
+        .filter((t) => t.isSettlement)
+        .map((t) => t.id),
+    );
+    return this.tagIds().filter((id) => !acerto.has(id));
   }
 
   private aoSalvar(
@@ -1148,6 +1353,7 @@ export class LancamentoSheet {
     this.notes.set('');
     this.tagIds.set([]);
     this.tagsManual.set(false);
+    this.dividirAberto.set(false);
     this.statusManual.set(null);
     this.refManual.set(null);
     this.walletManual.set(false);
