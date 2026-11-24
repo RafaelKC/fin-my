@@ -148,9 +148,8 @@ test('troca de senha em um aparelho derruba o outro na próxima ação', async (
   await a.getByRole('button', { name: 'Trocar senha' }).click();
   await expect(a.getByTestId('senha-trocada')).toBeVisible();
 
-  // Aparelho B: a próxima ação autenticada cai no login.
+  // Aparelho B: a próxima ação autenticada cai no login (ao abrir o Perfil, a lista de aplicativos conectados já é uma).
   await irPara(b, 'Perfil');
-  await b.getByRole('button', { name: 'Salvar nome' }).click();
   await expect(b).toHaveURL(/\/entrar/);
 
   // Aparelho A segue logado.

@@ -26,6 +26,24 @@ async function simularCallbackDoClaude(page: Page): Promise<void> {
   );
 }
 
+/**
+ * Stack real: o `/oauth/authorize` responde de verdade, mas o 302 para o Claude é capturado (o Playwright não roteia
+ * redirecionamentos do servidor e o teste não deve sair para a internet). Devolve onde o navegador seria mandado.
+ */
+async function capturarRetornoParaOClaude(page: Page): Promise<() => URL | undefined> {
+  let retorno: URL | undefined;
+  await page.route('**/oauth/authorize**', async (route) => {
+    const resposta = await route.fetch({ maxRedirects: 0 });
+    const destino = resposta.headers()['location'];
+    if (destino?.startsWith(CALLBACK)) {
+      retorno = new URL(destino);
+      return route.fulfill({ contentType: 'text/html', body: '<h1>Claude</h1>' });
+    }
+    return route.fulfill({ response: resposta });
+  });
+  return () => retorno;
+}
+
 test.describe('autorizar (US1.1) — API simulada', () => {
   test.beforeEach(async ({ page }) => {
     await simularCallbackDoClaude(page);
@@ -120,7 +138,7 @@ test('Claude abre o authorize, a pessoa entra e autoriza, e o código vira token
   request,
 }) => {
   test.skip(!process.env['E2E_BASE_URL'], 'precisa da stack real (E2E_BASE_URL)');
-  await simularCallbackDoClaude(page);
+  const retornoParaOClaude = await capturarRetornoParaOClaude(page);
   const conta = await criarConta(request);
   const clientId = await registrarCliente(request);
   const { verifier, challenge } = novoPkce();
@@ -136,8 +154,8 @@ test('Claude abre o authorize, a pessoa entra e autoriza, e o código vira token
   );
   await page.getByRole('button', { name: 'Autorizar' }).click();
 
-  await expect(page).toHaveURL(new RegExp(`^${CALLBACK.replace(/[.]/g, '\\.')}\\?`));
-  const retorno = new URL(page.url());
+  await expect.poll(retornoParaOClaude).toBeDefined();
+  const retorno = retornoParaOClaude()!;
   expect(retorno.searchParams.get('state')).toBe('estado-1');
   const code = retorno.searchParams.get('code');
   expect(code).toBeTruthy();
@@ -150,7 +168,7 @@ test('Cancelar na stack real devolve access_denied ao redirect do Claude', async
   request,
 }) => {
   test.skip(!process.env['E2E_BASE_URL'], 'precisa da stack real (E2E_BASE_URL)');
-  await simularCallbackDoClaude(page);
+  const retornoParaOClaude = await capturarRetornoParaOClaude(page);
   const conta = await criarConta(request);
   const clientId = await registrarCliente(request);
   const { challenge } = novoPkce();
@@ -161,8 +179,9 @@ test('Cancelar na stack real devolve access_denied ao redirect do Claude', async
   await page.getByRole('button', { name: 'Entrar' }).click();
   await page.getByRole('button', { name: 'Cancelar' }).click();
 
-  await expect(page).toHaveURL(new RegExp(`^${CALLBACK.replace(/[.]/g, '\\.')}\\?`));
-  const retorno = new URL(page.url());
+  await expect.poll(retornoParaOClaude).toBeDefined();
+  const retorno = retornoParaOClaude()!;
   expect(retorno.searchParams.get('error')).toBe('access_denied');
+  expect(retorno.searchParams.get('state')).toBe('estado-1');
   expect(retorno.searchParams.get('code')).toBeNull();
 });

@@ -65,6 +65,7 @@ test('desconectar encerra o acesso do Claude na hora (stack real)', async ({ pag
   await page.getByLabel('E-mail').fill(conta.email);
   await page.getByLabel('Senha', { exact: true }).fill(conta.senha);
   await page.getByRole('button', { name: 'Entrar' }).click();
+  await expect(page).toHaveURL(/\/mes\/\d{4}-\d{2}$/);
   await irPara(page, 'Perfil');
 
   const item = page.getByTestId('aplicativo-conectado');
