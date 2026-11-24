@@ -18,7 +18,7 @@ research da 002–005.
 - [x] T005 [US1] Tela `/painel/:ano` com "Agora", tabela, alternância, destaques, gráfico SVG (research R5) e preferência de tela inicial no Perfil (research R6); e2e `painel.spec.ts` (US1.1–US1.6, US2). Depende de T001, T002
 - [x] T006 [US3] Guia `/primeiros-passos/:etapa` reaproveitando os formulários, abertura automática com `autoStart` e cartão "Continuar configuração" no Painel; e2e `primeiros-passos.spec.ts` (US3.1–US3.4). Depende de T003, T005
 - [x] T007 [US4] Exportar CSV no Perfil (mês inicial/final, download); e2e `exportar.spec.ts` lendo o arquivo baixado. Depende de T004
-- [ ] T008 Validação: isolamento, quickstart contra a stack real, docs (§14, README). Depende de todas
+- [x] T008 Validação: isolamento, quickstart contra a stack real, docs (§14, README). Depende de todas
 
 ## Dependências (resumo)
 
