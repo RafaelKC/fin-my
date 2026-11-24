@@ -152,6 +152,34 @@ public class OAuthFlowTests(PostgresFixture postgres) : ApiTestBase(postgres)
     }
 
     [Fact]
+    public async Task Cancelar_volta_ao_redirect_registrado_com_access_denied_e_o_state_sem_emitir_codigo()
+    {
+        var clientId = await Flow.RegisterAsync();
+        var challenge = OAuthFlow.ChallengeOf(OAuthFlow.NewVerifier());
+
+        var response = await Flow.Raw.GetAsync($"{OAuthFlow.AuthorizeUrl(clientId, challenge)}&consent_denied=1");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+        var location = response.Headers.Location!;
+        location.GetLeftPart(UriPartial.Path).ShouldBe(OAuthFlow.Redirect);
+        var query = HttpUtility.ParseQueryString(location.Query);
+        query["error"].ShouldBe("access_denied");
+        query["state"].ShouldBe("estado-1");
+        query["code"].ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Cancelar_com_redirect_nao_registrado_nao_redireciona_para_ele()
+    {
+        var clientId = await Flow.RegisterAsync();
+        var challenge = OAuthFlow.ChallengeOf(OAuthFlow.NewVerifier());
+
+        var response = await Flow.Raw.GetAsync($"{OAuthFlow.AuthorizeUrl(clientId, challenge, redirect: "https://outro.exemplo.com/cb")}&consent_denied=1");
+
+        response.Headers.Location?.GetLeftPart(UriPartial.Path).ShouldNotBe("https://outro.exemplo.com/cb");
+    }
+
+    [Fact]
     public async Task Authorize_recusa_pedido_sem_PKCE_ou_com_plain_sem_levar_ao_front()
     {
         var clientId = await Flow.RegisterAsync();

@@ -28,3 +28,6 @@ public sealed record RegisteredClient(string ClientId, string ClientName, IReadO
 
 /// <summary>Erro do RFC 7591 (<c>invalid_redirect_uri</c> ou <c>invalid_client_metadata</c>).</summary>
 public sealed record ClientRegistrationError(string Error, string Description);
+
+/// <summary>Aplicativo conectado: a autorização (<paramref name="Id"/>), o nome do cliente, desde quando e o último uso (nulo se nunca usou).</summary>
+public sealed record ConnectedApp(string Id, string Name, DateTimeOffset ConnectedAt, DateTimeOffset? LastUsedAt);

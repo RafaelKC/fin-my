@@ -1,3 +1,4 @@
+using FinMy.Application.Abstractions;
 using FinMy.Domain.Common;
 using FinMy.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authentication;
@@ -13,7 +14,7 @@ namespace FinMy.Infrastructure.Context;
 /// </summary>
 public sealed class CurrentContextMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext httpContext, CurrentContext currentContext)
+    public async Task InvokeAsync(HttpContext httpContext, CurrentContext currentContext, IConnectedAppsStore connectedApps)
     {
         ArgumentNullException.ThrowIfNull(httpContext);
         ArgumentNullException.ThrowIfNull(currentContext);
@@ -29,6 +30,12 @@ public sealed class CurrentContextMiddleware(RequestDelegate next)
             }
 
             currentContext.Populate(userId, tenantId, channel);
+
+            // Token do conector (008): anota o último uso da autorização para "Aplicativos conectados" (no máximo 1×/5 min).
+            if (user.FindFirst(TokenClaims.OAuthAuthorization)?.Value is { Length: > 0 } authorizationId)
+            {
+                await connectedApps.RecordUseAsync(authorizationId, userId, httpContext.RequestAborted);
+            }
         }
 
         await next(httpContext);

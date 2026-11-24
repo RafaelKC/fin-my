@@ -10,3 +10,6 @@ public sealed record ChangePasswordRequest(string? CurrentPassword, string? NewP
 
 /// <summary>Usuário e Espaço do contexto (<c>MeResponse</c>).</summary>
 public sealed record MeResponse(UserDto User, TenantDto Tenant);
+
+/// <summary>Aplicativo conectado (<c>GET /api/v1/me/connected-apps</c>): <c>id</c> é o da autorização, usado em <c>DELETE</c>.</summary>
+public sealed record ConnectedAppResponse(string Id, string Name, DateTimeOffset ConnectedAt, DateTimeOffset? LastUsedAt);

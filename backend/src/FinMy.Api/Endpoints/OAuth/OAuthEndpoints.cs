@@ -26,6 +26,7 @@ namespace FinMy.Api.Endpoints.OAuth;
 public sealed class OAuthEndpoints : IEndpointModule
 {
     public const string ConsentTicketParameter = "consent_ticket";
+    public const string ConsentDeniedParameter = "consent_denied";
     public const string FrontAuthorizePath = "/autorizar";
     private const string TenantClaim = "tid";
     private const string ChannelClaim = "channel";
@@ -87,11 +88,24 @@ public sealed class OAuthEndpoints : IEndpointModule
     {
         var request = http.GetOpenIddictServerRequest() ?? throw new InvalidOperationException("O pedido de autorização do OpenIddict não está disponível.");
 
+        // "Cancelar" na tela de consentimento: o front volta aqui com os mesmos parâmetros; como o OpenIddict já validou
+        // cliente e redirect, a negação só pode ir para um endereço registrado.
+        if (request[ConsentDeniedParameter] is { } denied && !string.IsNullOrEmpty(denied.ToString()))
+        {
+            var query = new List<KeyValuePair<string, string?>> { new("error", OpenIddictErrors.AccessDenied), new("error_description", "A pessoa não autorizou o acesso.") };
+            if (!string.IsNullOrEmpty(request.State))
+            {
+                query.Add(new("state", request.State));
+            }
+
+            return TypedResults.Redirect(QueryHelpers.AddQueryString(request.RedirectUri!, query));
+        }
+
         // Sem ticket: a pessoa ainda precisa entrar e consentir, no front, com os mesmos parâmetros.
         if (request[ConsentTicketParameter]?.ToString() is not { Length: > 0 } ticket)
         {
             var parameters = (http.Request.HasFormContentType ? http.Request.Form : (IEnumerable<KeyValuePair<string, StringValues>>)http.Request.Query)
-                .Where(p => p.Key != ConsentTicketParameter)
+                .Where(p => p.Key is not (ConsentTicketParameter or ConsentDeniedParameter))
                 .SelectMany(p => p.Value.Select(v => KeyValuePair.Create(p.Key, v)))
                 .ToList();
             return TypedResults.Redirect(QueryHelpers.AddQueryString(appUrl.Combine(FrontAuthorizePath), parameters!));

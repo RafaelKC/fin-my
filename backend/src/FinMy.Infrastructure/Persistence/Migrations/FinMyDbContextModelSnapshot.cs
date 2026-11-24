@@ -842,6 +842,29 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                     b.ToTable("login_throttles", (string)null);
                 });
 
+            modelBuilder.Entity("FinMy.Domain.Identity.OAuthAuthorizationUsage", b =>
+                {
+                    b.Property<string>("AuthorizationId")
+                        .HasColumnType("text")
+                        .HasColumnName("authorization_id");
+
+                    b.Property<DateTimeOffset>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_used_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("AuthorizationId")
+                        .HasName("pk_oauth_authorization_usage");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_oauth_authorization_usage_user_id");
+
+                    b.ToTable("oauth_authorization_usage", (string)null);
+                });
+
             modelBuilder.Entity("FinMy.Domain.Identity.OAuthConsentTicket", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1944,6 +1967,16 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_entries_wallet_tenant_id_wallet_id");
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Identity.OAuthAuthorizationUsage", b =>
+                {
+                    b.HasOne("FinMy.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_oauth_authorization_usage_user_user_id");
                 });
 
             modelBuilder.Entity("FinMy.Domain.Identity.OAuthConsentTicket", b =>
