@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using FinMy.Application.Cards;
 using FinMy.Domain.Common;
 using ModelContextProtocol.Protocol;
@@ -31,6 +32,14 @@ public static class McpResult
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     public static CallToolResult Ok(object value) => new() { Content = [new TextContentBlock { Text = JsonSerializer.Serialize(value, Json) }] };
+
+    /// <summary>Resposta guardada de um <c>requestId</c> repetido: o mesmo JSON, marcado com <c>replayed: true</c>.</summary>
+    public static CallToolResult Replay(string? storedBody)
+    {
+        var node = string.IsNullOrEmpty(storedBody) ? new JsonObject() : JsonNode.Parse(storedBody)!.AsObject();
+        node["replayed"] = true;
+        return new CallToolResult { Content = [new TextContentBlock { Text = node.ToJsonString(Json) }] };
+    }
 
     public static CallToolResult Error(DomainError error)
     {
