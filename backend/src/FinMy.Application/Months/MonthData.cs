@@ -75,6 +75,22 @@ public sealed record MonthData(
     PendingSummary Pending,
     IReadOnlyList<CardPurchaseView> Purchases);
 
+/// <summary>Agregados do ano para o painel (006 research R1): o que o <see cref="MonthSummaryCalculator"/> precisa, sem as listas do mês.</summary>
+public sealed record YearData(
+    IReadOnlyList<WalletOpening> Wallets,
+    IReadOnlyList<EntryTotal> EntryTotals,
+    IReadOnlyList<TransferTotal> TransferTotals,
+    IReadOnlyList<InvoiceFigure> InvoiceFigures);
+
+/// <summary>Totais do ano numa leitura (Previsto ou Realizado); o saldo final é o de dezembro.</summary>
+public sealed record YearTotals(long IncomeCents, long ExpenseCents, long ResultCents, long FinalBalanceCents);
+
+/// <summary>Um mês do painel: o mesmo resumo da visão do mês, sem filtro de Carteiras.</summary>
+public sealed record PanelMonth(YearMonth Month, MonthSummary Summary);
+
+/// <summary>Resposta de <c>GET /years/{yyyy}/panel</c> (006 contracts/api.md).</summary>
+public sealed record YearPanelResult(int Year, DateOnly Today, IReadOnlyList<PanelMonth> Months, YearTotals Planned, YearTotals Actual);
+
 /// <summary>Totais dos itens listados com filtro de tags (004 research R6): Entradas, Saídas e Compras (Débitos − Créditos).</summary>
 public sealed record MonthFilterTotals(long IncomeCents, long ExpenseCents, long PurchasesNetCents);
 

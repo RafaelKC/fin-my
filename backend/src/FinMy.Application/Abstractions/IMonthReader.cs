@@ -14,4 +14,10 @@ public interface IMonthReader
     /// </summary>
     Task<MonthData> ReadAsync(
         YearMonth month, IReadOnlyCollection<Guid>? walletIds, IReadOnlyCollection<Guid> tagIds, DateOnly today, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Agregados do painel do ano (006 research R1): carteiras, lançamentos, transferências e faturas até dezembro de
+    /// <paramref name="year"/>, sem filtro de Carteiras, no formato que o <c>MonthSummaryCalculator</c> consome.
+    /// </summary>
+    Task<YearData> ReadYearAsync(int year, DateOnly today, CancellationToken cancellationToken);
 }
