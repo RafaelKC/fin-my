@@ -97,6 +97,25 @@ export const routes: Routes = [
           import('./features/cartoes/fatura/fatura.page').then((m) => m.FaturaPage),
       },
       {
+        path: 'recorrencias',
+        loadComponent: () =>
+          import('./features/recorrencias/recorrencias.page').then((m) => m.RecorrenciasPage),
+      },
+      {
+        path: 'recorrencias/nova',
+        loadComponent: () =>
+          import('./features/recorrencias/recorrencia-form.page').then(
+            (m) => m.RecorrenciaFormPage,
+          ),
+      },
+      {
+        path: 'recorrencias/:id',
+        loadComponent: () =>
+          import('./features/recorrencias/recorrencia-form.page').then(
+            (m) => m.RecorrenciaFormPage,
+          ),
+      },
+      {
         path: 'busca',
         loadComponent: () => import('./features/busca/busca.page').then((m) => m.BuscaPage),
       },

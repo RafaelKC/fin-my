@@ -1,0 +1,89 @@
+<main class="pagina">
+  <header class="cabecalho">
+    <h1>Recorrências</h1>
+    <a class="nova" routerLink="/recorrencias/nova" data-testid="nova-recorrencia"
+      >Nova recorrência</a
+    >
+  </header>
+
+  @if (lista(); as l) {
+    <dl class="totais" data-testid="totais" aria-label="Total mensal previsto">
+      <div>
+        <dt>Entradas por mês</dt>
+        <dd data-testid="total-entradas">{{ l.monthlyIncomeCents | brl }}</dd>
+      </div>
+      <div>
+        <dt>Saídas e compras por mês</dt>
+        <dd data-testid="total-saidas">{{ l.monthlyExpenseCents | brl }}</dd>
+      </div>
+    </dl>
+  }
+
+  <div class="grupo" role="radiogroup" aria-label="Situação">
+    <button
+      type="button"
+      role="radio"
+      class="chip"
+      data-testid="filtro-ativas"
+      [attr.aria-checked]="situacao() === 'active'"
+      (click)="escolher('active')"
+    >
+      Ativas
+    </button>
+    <button
+      type="button"
+      role="radio"
+      class="chip"
+      data-testid="filtro-encerradas"
+      [attr.aria-checked]="situacao() === 'ended'"
+      (click)="escolher('ended')"
+    >
+      Encerradas
+    </button>
+  </div>
+
+  @if (erro(); as mensagem) {
+    <div class="aviso" role="alert" data-testid="erro-lista">
+      <span>{{ mensagem }}</span>
+      <button type="button" class="tentar" (click)="carregar()">Tentar de novo</button>
+    </div>
+  }
+
+  @if (carregando()) {
+    <p role="status">Carregando…</p>
+  } @else if (itens().length === 0 && !erro()) {
+    <p class="vazio" data-testid="lista-vazia">
+      {{
+        situacao() === 'active'
+          ? 'Nenhuma recorrência ativa. Toque em "Nova recorrência" para cadastrar uma conta fixa.'
+          : 'Nenhuma recorrência encerrada.'
+      }}
+    </p>
+  } @else {
+    <ul class="lista" data-testid="lista-recorrencias">
+      @for (r of itens(); track r.id) {
+        <li>
+          <a class="linha" [routerLink]="['/recorrencias', r.id]" data-testid="recorrencia">
+            <span class="nome">
+              {{ r.description }}
+              <span class="selo cinza">{{ tipo(r) }}</span>
+            </span>
+            <span class="valor">{{ r.amountCents | brl }}</span>
+            <span class="meta">
+              Dia {{ r.dayOfMonth }} · {{ origem(r) }}
+              @if (r.nextOccurrenceDate; as proxima) {
+                · próxima em <span data-testid="proxima">{{ data(proxima) }}</span>
+              }
+              @if (r.status === 'ended') {
+                · encerrada
+              }
+            </span>
+            @if (aviso(r); as texto) {
+              <span class="revisar" data-testid="revisar">{{ texto }}</span>
+            }
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</main>

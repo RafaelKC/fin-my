@@ -1,0 +1,205 @@
+<main class="pagina">
+  <h1>{{ edicao ? 'Recorrência' : 'Nova recorrência' }}</h1>
+
+  @if (erro(); as mensagem) {
+    <div class="aviso" role="alert" data-testid="erro-recorrencia">{{ mensagem }}</div>
+  }
+  @if (info(); as mensagem) {
+    <div class="sucesso" role="status" data-testid="info-recorrencia">{{ mensagem }}</div>
+  }
+
+  @if (carregando()) {
+    <p role="status">Carregando…</p>
+  } @else if (!edicao || recorrencia()) {
+    @if (recorrencia(); as r) {
+      <p class="situacao">
+        <span class="selo" [class.cinza]="r.status === 'ended'" data-testid="situacao">{{
+          r.status === 'ended' ? 'Encerrada' : 'Ativa'
+        }}</span>
+        @if (r.needsReview) {
+          <span class="revisar" data-testid="revisar">{{
+            r.reviewReason === 'card_archived'
+              ? 'Revise: cartão arquivado'
+              : r.reviewReason === 'tag_archived'
+                ? 'Revise: tag arquivada'
+                : 'Revise: carteira arquivada'
+          }}</span>
+        }
+      </p>
+    }
+
+    <form class="form" [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+      <fieldset class="campo">
+        <legend>Tipo</legend>
+        <div class="opcoes" role="radiogroup" aria-label="Tipo">
+          @for (t of tipos; track t.value) {
+            <button
+              type="button"
+              role="radio"
+              class="chip"
+              [attr.data-testid]="'tipo-' + t.value"
+              [attr.aria-checked]="kind() === t.value"
+              [disabled]="edicao"
+              (click)="escolherTipo(t.value)"
+            >
+              {{ t.label }}
+            </button>
+          }
+        </div>
+        @if (edicao) {
+          <span class="ajuda">O tipo não muda depois de criada.</span>
+        }
+      </fieldset>
+
+      <div class="campo">
+        <label for="descricao">Descrição</label>
+        <input
+          id="descricao"
+          type="text"
+          autocomplete="off"
+          formControlName="description"
+          [attr.maxlength]="descricaoMax"
+          [attr.aria-invalid]="erros().description ? 'true' : null"
+        />
+        @if (erros().description; as mensagem) {
+          <span class="erro" data-testid="erro-descricao">{{ mensagem }}</span>
+        }
+      </div>
+
+      <div class="campo">
+        <app-amount-input formControlName="amount" />
+        @if (erros().amount; as mensagem) {
+          <span class="erro" data-testid="erro-valor">{{ mensagem }}</span>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="dia">Dia do mês</label>
+        <input
+          id="dia"
+          type="number"
+          inputmode="numeric"
+          min="1"
+          max="31"
+          formControlName="dayOfMonth"
+          [attr.aria-invalid]="erros().dayOfMonth ? 'true' : null"
+        />
+        <span class="ajuda">Em meses mais curtos vale o último dia do mês.</span>
+        @if (erros().dayOfMonth; as mensagem) {
+          <span class="erro" data-testid="erro-dia">{{ mensagem }}</span>
+        }
+      </div>
+
+      @if (kind() === 'card_purchase') {
+        <div class="campo">
+          <label for="cartao">Cartão</label>
+          <select id="cartao" (change)="escolherCartao($any($event.target).value)">
+            <option value="">Escolha um cartão</option>
+            @for (c of cartoes(); track c.id) {
+              <option [value]="c.id" [selected]="c.id === creditCardId()">{{ c.name }}</option>
+            }
+          </select>
+          @if (erros().origin; as mensagem) {
+            <span class="erro" data-testid="erro-origem">{{ mensagem }}</span>
+          }
+        </div>
+      } @else {
+        <div class="campo">
+          <label for="carteira">Carteira</label>
+          <select id="carteira" (change)="escolherCarteira($any($event.target).value)">
+            <option value="">Escolha uma carteira</option>
+            @for (w of carteiras(); track w.id) {
+              <option [value]="w.id" [selected]="w.id === walletId()">{{ w.name }}</option>
+            }
+          </select>
+          @if (erros().origin; as mensagem) {
+            <span class="erro" data-testid="erro-origem">{{ mensagem }}</span>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="regra">Mês de referência</label>
+          <select id="regra" (change)="escolherRegra($any($event.target).value)">
+            @for (r of regras; track r.value) {
+              <option [value]="r.value" [selected]="r.value === referenceMonthRule()">
+                {{ r.label }}
+              </option>
+            }
+          </select>
+        </div>
+      }
+
+      <app-tag-picker [(ids)]="tagIds" />
+
+      <div class="campo">
+        <label for="mes-inicial">Mês inicial</label>
+        <input
+          id="mes-inicial"
+          type="month"
+          formControlName="startMonth"
+          [attr.readonly]="edicao ? '' : null"
+          [attr.aria-invalid]="erros().startMonth ? 'true' : null"
+        />
+        @if (edicao) {
+          <span class="ajuda">O mês inicial não muda depois de criada.</span>
+        }
+        @if (erros().startMonth; as mensagem) {
+          <span class="erro" data-testid="erro-mes-inicial">{{ mensagem }}</span>
+        }
+      </div>
+
+      <fieldset class="campo">
+        <legend>Término</legend>
+        <div class="opcoes" role="radiogroup" aria-label="Término">
+          @for (t of terminos; track t.value) {
+            <button
+              type="button"
+              role="radio"
+              class="chip"
+              [attr.data-testid]="'termino-' + t.value"
+              [attr.aria-checked]="endType() === t.value"
+              (click)="escolherTermino(t.value)"
+            >
+              {{ t.label }}
+            </button>
+          }
+        </div>
+        @if (endType() === 'until_month') {
+          <label for="mes-final">Último mês</label>
+          <input id="mes-final" type="month" formControlName="endMonth" />
+        } @else if (endType() === 'after_count') {
+          <label for="ocorrencias">Número de ocorrências</label>
+          <input
+            id="ocorrencias"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            [max]="ocorrenciasMax"
+            formControlName="occurrenceLimit"
+          />
+        }
+        @if (erros().end; as mensagem) {
+          <span class="erro" data-testid="erro-termino">{{ mensagem }}</span>
+        }
+      </fieldset>
+
+      <button type="submit" class="enviar" [disabled]="ocupado()">
+        {{ ocupado() ? 'Salvando…' : 'Salvar' }}
+      </button>
+      <a class="voltar" routerLink="/recorrencias">Voltar</a>
+    </form>
+
+    @if (recorrencia(); as r) {
+      <section class="acoes" aria-label="Ações da recorrência">
+        @if (r.status === 'active') {
+          <button type="button" class="acao" [disabled]="ocupado()" (click)="encerrar()">
+            Encerrar
+          </button>
+        }
+        <button type="button" class="acao perigo" [disabled]="ocupado()" (click)="excluir()">
+          Excluir
+        </button>
+      </section>
+    }
+  }
+</main>
