@@ -10,7 +10,7 @@ Stack: .NET 10 · PostgreSQL 17 · Angular (PWA) · Docker Compose.
 
 | O quê | Onde |
 |---|---|
-| Specs por feature (spec-kit): `spec.md`, `plan.md`, `tasks.md`, `quickstart.md`, `contracts/` | [`specs/`](specs/README.md) (001 a 005 e 008 prontas; a próxima é a [`006-painel-e-primeiros-passos`](specs/006-painel-e-primeiros-passos/)) |
+| Specs por feature (spec-kit): `spec.md`, `plan.md`, `tasks.md`, `quickstart.md`, `contracts/` | [`specs/`](specs/README.md) (001 a 006 e 008 prontas; a próxima é a [`007-planejamento-anual`](specs/007-planejamento-anual/)) |
 | Constituição: princípios, glossário, regras transversais | [`.specify/memory/constitution.md`](.specify/memory/constitution.md) |
 | Arquitetura técnica (normativa) e desvios registrados | [`docs/arquitetura.md`](docs/arquitetura.md) |
 | Modelo de dados | [`docs/modelo-de-dados.md`](docs/modelo-de-dados.md) |
@@ -130,7 +130,9 @@ Telas (Angular; as públicas são `/entrar`, `/criar-conta`, `/esqueci-senha` e 
 | `/busca` | Busca de lançamentos e transferências por texto, sem acento nem caixa (e por tag) |
 | `/acertos`, `/acertos/:mes` | Acertos do mês por tag de acerto: Gasto, Cobrado, Recebido, A cobrar e Saldo acumulado; "Gerar cobrança" |
 | `/tags` | Gerenciar tags: criar, renomear, cor, marcar como de acerto, arquivar, excluir e juntar |
-| `/perfil` | Nome do usuário e do Espaço, troca de senha, sair |
+| `/painel`, `/painel/:ano` | Painel do ano (aba Home da planilha): "Agora" (saldos, faturas próximas, pendências, acertos), tabela Previsto/Realizado dos 12 meses e gráfico; cartão "Continuar configuração" |
+| `/primeiros-passos/:etapa` | Guia de 5 etapas (carteiras, cartões, tags de acerto, parcelamentos em andamento, recorrências); abre sozinho na conta nova |
+| `/perfil` | Nome do usuário e do Espaço, troca de senha, tela inicial (Mês ou Painel), exportar lançamentos (CSV), sair |
 
 API (`/api/v1`, tudo com sessão; contrato em
 [`specs/002-carteiras-e-lancamentos/contracts/openapi.yaml`](specs/002-carteiras-e-lancamentos/contracts/openapi.yaml) e [`specs/003-cartoes-e-faturas/contracts/openapi.yaml`](specs/003-cartoes-e-faturas/contracts/openapi.yaml) e [`specs/004-tags-e-acertos/contracts/openapi.yaml`](specs/004-tags-e-acertos/contracts/openapi.yaml)).
@@ -148,6 +150,9 @@ Os `POST` de criação aceitam `Idempotency-Key`:
 | Tags | `GET/POST /tags`, `PUT/DELETE /tags/{id}`, `POST /tags/{id}/archive`, `/unarchive`, `/merge` |
 | Acertos | `GET /settlements/{yyyy-MM}`, `GET /settlements/{yyyy-MM}/tags/{tagId}/items` |
 | Dividir | `POST /entries/split`, `POST /card-purchases/split` |
+| Painel e agora | `GET /years/{yyyy}/panel`, `GET /now` |
+| Primeiros passos | `GET /onboarding`, `PUT /onboarding/steps/{step}`, `POST /onboarding/dismiss` |
+| Exportar | `GET /exports/entries.csv?from=&to=` (CSV com BOM, `;`, até 120 meses) |
 | Desfazer exclusão | `POST /deletions/{batchId}/restore` (até 10 min) |
 
 ## Migrações (EF Core)

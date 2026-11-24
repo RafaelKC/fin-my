@@ -403,6 +403,19 @@ Mesma regra: quando uma feature futura mexer em um destes pontos, atualize a lis
 | 40 | Encerrar e excluir | `POST /recurrences/{id}/end` faz soft delete das ocorrências elegíveis em um lote (`deletionBatchId`), sem "Desfazer" na interface (a tela confirma). `DELETE /recurrences/{id}` encerra a partir de hoje e **desvincula** as ocorrências restantes (viram lançamentos comuns). Compra parcelada ou de crédito, ou lançamento que já é ocorrência, não vira recorrência (422 `recurrence.item_not_eligible`). | Dinheiro já lançado não pode sumir sem a pessoa confirmar (R4/R5). |
 | 41 | Isolamento nas rotas de recorrência | `ApiIsolationTests` cria em A uma recorrência de saída (com tag) e uma de compra no cartão (ids e ocorrências entram na varredura) e a lista esperada inclui as 7 rotas de `recurrences`. Carteira, cartão e tag de A em corpo de B e `from-item` com lançamento de A têm teste próprio. | Sem dados em A, o 404 por id de A só provava "id inexistente" (como nos itens 12, 20 e 24). |
 
+### Feature 006 (painel e primeiros passos)
+
+Mesma regra: quando uma feature futura mexer em um destes pontos, atualize a lista. A numeração segue a ordem de registro (a 008 foi registrada antes).
+
+| # | Tema | O que foi feito | Por quê |
+|---|---|---|---|
+| 42 | Gráfico (§2, §9) | O gráfico do Painel é SVG próprio (`Entradas x Saídas` por mês e linha do Saldo final), sem Chart.js/ng2-charts; a linha "Gráficos" da tabela do §2 não vale mais. | Princípio V (sem dependência para um gráfico simples) e `<title>` acessível em cada barra (006 research R5). |
+| 43 | Painel sem regra nova | `GET /years/{yyyy}/panel` roda as mesmas consultas agregadas da visão do mês uma vez para o ano (meses ≤ dez/yyyy) e compõe os 12 meses com `MonthSummaryCalculator`; nunca chama o endpoint do mês 12 vezes. `PanelParityTests` prova mês a mês que painel == visão do mês (SC-001); `PanelPerformanceTests` cobre 3.000 lançamentos (SC-003). | Painel e mês nunca podem divergir (RT-04/RT-05); o custo continua constante por ano. |
+| 44 | "Agora" calculado | `GET /now` devolve saldos (ativas, linha "Arquivadas" e total), faturas com Restante > 0 e vencimento entre hoje − 30 e hoje + 30 dias, pendências e Saldo acumulado por tag de acerto (só ≠ 0); nada é gravado. | Estado derivado diverge se gravado (RT-04/RT-05). |
+| 45 | Estado do guia no Espaço | O progresso do guia fica em `tenants.onboarding_steps` (jsonb) e `onboarding_dismissed_at` (tabela global, migração `Onboarding`), por Espaço. Etapa "concluída" é "a pessoa tocou Continuar", não é inferida dos dados; `autoStart` = não dispensado, Espaço sem carteiras e alguma etapa pendente. | Só a conta recém-criada abre o guia sozinha; depois, pelo cartão "Continuar configuração" no Painel (research R3). |
+| 46 | Exportação CSV | `GET /exports/entries.csv?from=&to=` responde `text/csv; charset=utf-8` com BOM, separador `;`, valor `1234,56` sem milhar e até 120 meses (senão 422). Compra e pagamento de fatura entram pelo mês de **vencimento da fatura**. O front baixa com `HttpClient` (bearer, `blob`), não por link. | O Excel/LibreOffice em pt-BR abrem sem ajuste; a rota exige sessão, então não pode ser um `<a href>` (research R4). |
+| 47 | Isolamento nas rotas novas | `ApiIsolationTests` inclui na lista esperada `GET /years/{year}/panel`, `GET /now`, `GET /onboarding`, `PUT /onboarding/steps/{step}`, `POST /onboarding/dismiss` e `GET /exports/entries.csv`, e um teste próprio mostra B com painel, "Agora", guia e CSV vazios enquanto A tem dados (com controle positivo em A) e que dispensar o guia em B não toca o de A. | Sem dados em A, o 404/200 vazio em B não provaria isolamento (como nos itens 12, 20, 24 e 41). |
+
 ### Feature 008 (assistente no Claude)
 
 Mesma regra: quando uma feature futura mexer em um destes pontos, atualize a lista.
