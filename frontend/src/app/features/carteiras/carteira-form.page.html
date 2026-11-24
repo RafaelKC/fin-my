@@ -1,5 +1,7 @@
-<main class="pagina">
-  <h1>{{ edicao ? 'Carteira' : 'Nova carteira' }}</h1>
+<main class="pagina" [class.embutido]="embutido()">
+  @if (!embutido()) {
+    <h1>{{ edicao ? 'Carteira' : 'Nova carteira' }}</h1>
+  }
 
   @if (erro(); as mensagem) {
     <div class="aviso" role="alert" data-testid="erro-carteira">{{ mensagem }}</div>
@@ -94,7 +96,9 @@
       <button type="submit" class="enviar" [disabled]="ocupado()">
         {{ ocupado() ? 'Salvando…' : 'Salvar' }}
       </button>
-      <a class="voltar" routerLink="/carteiras">Voltar</a>
+      @if (!embutido()) {
+        <a class="voltar" routerLink="/carteiras">Voltar</a>
+      }
     </form>
 
     @if (carteira(); as c) {

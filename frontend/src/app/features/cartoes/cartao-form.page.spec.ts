@@ -99,6 +99,22 @@ describe('CartaoFormPage', () => {
     expect(navegar).toHaveBeenCalledWith('/cartoes');
   });
 
+  it('embutido (primeiros passos): sem título nem "Voltar"; ao salvar avisa em vez de navegar', () => {
+    abrir(null);
+    fixture.componentRef.setInput('embutido', true);
+    let avisos = 0;
+    fixture.componentInstance.salvou.subscribe(() => avisos++);
+    http.expectOne('/api/v1/wallets?archived=all').flush([carteira()]);
+    fixture.detectChanges();
+    expect(el.querySelector('h1')).toBeNull();
+    expect(el.querySelector('.voltar')).toBeNull();
+    preencher('#nome', 'Azul');
+    salvar();
+    http.expectOne('/api/v1/credit-cards').flush(cartao(), { status: 201, statusText: 'Created' });
+    expect(avisos).toBe(1);
+    expect(navegar).not.toHaveBeenCalled();
+  });
+
   it('limite vazio é enviado como null (sem limite)', () => {
     novo();
     preencher('#nome', 'Verde');
