@@ -445,9 +445,9 @@ PK `(tenant_id, key)` (`key uuid`, o valor do cabeçalho `Idempotency-Key`); `us
 | due_month | date | não | dia 1; `UNIQUE (tenant_id, credit_card_id, due_month)` (uma fatura por cartão e mês; alvo do `ON CONFLICT` do get-or-create); índice `(tenant_id, due_month)` para a visão do mês |
 | closing_date | date | não | gravada na criação (003 FR-004); recalculada só se `closing_date > hoje` quando os dias do cartão mudam |
 | due_date | date | não | 003 FR-003 |
-| estimate_cents | bigint | sim | `> 0` (007) |
+| estimate_cents | bigint | sim | `CHECK (estimate_cents > 0 AND estimate_cents <= 999999999)` (007 FR-009, migração `InvoiceEstimates`); nulo = sem estimativa. Só entra no Previsto até o fechamento (`InvoiceForecast`); **nunca** altera Total, Restante, situação, limite, acertos nem saldo de carteira (007 FR-011/FR-012) |
 
-- A linha é criada quando a fatura recebe a primeira compra, pagamento ou estimativa. A "fatura atual"
+- A linha é criada quando a fatura recebe a primeira compra, pagamento ou estimativa (definir estimativa em fatura sem linha cria a linha; remover a estimativa não apaga a linha). A "fatura atual"
   sem linha é calculada a partir do cartão (003 FR-007) e exibida com total 0.
 - **Não** há colunas de total/pago/situação: são calculados (003 FR-005/FR-006).
 
