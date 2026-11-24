@@ -11,7 +11,7 @@ research da 002–006.
 **Testes**: obrigatórios, no mesmo PR. **Unidade**: 1 tarefa = 1 card = 1 PR. Agentes não editam este arquivo.
 **Pré-requisito**: 006 concluída na `main`. Dados fictícios.
 
-- [ ] T001 [US2] Estimativa de fatura (research R1): coluna e migração `InvoiceEstimates`, `InvoiceForecast` + vetor `invoice-forecast.json` (e porta TS com spec), uso no `MonthSummaryCalculator`/painel/visão do mês com recorte por carteira, `PUT …/estimate`, `estimateCents`/`estimateActive` nas respostas; `InvoiceEstimateTests` (US2.1–US2.3, US2.6, FR-011, FR-012)
+- [x] T001 [US2] Estimativa de fatura (research R1): coluna e migração `InvoiceEstimates`, `InvoiceForecast` + vetor `invoice-forecast.json` (e porta TS com spec), uso no `MonthSummaryCalculator`/painel/visão do mês com recorte por carteira, `PUT …/estimate`, `estimateCents`/`estimateActive` nas respostas; `InvoiceEstimateTests` (US2.1–US2.3, US2.6, FR-011, FR-012)
 - [ ] T002 [US1] `GET /years/{yyyy}/planning` (research R2); `PlanningGridTests` (US1.1, FR-002, SC-002). Depende de T001
 - [ ] T003 [US1] `PUT /years/{yyyy}/planning/cells` e `POST /years/{yyyy}/planning/fill` (research R3); `PlanningCellTests` (US1.2–US1.6, US1.8, US2.4, US2.5). Depende de T002
 - [ ] T004 [US3] `GET …/copy-candidates` e `POST …/copy` (research R4); `PlanningCopyTests` (US3.1–US3.4). Depende de T002
