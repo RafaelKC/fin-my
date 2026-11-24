@@ -1,0 +1,187 @@
+<section class="pagina">
+  <h1>Tags</h1>
+
+  <label class="filtro">
+    <input
+      type="checkbox"
+      data-testid="filtro-arquivadas"
+      [checked]="filtro() === 'true'"
+      (change)="mostrarArquivadas($any($event.target).checked)"
+    />
+    Arquivadas
+  </label>
+
+  @if (erroLista(); as mensagem) {
+    <p class="erro" role="alert" data-testid="erro-lista">{{ mensagem }}</p>
+  }
+
+  @if (tags(); as lista) {
+    @if (lista.length === 0 && !erroLista()) {
+      <p class="vazio" data-testid="sem-tags">
+        {{ filtro() === 'true' ? 'Nenhuma tag arquivada.' : 'Nenhuma tag ainda.' }}
+      </p>
+    }
+    <ul class="lista">
+      @for (t of lista; track t.id) {
+        <li class="tag" data-testid="tag" [attr.data-nome]="t.name">
+          <div class="linha">
+            <span class="cor" [style.background]="t.color" aria-hidden="true"></span>
+            <span class="nome" data-testid="tag-nome">{{ t.name }}</span>
+            @if (t.isSettlement) {
+              <span class="selo" data-testid="tag-acerto">
+                <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">person</mat-icon>
+                de acerto
+              </span>
+            }
+            <span class="usos" data-testid="tag-usos">{{ t.uses90d }} usos em 90 dias</span>
+          </div>
+          <div class="acoes">
+            <button type="button" class="botao" data-testid="editar" (click)="abrirEdicao(t)">
+              Editar
+            </button>
+            <button type="button" class="botao" data-testid="arquivar" (click)="arquivar(t)">
+              {{ t.archived ? 'Desarquivar' : 'Arquivar' }}
+            </button>
+            @if (!t.archived) {
+              <button type="button" class="botao" data-testid="juntar" (click)="abrirJuncao(t)">
+                Juntar em…
+              </button>
+            }
+            @if (!t.inUse) {
+              <button type="button" class="botao" data-testid="excluir" (click)="abrirExclusao(t)">
+                Excluir
+              </button>
+            }
+          </div>
+
+          @if (painel(); as p) {
+            @if (p.tag.id === t.id) {
+              <div class="painel" role="group" data-testid="painel" [attr.aria-label]="p.tipo">
+                @switch (p.tipo) {
+                  @case ('editar') {
+                    <label for="tag-nome">Nome</label>
+                    <input
+                      id="tag-nome"
+                      class="campo"
+                      data-testid="campo-nome"
+                      [attr.maxlength]="nomeMax"
+                      [ngModel]="p.nome"
+                      (ngModelChange)="atualizarEdicao({ nome: $event })"
+                    />
+                    <label for="tag-cor">Cor</label>
+                    <input
+                      id="tag-cor"
+                      class="campo cor-campo"
+                      type="color"
+                      data-testid="campo-cor"
+                      [ngModel]="p.cor"
+                      (ngModelChange)="atualizarEdicao({ cor: $event })"
+                    />
+                    <label class="marcar">
+                      <input
+                        type="checkbox"
+                        data-testid="campo-acerto"
+                        [ngModel]="p.deAcerto"
+                        (ngModelChange)="atualizarEdicao({ deAcerto: $event })"
+                      />
+                      Tag de acerto
+                    </label>
+                  }
+                  @case ('juntar') {
+                    <label for="tag-destino">Juntar “{{ p.tag.name }}” em</label>
+                    <select
+                      id="tag-destino"
+                      class="campo"
+                      data-testid="campo-destino"
+                      [ngModel]="p.destinoId"
+                      (ngModelChange)="escolherDestino($event)"
+                    >
+                      <option value="">Escolha uma tag</option>
+                      @for (d of destinos(p.tag); track d.id) {
+                        <option [value]="d.id">{{ d.name }}</option>
+                      }
+                    </select>
+                    @if (p.confirmando) {
+                      <p data-testid="confirmacao-juncao">
+                        Todos os lançamentos de “{{ p.tag.name }}” passarão a ter “{{
+                          nomeDoDestino(p.destinoId)
+                        }}” e “{{ p.tag.name }}” deixará de existir.
+                      </p>
+                    }
+                  }
+                  @case ('excluir') {
+                    <p data-testid="confirmacao-exclusao">
+                      Excluir “{{ p.tag.name }}”? Isso não pode ser desfeito.
+                    </p>
+                  }
+                }
+
+                @if (erro(); as mensagem) {
+                  <p class="erro" role="alert" data-testid="erro">{{ mensagem }}</p>
+                }
+                @if (conflitos().length > 0) {
+                  <ul class="conflitos" data-testid="conflitos">
+                    @for (c of conflitos(); track c.id) {
+                      <li data-testid="conflito">{{ c.date }} · {{ c.description }}</li>
+                    }
+                  </ul>
+                }
+
+                <div class="acoes">
+                  <button type="button" class="botao" (click)="fechar()">Cancelar</button>
+                  @switch (p.tipo) {
+                    @case ('editar') {
+                      <button
+                        type="button"
+                        class="botao principal"
+                        data-testid="salvar"
+                        [disabled]="ocupado()"
+                        (click)="salvarEdicao()"
+                      >
+                        Salvar
+                      </button>
+                    }
+                    @case ('juntar') {
+                      @if (p.confirmando) {
+                        <button
+                          type="button"
+                          class="botao principal"
+                          data-testid="confirmar-juncao"
+                          [disabled]="ocupado()"
+                          (click)="confirmarJuncao()"
+                        >
+                          Juntar
+                        </button>
+                      } @else {
+                        <button
+                          type="button"
+                          class="botao principal"
+                          data-testid="continuar-juncao"
+                          [disabled]="p.destinoId === ''"
+                          (click)="pedirConfirmacaoJuncao()"
+                        >
+                          Continuar
+                        </button>
+                      }
+                    }
+                    @case ('excluir') {
+                      <button
+                        type="button"
+                        class="botao principal"
+                        data-testid="confirmar-exclusao"
+                        [disabled]="ocupado()"
+                        (click)="confirmarExclusao()"
+                      >
+                        Excluir
+                      </button>
+                    }
+                  }
+                </div>
+              </div>
+            }
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

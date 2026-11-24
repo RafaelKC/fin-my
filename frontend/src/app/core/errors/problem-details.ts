@@ -16,6 +16,8 @@ export interface Problem {
   retryAfterSeconds?: number;
   /** Só em `tag.name_taken` (004): a tag que já tem esse nome. */
   existingTagId?: string;
+  /** Só em `tag.settlement_conflict` (004): lançamentos que ficariam com duas tags de acerto. */
+  conflicts?: { type: string; id: string; description: string; date: string }[];
 }
 
 export const MENSAGEM_ERRO_GENERICO = 'Algo deu errado. Tente novamente.';
