@@ -16,7 +16,9 @@ public sealed record PlanningEntry(
     EntryStatus Status,
     Guid WalletId,
     DateTimeOffset CreatedAt,
-    IReadOnlyList<Guid> TagIds);
+    IReadOnlyList<Guid> TagIds,
+    Guid? SettlementTagId = null,
+    Guid? RecurrenceId = null);
 
 public sealed record PlanningCard(Guid Id, string Name, bool Archived);
 

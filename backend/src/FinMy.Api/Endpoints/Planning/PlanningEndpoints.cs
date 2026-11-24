@@ -75,7 +75,38 @@ public sealed record PlanningFillResponse(int Created, int Skipped, object Row, 
         new(r.Created, r.Skipped, PlanningCellResponse.RowOf(r.Outcome), PlanningGridDto.TotalsOf(r.Outcome.Totals));
 }
 
-/// <summary>Grade do ano (007 US1): <c>/api/v1/years/{yyyy}/planning</c> (leitura, edição de célula e preenchimento).</summary>
+public sealed record CopyCandidateCellDto(string Month, long PlannedCents, int ItemCount);
+
+public sealed record CopyCandidateRowDto(
+    string Key, string Kind, string Description, Guid? SettlementTagId, string? SettlementTagName, IReadOnlyList<CopyCandidateCellDto> Cells);
+
+public sealed record CopyEstimateMonthDto(string Month, long EstimateCents);
+
+public sealed record CopyEstimateCardDto(Guid CreditCardId, string CreditCardName, IReadOnlyList<CopyEstimateMonthDto> Months);
+
+/// <summary>Resposta de <c>GET /years/{yyyy}/planning/copy-candidates</c> (007 contracts/api.md).</summary>
+public sealed record CopyCandidatesDto(IReadOnlyList<CopyCandidateRowDto> Rows, IReadOnlyList<CopyEstimateCardDto> Estimates)
+{
+    public static CopyCandidatesDto From(CopyCandidatesResult r) => new(
+        r.Rows.Select(row => new CopyCandidateRowDto(
+            row.Key,
+            row.Kind == EntryKind.Income ? "income" : "expense",
+            row.Description,
+            row.SettlementTagId,
+            row.SettlementTagName,
+            row.Cells.Select(c => new CopyCandidateCellDto(c.Month.ToString(), c.PlannedCents, c.ItemCount)).ToList())).ToList(),
+        r.Estimates.Select(card => new CopyEstimateCardDto(
+            card.CreditCardId,
+            card.CreditCardName,
+            card.Months.Select(m => new CopyEstimateMonthDto(m.Month.ToString(), m.EstimateCents)).ToList())).ToList());
+}
+
+/// <summary>Corpo de <c>POST /years/{yyyy}/planning/copy</c> (007 research R4).</summary>
+public sealed record PlanningCopyRequest(IReadOnlyList<string>? RowKeys, bool? CopyEstimates);
+
+public sealed record PlanningCopyResponse(int Created, int Skipped);
+
+/// <summary>Grade do ano (007 US1): <c>/api/v1/years/{yyyy}/planning</c> (leitura, edição de célula, preenchimento e cópia).</summary>
 public sealed class PlanningEndpoints : IEndpointModule
 {
     public void MapEndpoints(IEndpointRouteBuilder app)
@@ -90,6 +121,19 @@ public sealed class PlanningEndpoints : IEndpointModule
             http.Response.Headers.CacheControl = "no-store";
             return Results.Ok(PlanningGridDto.From(result));
         });
+
+        group.MapGet("/{year}/planning/copy-candidates", async (string year, GetPlanningCopyCandidatesHandler handler, HttpContext http, CancellationToken cancellationToken) =>
+        {
+            var result = await handler.HandleAsync(year, cancellationToken);
+            http.Response.Headers.CacheControl = "no-store";
+            return Results.Ok(CopyCandidatesDto.From(result));
+        });
+
+        group.MapPost("/{year}/planning/copy", async (string year, PlanningCopyRequest body, CopyPlanningHandler handler, CancellationToken cancellationToken) =>
+        {
+            var result = await handler.HandleAsync(new CopyPlanningCommand(year, body.RowKeys, body.CopyEstimates), cancellationToken);
+            return Results.Ok(new PlanningCopyResponse(result.Created, result.Skipped));
+        }).WithIdempotency();
 
         group.MapPut("/{year}/planning/cells", async (string year, PlanningCellRequest body, SetPlanningCellHandler handler, CancellationToken cancellationToken) =>
         {
