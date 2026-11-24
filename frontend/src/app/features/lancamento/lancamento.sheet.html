@@ -2,6 +2,7 @@
   <header class="topo">
     <h2 class="titulo" id="lancamento-titulo">
       {{ editandoCompra ? 'Editar compra' : editando ? 'Editar lançamento' : 'Novo lançamento' }}
+      <app-selo-via-claude [via]="criadoVia" />
     </h2>
     <button type="button" class="fechar" aria-label="Fechar" (click)="fechar()">
       <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">close</mat-icon>

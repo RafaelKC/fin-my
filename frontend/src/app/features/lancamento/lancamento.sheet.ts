@@ -1,3 +1,4 @@
+import { SeloViaClaude } from '../../shared/selo-via-claude/selo-via-claude';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
@@ -140,7 +141,7 @@ interface Rascunho {
 @Component({
   selector: 'app-lancamento-sheet',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, MatIconModule, AmountInput, TagPicker, BrlPipe],
+  imports: [FormsModule, MatIconModule, AmountInput, TagPicker, BrlPipe, SeloViaClaude],
   templateUrl: './lancamento.sheet.html',
   styleUrl: './lancamento.sheet.scss',
 })
@@ -168,6 +169,7 @@ export class LancamentoSheet {
   private readonly valorCampo = viewChild(AmountInput);
 
   protected readonly editandoCompra = this.compraAtual !== null;
+  protected readonly criadoVia = this.edicao?.createdVia ?? this.compraAtual?.createdVia ?? null;
   protected readonly editando = this.edicao !== null || this.editandoCompra;
   protected readonly descricaoMax = DESCRICAO_MAX;
   protected readonly observacaoMax = OBSERVACAO_MAX;

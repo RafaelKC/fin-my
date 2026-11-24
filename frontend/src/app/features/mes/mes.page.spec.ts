@@ -150,6 +150,29 @@ describe('MesPage', () => {
     ).toContain('R$ 1.955,01');
   });
 
+  it('008 FR-008: mostra o selo "via Claude" só nos lançamentos e transferências criados pelo Claude', async () => {
+    await abrir(
+      '/mes/2026-03',
+      visao({
+        entries: [
+          entry({ id: '1', description: 'Padaria da Carla', createdVia: 'claude' }),
+          entry({ id: '2', description: 'Aluguel', createdVia: 'app' }),
+        ],
+        transfers: [transferencia({ createdVia: 'claude' }), transferencia({ id: 't2' })],
+      }),
+    );
+    const linhas = [...el.querySelectorAll('[data-testid="lancamento"]')];
+    expect(linhas[0].querySelector('[data-testid="selo-via-claude"]')?.textContent).toContain(
+      'via Claude',
+    );
+    expect(linhas[1].querySelector('[data-testid="selo-via-claude"]')).toBeNull();
+    el.querySelector<HTMLButtonElement>('[data-testid="transferencias-alternar"]')!.click();
+    harness.detectChanges();
+    const transf = [...el.querySelectorAll('[data-testid="transferencia"]')];
+    expect(transf[0].querySelector('[data-testid="selo-via-claude"]')).not.toBeNull();
+    expect(transf[1].querySelector('[data-testid="selo-via-claude"]')).toBeNull();
+  });
+
   it('destaca negativos em vermelho (US3.4)', async () => {
     await abrir(
       '/mes/2026-03',

@@ -1,3 +1,4 @@
+import type { CriadoVia } from '../../shared/selo-via-claude/selo-via-claude';
 import type { InvoiceSummary } from '../cartoes/card.models';
 import type { CardPurchase } from '../lancamento/card-purchase.models';
 import { Entry } from '../lancamento/entry.models';
@@ -25,6 +26,8 @@ export interface Transfer {
   description: string;
   notes?: string | null;
   createdAt: string;
+  /** Canal que criou o lançamento (008 FR-008); ausente = app. */
+  createdVia?: CriadoVia;
   version: number;
 }
 

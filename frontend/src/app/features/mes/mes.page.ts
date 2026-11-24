@@ -1,3 +1,4 @@
+import { SeloViaClaude } from '../../shared/selo-via-claude/selo-via-claude';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -85,7 +86,7 @@ interface LinhaResumo {
 @Component({
   selector: 'app-mes-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BrlPipe, MatIconModule, PendenciasComponent, TagFilter],
+  imports: [BrlPipe, MatIconModule, PendenciasComponent, TagFilter, SeloViaClaude],
   templateUrl: './mes.page.html',
   styleUrl: './mes.page.scss',
 })

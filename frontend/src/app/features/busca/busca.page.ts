@@ -1,3 +1,4 @@
+import { SeloViaClaude } from '../../shared/selo-via-claude/selo-via-claude';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -55,7 +56,7 @@ function dataBr(iso: string): string {
 @Component({
   selector: 'app-busca-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, BrlPipe, TagFilter],
+  imports: [FormsModule, BrlPipe, TagFilter, SeloViaClaude],
   templateUrl: './busca.page.html',
   styleUrl: './busca.page.scss',
 })

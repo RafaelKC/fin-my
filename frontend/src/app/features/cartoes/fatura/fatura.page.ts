@@ -1,3 +1,4 @@
+import { SeloViaClaude } from '../../../shared/selo-via-claude/selo-via-claude';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -46,7 +47,7 @@ const ROTULO_SITUACAO: Record<InvoiceStatus, string> = {
 @Component({
   selector: 'app-fatura-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, BrlPipe, TagFilter],
+  imports: [RouterLink, BrlPipe, TagFilter, SeloViaClaude],
   templateUrl: './fatura.page.html',
   styleUrl: './fatura.page.scss',
 })
