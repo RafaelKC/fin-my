@@ -304,6 +304,47 @@
   }
 }
 
+/*
+ * Largura das telas dentro da casca: centralizadas no espaço ao lado do menu, com respiro.
+ * Listas e mês ~1160 px; planejamento e painel usam mais (~1400 px); formulários ~640 px.
+ */
+@layer components {
+  app-shell main.conteudo > :not(router-outlet) {
+    display: block;
+    width: 100%;
+    max-width: 1160px;
+    margin-inline: auto;
+  }
+
+  app-shell main.conteudo > :is(app-planejamento-page, app-painel-page) {
+    max-width: 1400px;
+  }
+
+  app-shell
+    main.conteudo
+    > :is(
+      app-perfil-page,
+      app-carteira-form-page,
+      app-cartao-form-page,
+      app-recorrencia-form-page,
+      app-primeiros-passos-page
+    ) {
+    max-width: 640px;
+  }
+
+  app-shell
+    main.conteudo
+    > :is(
+      app-cartoes-page,
+      app-carteiras-page,
+      app-tags-page,
+      app-recorrencias-page,
+      app-acertos-page
+    ) {
+    max-width: 880px;
+  }
+}
+
 /* Telas sem login (entrar, criar conta, senha, autorizar): cartão central com a marca. */
 @layer components {
   :is(
@@ -384,7 +425,19 @@
 @keyframes surgir-auth {
   from {
     opacity: 0;
-    transform: translateY(8px);
+  }
+}
+
+/* O conteúdo do diálogo de formulário ocupa a altura do painel e rola por dentro. */
+.dialogo-formulario [data-slot='dialog-body'],
+.dialogo-tela-cheia [data-slot='dialog-body'] {
+  flex: 1;
+  min-height: 0;
+}
+
+@keyframes folha-aparece {
+  from {
+    opacity: 0;
   }
 }
 
@@ -407,6 +460,9 @@
 /* Formulário rápido no celular: o painel do diálogo ocupa a tela inteira. */
 @layer utilities {
   .dialogo-tela-cheia {
+    /* Sem "zoom" de entrada: a folha ocupa a tela exata desde o primeiro quadro. */
+    transform: none !important;
+    animation: folha-aparece 180ms ease-out;
     inset: 0 !important;
     top: 0 !important;
     left: 0 !important;
@@ -422,6 +478,7 @@
   }
 
   .dialogo-formulario {
+    height: min(860px, 92dvh);
     max-height: 92dvh;
     padding: 0 !important;
     display: flex !important;

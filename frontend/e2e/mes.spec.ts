@@ -219,7 +219,8 @@ test.describe('visão do mês (US3) — API simulada', () => {
     await simular(page, [lanc('9', 'expense', 'Léo Casa', 90000, 'planned')]);
     await page.goto('/mes/2026-03');
     await expect(celula(page, 'resultado', 'previsto')).toHaveText('-R$ 900,00');
-    await expect(celula(page, 'resultado', 'previsto')).toHaveCSS('color', 'rgb(186, 26, 26)');
+    // vermelho = --saida do tema claro
+    await expect(celula(page, 'resultado', 'previsto')).toHaveCSS('color', 'oklch(0.53 0.19 25)');
     await expect(celula(page, 'resultado', 'realizado')).not.toHaveClass(/negativo/);
   });
 

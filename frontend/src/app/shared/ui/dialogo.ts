@@ -46,12 +46,47 @@ export class Dialogo {
       zClosable: false,
       zMaskClosable: opcoes.fecharFora ?? true,
       zWidth: opcoes.telaCheia ? undefined : opcoes.width,
+      // Tela cheia: sem a transição de escala do Zard (a folha já nasce do tamanho da tela).
+      zDuration: opcoes.telaCheia ? 0 : undefined,
       zCustomClasses: classes,
     }) as unknown as ZardDialogRef<C, R>;
     const comoDesconhecido = ref as unknown as ZardDialogRef<unknown, unknown>;
     this.abertos.add(comoDesconhecido);
-    ref.afterClosed().subscribe(() => this.abertos.delete(comoDesconhecido));
+    this.esconderFundo();
+    ref.afterClosed().subscribe(() => {
+      this.abertos.delete(comoDesconhecido);
+      if (this.abertos.size === 0) this.mostrarFundo();
+    });
     return ref;
+  }
+
+  /**
+   * Diálogo modal: o resto da página sai da árvore de acessibilidade enquanto ele está aberto
+   * (como o MatDialog fazia), para leitores de tela e buscas por papel não verem o fundo.
+   * Os avisos (toasts) continuam visíveis.
+   */
+  private escondidos: Element[] = [];
+
+  private esconderFundo(): void {
+    if (this.escondidos.length > 0 || typeof document === 'undefined') return;
+    const raiz = document.querySelector('app-root');
+    const candidatos = [
+      ...Array.from(document.body.children).filter(
+        (e) =>
+          e !== raiz && !e.classList.contains('cdk-overlay-container') && e.tagName !== 'SCRIPT',
+      ),
+      ...Array.from(raiz?.children ?? []).filter((e) => e.tagName !== 'Z-SONNER'),
+    ];
+    for (const e of candidatos) {
+      if (e.getAttribute('aria-hidden') === 'true') continue;
+      e.setAttribute('aria-hidden', 'true');
+      this.escondidos.push(e);
+    }
+  }
+
+  private mostrarFundo(): void {
+    for (const e of this.escondidos) e.removeAttribute('aria-hidden');
+    this.escondidos = [];
   }
 
   /** Fecha todos os diálogos abertos por este serviço. */
