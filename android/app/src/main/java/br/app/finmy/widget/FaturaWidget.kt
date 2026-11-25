@@ -112,7 +112,7 @@ class FaturaWidgetReceiver : GlanceAppWidgetReceiver() {
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        WidgetWork.cancel(context)
+        WidgetWork.cancelIfNoWidgets(context)
     }
 }
 
@@ -125,9 +125,9 @@ class RefreshAction : ActionCallback {
 
 internal val Surface = ColorProvider(day = Color(0xFFFFFFFF), night = Color(0xFF17171C))
 internal val OnSurface = ColorProvider(day = Color(0xFF1A1A1F), night = Color(0xFFF2F2F5))
-private val Muted = ColorProvider(day = Color(0xFF6B6B76), night = Color(0xFFA9A9B4))
-private val Warning = ColorProvider(day = Color(0xFFB3261E), night = Color(0xFFFF8A80))
-private val Track = ColorProvider(day = Color(0xFFEFEFF4), night = Color(0xFF2A2A33))
+internal val Muted = ColorProvider(day = Color(0xFF6B6B76), night = Color(0xFFA9A9B4))
+internal val Warning = ColorProvider(day = Color(0xFFB3261E), night = Color(0xFFFF8A80))
+internal val Track = ColorProvider(day = Color(0xFFEFEFF4), night = Color(0xFF2A2A33))
 
 /** Cores do selo de situação (fundo, texto), no tom do app. */
 private fun statusColors(code: String): Pair<ColorProviderType, ColorProviderType> = when (code) {

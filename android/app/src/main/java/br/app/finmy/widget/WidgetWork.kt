@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit
 class WidgetUpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         WidgetState.refreshAll(applicationContext)
+        OverviewState.refreshAll(applicationContext)
         // Falhas de rede já viram "atualizado às HH:MM" no widget; não há o que repetir.
         return Result.success()
     }
@@ -29,6 +30,21 @@ object WidgetWork {
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(UNIQUE_NAME, ExistingPeriodicWorkPolicy.KEEP, request)
+    }
+
+    /** Pede uma atualização agora (widget recém-colocado na tela). */
+    fun refreshNow(context: Context) {
+        val request = androidx.work.OneTimeWorkRequestBuilder<WidgetUpdateWorker>()
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .build()
+        WorkManager.getInstance(context).enqueueUniqueWork("$UNIQUE_NAME-now", androidx.work.ExistingWorkPolicy.REPLACE, request)
+    }
+
+    /** Cancela a atualização periódica só quando não sobra nenhum widget do app na tela. */
+    fun cancelIfNoWidgets(context: Context) {
+        val manager = android.appwidget.AppWidgetManager.getInstance(context)
+        val any = manager.getInstalledProvidersForPackage(context.packageName, null).any { manager.getAppWidgetIds(it.provider).isNotEmpty() }
+        if (!any) cancel(context)
     }
 
     fun cancel(context: Context) {

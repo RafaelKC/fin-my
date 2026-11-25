@@ -48,3 +48,49 @@ public sealed record WidgetCurrentInvoiceResponse(
         $"/cartoes/{v.CardId}/faturas/{v.DueMonth}",
         v.History.Select(h => new WidgetHistoryResponse(h.DueMonth, h.TotalCents)).ToList());
 }
+
+/// <summary>Resposta de <c>GET /api/v1/widget/overview</c> (010): valores em centavos e já formatados.</summary>
+public sealed record WidgetOverviewResponse(
+    DateOnly Today,
+    string Month,
+    WidgetMoney PlannedIncome,
+    WidgetMoney PlannedExpense,
+    WidgetMoney PlannedFinal,
+    WidgetMoney ActualIncome,
+    WidgetMoney ActualExpense,
+    WidgetMoney ActualFinal,
+    WidgetMoney TotalBalance,
+    WidgetPendingResponse Pending,
+    IReadOnlyList<WidgetUpcomingResponse> Upcoming,
+    IReadOnlyList<WidgetSettlementResponse> Settlements,
+    string MonthPath,
+    string SettlementsPath)
+{
+    public static WidgetOverviewResponse From(WidgetOverviewView v) => new(
+        v.Today,
+        v.Month,
+        WidgetMoney.Of(v.Figures.PlannedIncomeCents),
+        WidgetMoney.Of(v.Figures.PlannedExpenseCents),
+        WidgetMoney.Of(v.Figures.PlannedFinalCents),
+        WidgetMoney.Of(v.Figures.ActualIncomeCents),
+        WidgetMoney.Of(v.Figures.ActualExpenseCents),
+        WidgetMoney.Of(v.Figures.ActualFinalCents),
+        WidgetMoney.Of(v.TotalBalanceCents),
+        new WidgetPendingResponse(v.Pending.Count, WidgetMoney.Of(v.Pending.ToReceiveCents), WidgetMoney.Of(v.Pending.ToPayCents)),
+        v.Upcoming.Select(u => new WidgetUpcomingResponse(u.Kind, u.Description, u.Date, WidgetMoney.Of(u.AmountCents), u.Overdue)).ToList(),
+        v.Settlements.Select(s => new WidgetSettlementResponse(s.TagId, s.Name, s.Color, WidgetMoney.Of(s.AmountCents))).ToList(),
+        $"/mes/{v.Month}",
+        $"/acertos/{v.Month}");
+}
+
+/// <summary>Valor em centavos com o texto pt-BR (o mesmo formato das telas).</summary>
+public sealed record WidgetMoney(long Cents, string Text)
+{
+    public static WidgetMoney Of(long cents) => new(cents, FinMy.Application.Cards.InvoiceErrors.FormatBrl(cents));
+}
+
+public sealed record WidgetPendingResponse(int Count, WidgetMoney ToReceive, WidgetMoney ToPay);
+
+public sealed record WidgetUpcomingResponse(string Kind, string Description, DateOnly Date, WidgetMoney Amount, bool Overdue);
+
+public sealed record WidgetSettlementResponse(Guid TagId, string Name, string Color, WidgetMoney Amount);

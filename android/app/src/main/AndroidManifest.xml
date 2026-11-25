@@ -46,6 +46,55 @@
                 android:resource="@xml/fatura_widget_info" />
         </receiver>
 
+        <!-- Widgets de resumo e o atalho Lançar (010). -->
+        <receiver
+            android:name="br.app.finmy.widget.MesWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_mes_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/mes_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="br.app.finmy.widget.VencimentosWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_vencimentos_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/vencimentos_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="br.app.finmy.widget.AcertosWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_acertos_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/acertos_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="br.app.finmy.widget.LancarWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_lancar_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/lancar_widget_info" />
+        </receiver>
+
         <!-- O sistema abre a configuração ao adicionar o widget. -->
         <activity
             android:name="br.app.finmy.widget.WidgetConfigActivity"

@@ -20,5 +20,9 @@ public sealed class WidgetEndpoints : IEndpointModule
 
         group.MapGet("/credit-cards/{id:guid}/current-invoice", async (Guid id, GetWidgetCurrentInvoiceHandler handler, CancellationToken cancellationToken) =>
             Results.Ok(WidgetCurrentInvoiceResponse.From(await handler.HandleAsync(id, cancellationToken))));
+
+        // Widgets "Mês atual", "Próximos vencimentos" e "Acertos" (010).
+        group.MapGet("/overview", async (GetWidgetOverviewHandler handler, CancellationToken cancellationToken) =>
+            Results.Ok(WidgetOverviewResponse.From(await handler.HandleAsync(cancellationToken))));
     }
 }

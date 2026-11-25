@@ -14,4 +14,12 @@
     <string name="widget_config_offline">Sem conexão. Verifique a internet e tente de novo.</string>
     <string name="widget_config_error">Não foi possível falar com o Fin-My agora.</string>
     <string name="widget_config_retry">Tentar de novo</string>
+    <string name="widget_mes_name">Mês atual</string>
+    <string name="widget_mes_description">Saldo previsto do mês, entradas e saídas.</string>
+    <string name="widget_vencimentos_name">Próximos vencimentos</string>
+    <string name="widget_vencimentos_description">Contas e faturas a pagar e receber, atrasadas primeiro.</string>
+    <string name="widget_acertos_name">Acertos</string>
+    <string name="widget_acertos_description">Quanto cada pessoa deve para você.</string>
+    <string name="widget_lancar_name">Lançar</string>
+    <string name="widget_lancar_description">Abre o formulário de lançamento.</string>
 </resources>

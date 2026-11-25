@@ -29,7 +29,11 @@ class WidgetSetupTest {
     @Test
     fun `receiver do widget e a configuracao estao declarados`() {
         val update = Intent("android.appwidget.action.APPWIDGET_UPDATE").setPackage(context.packageName)
-        assertEquals(listOf(FaturaWidgetReceiver::class.java.name), pm.queryBroadcastReceivers(update, 0).map { it.activityInfo.name })
+        assertEquals(
+            listOf(FaturaWidgetReceiver::class, MesWidgetReceiver::class, VencimentosWidgetReceiver::class, AcertosWidgetReceiver::class, LancarWidgetReceiver::class)
+                .map { it.java.name }.sorted(),
+            pm.queryBroadcastReceivers(update, 0).map { it.activityInfo.name }.sorted(),
+        )
 
         val configure = Intent("android.appwidget.action.APPWIDGET_CONFIGURE").setPackage(context.packageName)
         assertEquals(listOf(WidgetConfigActivity::class.java.name), pm.queryIntentActivities(configure, 0).map { it.activityInfo.name })

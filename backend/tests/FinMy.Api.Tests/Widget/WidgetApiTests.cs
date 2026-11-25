@@ -230,6 +230,90 @@ public class WidgetApiTests(PostgresFixture postgres) : ApiTestBase(postgres)
         history.Sum(h => h.GetProperty("totalCents").GetInt64()).ShouldBe(30000 + 4590 + 8000);
     }
 
+    // ---- Resumo para os widgets (010) ----
+
+    private static async Task<Guid> CreatedIdAsync(HttpClient app, string url, object body)
+    {
+        var response = await app.PostAsJsonAsync(url, body);
+        response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+        return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+    }
+
+    [Fact]
+    public async Task Resumo_tem_os_numeros_do_mes_as_pendencias_e_os_acertos_iguais_aos_das_telas()
+    {
+        var (app, _, azul, verde, widget) = await NewLiaAsync();
+        var bruna = await CreatedIdAsync(app, "/api/v1/tags", new { name = "Bruna", isSettlement = true });
+        await CreatedIdAsync(app, "/api/v1/entries", new { kind = "income", description = "Salário", amount = "3000", date = "2026-03-05", walletId = azul, status = "settled" });
+        await CreatedIdAsync(app, "/api/v1/entries", new { kind = "expense", description = "Luz", amount = "120", date = "2026-03-25", walletId = azul, status = "planned" });
+        await CreatedIdAsync(app, "/api/v1/entries", new { kind = "expense", description = "Água", amount = "80", date = "2026-02-10", walletId = azul, status = "planned" });
+        await CreatedIdAsync(app, "/api/v1/entries", new { kind = "expense", description = "Cinema", amount = "60", date = "2026-03-12", walletId = azul, status = "settled", tagIds = new[] { bruna } });
+        await PurchaseAsync(app, verde.Id, "Mercado", "300,00", "2026-03-18");
+
+        var overview = await OkAsync(widget, "/api/v1/widget/overview");
+        var month = await app.GetFromJsonAsync<JsonElement>("/api/v1/months/2026-03");
+
+        overview.GetProperty("month").GetString().ShouldBe("2026-03");
+        overview.GetProperty("monthPath").GetString().ShouldBe("/mes/2026-03");
+        overview.GetProperty("settlementsPath").GetString().ShouldBe("/acertos/2026-03");
+        foreach (var (field, column, source) in new[]
+        {
+            ("plannedIncome", "planned", "incomeCents"), ("plannedExpense", "planned", "expenseCents"), ("plannedFinal", "planned", "finalBalanceCents"),
+            ("actualIncome", "actual", "incomeCents"), ("actualExpense", "actual", "expenseCents"), ("actualFinal", "actual", "finalBalanceCents"),
+        })
+        {
+            overview.GetProperty(field).GetProperty("cents").GetInt64().ShouldBe(month.GetProperty(column).GetProperty(source).GetInt64(), field);
+        }
+
+        overview.GetProperty("actualIncome").GetProperty("text").GetString().ShouldBe("R$ 3.000,00");
+        overview.GetProperty("pending").GetProperty("count").GetInt32().ShouldBe(month.GetProperty("pending").GetProperty("count").GetInt32());
+
+        var settlements = await app.GetFromJsonAsync<JsonElement>("/api/v1/settlements/2026-03");
+        var person = overview.GetProperty("settlements").EnumerateArray().Single();
+        person.GetProperty("name").GetString().ShouldBe("Bruna");
+        person.GetProperty("amount").GetProperty("cents").GetInt64().ShouldBe(
+            settlements.EnumerateArray().Single(r => r.GetProperty("tagId").GetGuid() == bruna).GetProperty("accumulatedCents").GetInt64());
+    }
+
+    [Fact]
+    public async Task Proximos_vencimentos_trazem_atrasadas_primeiro_depois_por_data_com_faturas()
+    {
+        var (app, _, azul, verde, widget) = await NewLiaAsync();
+        await CreatedIdAsync(app, "/api/v1/entries", new { kind = "expense", description = "Luz", amount = "120", date = "2026-03-25", walletId = azul, status = "planned" });
+        await CreatedIdAsync(app, "/api/v1/entries", new { kind = "income", description = "Freela", amount = "500", date = "2026-03-28", walletId = azul, status = "planned" });
+        await CreatedIdAsync(app, "/api/v1/entries", new { kind = "expense", description = "Água", amount = "80", date = "2026-02-10", walletId = azul, status = "planned" });
+        await CreatedIdAsync(app, "/api/v1/entries", new { kind = "expense", description = "Pago", amount = "10", date = "2026-03-21", walletId = azul, status = "settled" });
+        await PurchaseAsync(app, verde.Id, "Mercado", "300,00", "2026-03-10");
+
+        var upcoming = (await OkAsync(widget, "/api/v1/widget/overview")).GetProperty("upcoming").EnumerateArray().ToList();
+
+        upcoming[0].GetProperty("description").GetString().ShouldBe("Água");
+        upcoming[0].GetProperty("overdue").GetBoolean().ShouldBeTrue();
+        upcoming.ShouldNotContain(u => u.GetProperty("description").GetString() == "Pago");
+        var rest = upcoming.Skip(1).ToList();
+        rest.Select(u => u.GetProperty("date").GetString()).ShouldBe(rest.Select(u => u.GetProperty("date").GetString()).Order().ToList());
+        var luz = upcoming.Single(u => u.GetProperty("description").GetString() == "Luz");
+        luz.GetProperty("kind").GetString().ShouldBe("expense");
+        luz.GetProperty("amount").GetProperty("text").GetString().ShouldBe("R$ 120,00");
+        upcoming.Single(u => u.GetProperty("description").GetString() == "Freela").GetProperty("kind").GetString().ShouldBe("income");
+        var invoice = upcoming.Single(u => u.GetProperty("kind").GetString() == "invoice");
+        invoice.GetProperty("description").GetString().ShouldBe("Fatura Verde");
+        invoice.GetProperty("amount").GetProperty("cents").GetInt64().ShouldBe(30000);
+    }
+
+    [Fact]
+    public async Task Resumo_so_ve_o_espaco_de_quem_autorizou_e_recusa_o_jwt_do_app()
+    {
+        var (_, lia, _, _, widget) = await NewLiaAsync();
+        var (bruna, _) = await CardTestSupport.NewSpaceAsync(Factory, "Bruna");
+        var outra = await CardTestSupport.CreateWalletAsync(bruna, "Verde");
+        await CreatedIdAsync(bruna, "/api/v1/entries", new { kind = "expense", description = "Da Bruna", amount = "99", date = "2026-03-25", walletId = outra.Id, status = "planned" });
+
+        var overview = await OkAsync(widget, "/api/v1/widget/overview");
+        overview.GetProperty("upcoming").EnumerateArray().ShouldNotContain(u => u.GetProperty("description").GetString() == "Da Bruna");
+        (await GetAsync(lia.AccessToken, "/api/v1/widget/overview")).StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
     [Fact]
     public async Task Cartao_arquivado_ou_excluido_ou_desconhecido_e_404_credit_card_not_found()
     {

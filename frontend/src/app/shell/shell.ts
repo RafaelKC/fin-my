@@ -96,7 +96,25 @@ export class Shell {
         filter((e) => e instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
-      .subscribe(() => this.maisAberto.set(false));
+      .subscribe(() => {
+        this.maisAberto.set(false);
+        this.abrirLancamentoPedidoPeloWidget();
+      });
+  }
+
+  /**
+   * Widget "Lançar" do app Android (010): abre o app em `?lancar=1`. Abre o formulário rápido e tira o parâmetro da URL
+   * (voltar não reabre o formulário).
+   */
+  private abrirLancamentoPedidoPeloWidget(): void {
+    const tree = this.router.parseUrl(this.router.url);
+    if (tree.queryParams['lancar'] !== '1') return;
+    void this.router.navigate([], {
+      queryParams: { lancar: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+    this.lancamento.abrir();
   }
 
   protected alternarMais(): void {

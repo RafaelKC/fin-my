@@ -96,3 +96,16 @@ app nativo precisam confiar nele:
    conectado, a configuração mostra **Abrir o app**; ao voltar, lista os cartões.
 3. Sair do app desconecta o widget. Também dá para desconectar em Perfil → Aplicativos conectados
    ("App Fin-My (Android)").
+
+## 7. Outros widgets (010)
+
+Todos usam a mesma conexão do widget (sessão do app) e atualizam juntos a cada 30 minutos, com o botão de atualizar.
+
+| Widget | Mostra | Toque abre |
+|---|---|---|
+| **Mês atual** (4x2) | Saldo previsto no fim do mês, entradas e saídas previstas, barra de quanto das saídas já saiu, quanto falta pagar | `/mes/<mês>` |
+| **Próximos vencimentos** (4x3) | Até 8 itens: previstas atrasadas (vermelho), previstas do mês e faturas com restante, por data | `/mes/<mês>` |
+| **Acertos** (4x2) | Quanto cada pessoa (Tag de acerto) deve ou tem de crédito, com o total a receber | `/acertos/<mês>` |
+| **Lançar** (2x1 ou 1x1) | Botão "+" | o app com o formulário rápido aberto (`/mes?lancar=1`) |
+
+Os três primeiros leem `GET /api/v1/widget/overview` (mesmos números das telas do mês, de agora e dos acertos).
