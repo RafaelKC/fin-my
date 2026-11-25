@@ -3,7 +3,6 @@ package br.app.finmy.widget
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import java.security.KeyStore
-import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -19,12 +18,13 @@ interface SecretBox {
 
 /** AES-256/GCM com IV aleatório na frente do texto cifrado. A chave vem de [keyProvider] (Keystore em produção). */
 class AesGcmSecretBox(private val keyProvider: () -> SecretKey) : SecretBox {
-    private val random = SecureRandom()
-
     override fun encrypt(plain: ByteArray): ByteArray {
-        val iv = ByteArray(IV_BYTES).also(random::nextBytes)
+        // O IV é gerado pelo próprio Cipher: chaves do Android Keystore recusam IV do chamador
+        // (randomized encryption), e o app fechava ao salvar os tokens.
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.ENCRYPT_MODE, keyProvider(), GCMParameterSpec(TAG_BITS, iv))
+        cipher.init(Cipher.ENCRYPT_MODE, keyProvider())
+        val iv = cipher.iv
+        check(iv.size == IV_BYTES) { "IV inesperado: ${iv.size} bytes" }
         return iv + cipher.doFinal(plain)
     }
 

@@ -11,32 +11,26 @@ import android.widget.ListView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.ComponentActivity
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.lifecycle.lifecycleScope
+import br.app.finmy.MainActivity
 import br.app.finmy.R
 import kotlinx.coroutines.launch
-import net.openid.appauth.AuthorizationException
-import net.openid.appauth.AuthorizationResponse
-import net.openid.appauth.AuthorizationService
 
 /**
- * Configuração do widget: entra (OAuth + PKCE no Custom Tab, se ainda não houver sessão) e escolhe o cartão.
+ * Configuração do widget: escolhe o cartão. A conexão vem da sessão do app (010, [br.app.finmy.WidgetBridgePlugin]):
+ * sem ela, a tela pede para abrir o app (já logado, ele conecta o widget sozinho) e, ao voltar, lista os cartões.
  * Também serve para "Entre de novo" e "Cartão indisponível — toque para escolher outro".
  */
 class WidgetConfigActivity : ComponentActivity() {
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
-    private var authService: AuthorizationService? = null
+    private var waitingForApp = false
     private lateinit var services: WidgetComponents
 
     private lateinit var message: TextView
     private lateinit var progress: ProgressBar
     private lateinit var action: Button
     private lateinit var cardList: ListView
-
-    private val loginLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        handleLoginResult(result.data)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,9 +51,13 @@ class WidgetConfigActivity : ComponentActivity() {
         if (savedInstanceState == null) start()
     }
 
-    override fun onDestroy() {
-        authService?.dispose()
-        super.onDestroy()
+    override fun onResume() {
+        super.onResume()
+        // Voltou do app: se ele conectou o widget, segue para a lista de cartões.
+        if (waitingForApp) {
+            waitingForApp = false
+            start()
+        }
     }
 
     private fun start() {
@@ -69,35 +67,12 @@ class WidgetConfigActivity : ComponentActivity() {
     }
 
     private fun showLogin(messageRes: Int) {
-        show(messageRes, buttonRes = R.string.widget_config_login_button) { launchLogin() }
+        show(messageRes, buttonRes = R.string.widget_config_open_app) { openApp() }
     }
 
-    private fun launchLogin() {
-        val service = authService ?: AuthorizationService(this).also { authService = it }
-        val request = AuthConfig.authorizationRequest(services.baseUrl)
-        loginLauncher.launch(service.getAuthorizationRequestIntent(request))
-    }
-
-    private fun handleLoginResult(data: Intent?) {
-        val response = data?.let(AuthorizationResponse::fromIntent)
-        val error = data?.let(AuthorizationException::fromIntent)
-        val code = response?.authorizationCode
-        val verifier = response?.request?.codeVerifier
-        if (error != null || code == null || verifier == null) {
-            showLogin(R.string.widget_config_login_failed)
-            return
-        }
-        lifecycleScope.launch {
-            showLoading()
-            when (val tokens = services.tokenClient.exchangeCode(code, verifier)) {
-                is ApiResult.Ok -> {
-                    services.session.signIn(tokens.value)
-                    loadCards()
-                }
-                ApiResult.Offline -> show(R.string.widget_config_offline, R.string.widget_config_retry) { start() }
-                else -> showLogin(R.string.widget_config_login_failed)
-            }
-        }
+    private fun openApp() {
+        waitingForApp = true
+        startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 
     private suspend fun loadCards() {

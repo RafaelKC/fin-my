@@ -51,34 +51,6 @@ class WidgetSetupTest {
     }
 
     @Test
-    fun `redirect do OAuth br_app_finmy abre o AppAuth`() {
-        val callback = Intent(Intent.ACTION_VIEW, Uri.parse("br.app.finmy:/oauth/callback?code=x&state=y"))
-            .addCategory(Intent.CATEGORY_BROWSABLE)
-            .setPackage(context.packageName)
-        assertEquals(
-            listOf("net.openid.appauth.RedirectUriReceiverActivity"),
-            pm.queryIntentActivities(callback, 0).map { it.activityInfo.name },
-        )
-    }
-
-    @Test
-    fun `pedido de autorizacao usa PKCE S256 e o cliente finmy-android`() {
-        val request = AuthConfig.authorizationRequest("https://fin-my.exemplo.com.br")
-        val uri = request.toUri()
-
-        assertEquals("https://fin-my.exemplo.com.br/oauth/authorize", uri.buildUpon().clearQuery().build().toString())
-        assertEquals("finmy-android", uri.getQueryParameter("client_id"))
-        assertEquals("code", uri.getQueryParameter("response_type"))
-        assertEquals("br.app.finmy:/oauth/callback", uri.getQueryParameter("redirect_uri"))
-        assertEquals("S256", uri.getQueryParameter("code_challenge_method"))
-        assertTrue(!uri.getQueryParameter("code_challenge").isNullOrEmpty())
-        assertEquals("offline_access", uri.getQueryParameter("scope"))
-        assertTrue(!request.codeVerifier.isNullOrEmpty())
-        // O verifier nunca vai na URL.
-        assertTrue(!uri.toString().contains(request.codeVerifier!!))
-    }
-
-    @Test
     fun `WorkManager atualiza a cada 30 minutos em uma tarefa unica, so com rede`() {
         WorkManagerTestInitHelper.initializeTestWorkManager(context)
         WidgetWork.schedule(context)

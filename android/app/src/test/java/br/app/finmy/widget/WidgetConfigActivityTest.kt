@@ -75,12 +75,12 @@ class WidgetConfigActivityTest {
     }
 
     @Test
-    fun `sem sessao pede para entrar e mostra o botao Entrar`() {
+    fun `sem sessao pede para abrir o app`() {
         val activity = launch().get()
         settle { activity.findViewById<Button>(R.id.action).visibility == View.VISIBLE }
 
         assertEquals(View.VISIBLE, activity.findViewById<Button>(R.id.action).visibility)
-        assertEquals("Entrar", activity.findViewById<Button>(R.id.action).text.toString())
+        assertEquals("Abrir o app", activity.findViewById<Button>(R.id.action).text.toString())
         assertEquals(context.getString(R.string.widget_config_login), activity.findViewById<TextView>(R.id.message).text.toString())
         assertEquals(Activity.RESULT_CANCELED, shadowOf(activity).resultCode)
         assertEquals(0, server.requestCount)
@@ -131,7 +131,7 @@ class WidgetConfigActivityTest {
         val activity = launch().get()
         settle { activity.findViewById<Button>(R.id.action).visibility == View.VISIBLE }
 
-        assertEquals("Entrar", activity.findViewById<Button>(R.id.action).text.toString())
+        assertEquals("Abrir o app", activity.findViewById<Button>(R.id.action).text.toString())
         runBlocking { assertEquals(false, rig.session.hasSession()) }
     }
 
@@ -144,5 +144,25 @@ class WidgetConfigActivityTest {
         settle { activity.findViewById<Button>(R.id.action).visibility == View.VISIBLE }
 
         assertEquals(context.getString(R.string.widget_config_empty), activity.findViewById<TextView>(R.id.message).text.toString())
+    }
+
+    @Test
+    fun `sem sessao Abrir o app abre o app e ao voltar conectado lista os cartoes`() {
+        val controller = launch()
+        val activity = controller.get()
+        settle { activity.findViewById<Button>(R.id.action).visibility == View.VISIBLE }
+
+        activity.findViewById<Button>(R.id.action).performClick()
+        val started = shadowOf(activity).nextStartedActivity
+        assertEquals(br.app.finmy.MainActivity::class.java.name, started.component?.className)
+
+        // O app conectou o widget (WidgetBridgePlugin) enquanto a configuração estava em segundo plano.
+        rig.store.tokens = TestRig.valid()
+        server.enqueue(MockResponse().setBody(Fixtures.cardsJson()))
+        controller.pause().resume()
+
+        val list = activity.findViewById<ListView>(R.id.cards)
+        settle { list.visibility == View.VISIBLE }
+        assertEquals(2, list.adapter.count)
     }
 }

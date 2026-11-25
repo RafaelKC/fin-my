@@ -99,7 +99,7 @@ class FaturaWidgetContentTest {
     @Test
     fun `intent da fatura vai para a TWA com a URL do site`() {
         assertEquals("https://fin-my.exemplo.com.br/cartoes/${Fixtures.CARD_ID}/faturas/2026-12", open.dataString)
-        assertEquals("com.google.androidbrowserhelper.trusted.LauncherActivity", open.component?.className)
+        assertEquals("br.app.finmy.MainActivity", open.component?.className)
         assertEquals(Intent.ACTION_VIEW, open.action)
     }
 

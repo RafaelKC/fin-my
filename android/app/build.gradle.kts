@@ -33,7 +33,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        // Fixo: uma futura troca de TWA por outra tecnologia mantém a instalação.
+        // Fixo desde a TWA (009): o app Capacitor atualiza a instalação existente.
         applicationId = "br.app.finmy"
         minSdk = 26
         targetSdk = 36
@@ -42,17 +42,9 @@ android {
         versionName = providers.gradleProperty("finmy.versionName").orNull ?: "0.1.0"
 
         buildConfigField("String", "APP_URL", "\"$appUrl\"")
-        manifestPlaceholders["appUrl"] = appUrl
-        // Redirect do login do widget (br.app.finmy:/oauth/callback): o AppAuth declara a activity de retorno.
-        manifestPlaceholders["appAuthRedirectScheme"] = "br.app.finmy"
 
         resValue("string", "shortcut_mes_url", "$appUrl/mes")
         resValue("string", "shortcut_painel_url", "$appUrl/painel")
-        resValue(
-            "string",
-            "asset_statements",
-            """[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"web","site":"$appUrl"}}]""",
-        )
     }
 
     signingConfigs {
@@ -105,16 +97,16 @@ kotlin {
 }
 
 dependencies {
-    implementation("com.google.androidbrowserhelper:androidbrowserhelper:2.6.2")
-    implementation("androidx.browser:browser:1.9.0")
+    // App (010): Capacitor (WebView carregando o site) e a ponte do widget.
+    implementation(project(":capacitor-android"))
+    implementation("androidx.appcompat:appcompat:1.7.1")
 
-    // Widget (009 T004): Glance, WorkManager, login OAuth (AppAuth) e HTTP.
+    // Widget (009 T004): Glance, WorkManager e HTTP.
     implementation("androidx.glance:glance-appwidget:1.1.1")
     implementation("androidx.work:work-runtime-ktx:2.10.3")
     implementation("androidx.datastore:datastore-preferences:1.1.7")
     implementation("androidx.activity:activity-ktx:1.10.1")
     implementation("androidx.core:core-ktx:1.16.0")
-    implementation("net.openid:appauth:0.11.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
@@ -173,5 +165,42 @@ androidComponents {
             devCertPath?.let { devCert.set(file(it)) }
         }
         variant.sources.res?.addGeneratedSourceDirectory(task, GenerateDebugNetworkConfig::outputDir)
+    }
+}
+
+// capacitor.config.json (010): o app abre o site (server.url = finmy.appUrl) na WebView do Capacitor.
+abstract class GenerateCapacitorConfig : DefaultTask() {
+    @get:Input
+    abstract val appUrl: Property<String>
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun generate() {
+        val out = outputDir.get().asFile
+        out.deleteRecursively()
+        out.mkdirs()
+        val host = URI(appUrl.get()).host
+        File(out, "capacitor.config.json").writeText(
+            """{
+  "appId": "br.app.finmy",
+  "appName": "Fin-My",
+  "server": { "url": "${appUrl.get()}", "allowNavigation": ["$host"], "errorPath": "offline.html" },
+  "android": { "allowMixedContent": false, "captureInput": true }
+}
+""",
+        )
+    }
+}
+
+val capacitorSiteUrl = appUrl
+
+androidComponents {
+    onVariants { variant ->
+        val task = tasks.register<GenerateCapacitorConfig>("generate${variant.name.replaceFirstChar { it.uppercase() }}CapacitorConfig") {
+            appUrl.set(capacitorSiteUrl)
+        }
+        variant.sources.assets?.addGeneratedSourceDirectory(task, GenerateCapacitorConfig::outputDir)
     }
 }
