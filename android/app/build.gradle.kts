@@ -91,8 +91,8 @@ android {
     lint {
         warningsAsErrors = true
         abortOnError = true
-        // Versões mais novas das dependências não são aviso de build.
-        disable += setOf("GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion")
+        // Versões/SDKs mais novos não são aviso de build (o resultado mudaria com a data, sem mudar o código).
+        disable += setOf("GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion", "OldTargetApi")
     }
 }
 
