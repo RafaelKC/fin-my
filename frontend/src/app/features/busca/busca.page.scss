@@ -11,7 +11,7 @@
 }
 h1 {
   margin: 0;
-  font: var(--mat-sys-headline-small);
+  font: var(--fonte-titulo);
 }
 .filtros {
   display: flex;
@@ -26,7 +26,7 @@ h1 {
 
   label,
   .rotulo {
-    font: var(--mat-sys-label-large);
+    font: var(--fonte-rotulo-g);
   }
   input,
   select {
@@ -34,8 +34,8 @@ h1 {
     padding: 0 12px;
     font: inherit;
     color: inherit;
-    background: var(--mat-sys-surface);
-    border: 1px solid var(--mat-sys-outline);
+    background: var(--card);
+    border: 1px solid var(--border-forte);
     border-radius: 8px;
   }
 }
@@ -55,16 +55,16 @@ h1 {
   gap: 6px;
   min-height: 44px;
   padding: 0 16px;
-  font: var(--mat-sys-label-large);
+  font: var(--fonte-rotulo-g);
   color: inherit;
   background: transparent;
-  border: 1px solid var(--mat-sys-outline);
+  border: 1px solid var(--border-forte);
   border-radius: 22px;
   cursor: pointer;
 
   &[aria-pressed='true'] {
-    background: var(--mat-sys-secondary-container);
-    border-color: var(--mat-sys-secondary);
+    background: var(--accent);
+    border-color: var(--primary);
   }
 }
 .cor {
@@ -77,25 +77,25 @@ h1 {
   align-self: flex-start;
   min-height: 44px;
   padding: 0 16px;
-  font: var(--mat-sys-label-large);
-  color: var(--mat-sys-primary);
+  font: var(--fonte-rotulo-g);
+  color: var(--primary);
   background: transparent;
-  border: 1px solid var(--mat-sys-outline);
+  border: 1px solid var(--border-forte);
   border-radius: 22px;
   cursor: pointer;
 }
 .total {
   margin: 0;
-  font: var(--mat-sys-title-medium);
+  font: var(--fonte-titulo-p);
 }
 .negativo {
-  color: var(--mat-sys-error);
+  color: var(--destructive);
 }
 .erro {
-  color: var(--mat-sys-error);
+  color: var(--destructive);
 }
 .vazio {
-  color: var(--mat-sys-on-surface-variant);
+  color: var(--muted-foreground);
 }
 .itens {
   list-style: none;
@@ -105,7 +105,7 @@ h1 {
 .item {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  border-bottom: 1px solid var(--border);
 }
 .linha {
   flex: 1;
@@ -129,14 +129,14 @@ h1 {
 }
 .meta {
   grid-column: 1 / -1;
-  color: var(--mat-sys-on-surface-variant);
-  font: var(--mat-sys-body-small);
+  color: var(--muted-foreground);
+  font: var(--fonte-corpo-p);
 }
 .excluir {
   min-width: 44px;
   min-height: 44px;
   padding: 0 12px;
-  color: var(--mat-sys-error);
+  color: var(--destructive);
   background: transparent;
   border: 0;
   cursor: pointer;
@@ -147,14 +147,14 @@ h1 {
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 2px solid var(--mat-sys-primary);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
 .selo-divisao {
-  font: var(--mat-sys-label-small);
-  color: var(--mat-sys-on-secondary-container);
-  background: var(--mat-sys-secondary-container);
+  font: var(--fonte-rotulo-p);
+  color: var(--accent-foreground);
+  background: var(--accent);
   padding: 2px 8px;
   border-radius: 10px;
 }

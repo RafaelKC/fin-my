@@ -5,8 +5,8 @@
   gap: 8px 16px;
   padding: 12px;
   border-radius: 8px;
-  background: var(--mat-sys-tertiary-container);
-  color: var(--mat-sys-on-tertiary-container);
+  background: var(--previsto-suave);
+  color: var(--previsto);
 }
 .texto {
   flex: 1;
@@ -15,7 +15,7 @@
 .botao {
   min-height: 44px;
   padding: 0 16px;
-  border: 1px solid var(--mat-sys-outline);
+  border: 1px solid var(--border-forte);
   border-radius: 8px;
   background: transparent;
   color: inherit;
@@ -25,7 +25,7 @@
     cursor: default;
   }
   &.perigo {
-    color: var(--mat-sys-error);
+    color: var(--destructive);
   }
 }
 .lista {
@@ -46,7 +46,7 @@
   padding: 0;
 }
 .item {
-  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  border-bottom: 1px solid var(--border);
 }
 .linha {
   display: grid;
@@ -58,7 +58,7 @@
 }
 .meta {
   grid-column: 2 / -1;
-  font: var(--mat-sys-body-small);
+  font: var(--fonte-corpo-p);
 }
 .acoes {
   display: flex;
@@ -67,5 +67,5 @@
 }
 .erro {
   margin: 0;
-  color: var(--mat-sys-error);
+  color: var(--destructive);
 }

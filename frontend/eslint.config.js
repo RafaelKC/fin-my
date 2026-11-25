@@ -34,6 +34,22 @@ module.exports = defineConfig([
     },
   },
   {
+    // Código do Zard UI copiado pela CLI (`zard-cli add`): prefixo `z-` e estilo do projeto de origem.
+    files: [
+      'src/app/shared/components/**/*.ts',
+      'src/app/shared/core/**/*.ts',
+      'src/app/shared/services/**/*.ts',
+      'src/app/shared/utils/**/*.ts',
+    ],
+    rules: {
+      '@angular-eslint/component-selector': 'off',
+      '@angular-eslint/directive-selector': 'off',
+      '@typescript-eslint/array-type': 'off',
+      '@typescript-eslint/consistent-indexed-object-style': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
+  {
     files: ['**/*.html'],
     extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],
     rules: {},

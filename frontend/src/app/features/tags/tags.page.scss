@@ -6,7 +6,7 @@
 }
 
 h1 {
-  font: var(--mat-sys-headline-medium);
+  font: var(--fonte-titulo-g);
   margin: 0 0 8px;
 }
 
@@ -29,7 +29,7 @@ h1 {
 
 .tag {
   padding: 12px;
-  border: 1px solid var(--mat-sys-outline-variant);
+  border: 1px solid var(--border);
   border-radius: 12px;
 }
 
@@ -47,15 +47,15 @@ h1 {
 }
 
 .nome {
-  font: var(--mat-sys-title-medium);
+  font: var(--fonte-titulo-p);
 }
 
 .selo {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  font: var(--mat-sys-label-medium);
-  color: var(--mat-sys-primary);
+  font: var(--fonte-rotulo);
+  color: var(--primary);
 
   mat-icon {
     width: 18px;
@@ -66,8 +66,8 @@ h1 {
 
 .usos {
   margin-left: auto;
-  font: var(--mat-sys-body-small);
-  color: var(--mat-sys-on-surface-variant);
+  font: var(--fonte-corpo-p);
+  color: var(--muted-foreground);
 }
 
 .acoes {
@@ -81,16 +81,16 @@ h1 {
   min-width: 44px;
   min-height: 44px;
   padding: 0 16px;
-  font: var(--mat-sys-label-large);
-  color: var(--mat-sys-primary);
+  font: var(--fonte-rotulo-g);
+  color: var(--primary);
   background: transparent;
   border: 0;
   border-radius: 24px;
   cursor: pointer;
 
   &.principal {
-    color: var(--mat-sys-on-primary);
-    background: var(--mat-sys-primary);
+    color: var(--primary-foreground);
+    background: var(--primary);
   }
 
   &:disabled {
@@ -102,7 +102,7 @@ h1 {
 .painel {
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid var(--mat-sys-outline-variant);
+  border-top: 1px solid var(--border);
 
   label {
     display: block;
@@ -116,10 +116,10 @@ h1 {
   min-height: 48px;
   margin-top: 4px;
   padding: 8px 12px;
-  font: var(--mat-sys-body-large);
+  font: var(--fonte-corpo-g);
   color: inherit;
   background: transparent;
-  border: 1px solid var(--mat-sys-outline);
+  border: 1px solid var(--border-forte);
   border-radius: 8px;
 }
 
@@ -129,9 +129,9 @@ h1 {
 }
 
 .erro {
-  color: var(--mat-sys-error);
+  color: var(--destructive);
 }
 
 .vazio {
-  color: var(--mat-sys-on-surface-variant);
+  color: var(--muted-foreground);
 }

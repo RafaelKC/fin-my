@@ -3,7 +3,9 @@
   "version": 1,
   "cli": {
     "packageManager": "npm",
-    "schematicCollections": ["angular-eslint"]
+    "schematicCollections": [
+      "angular-eslint"
+    ]
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -22,7 +24,9 @@
           "builder": "@angular/build:application",
           "options": {
             "browser": "src/main.ts",
-            "polyfills": ["zone.js"],
+            "polyfills": [
+              "zone.js"
+            ],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -32,11 +36,8 @@
               }
             ],
             "styles": [
-              "@fontsource/roboto/latin-300.css",
-              "@fontsource/roboto/latin-400.css",
-              "@fontsource/roboto/latin-500.css",
-              "@fontsource/material-symbols-outlined/latin-400.css",
-              "src/styles.scss"
+              "@fontsource-variable/inter/index.css",
+              "src/styles.css"
             ]
           },
           "configurations": {
@@ -56,7 +57,10 @@
               "outputHashing": "all",
               "optimization": {
                 "scripts": true,
-                "styles": { "minify": true, "inlineCritical": false },
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
                 "fonts": true
               },
               "serviceWorker": "ngsw-config.json"
@@ -87,7 +91,11 @@
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
-            "lintFilePatterns": ["src/**/*.ts", "src/**/*.html", "e2e/**/*.ts"]
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "src/**/*.html",
+              "e2e/**/*.ts"
+            ]
           }
         }
       }

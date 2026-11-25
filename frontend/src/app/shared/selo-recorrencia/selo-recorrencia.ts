@@ -24,8 +24,8 @@ import { MatIconModule } from '@angular/material/icon';
       gap: 4px;
       margin-left: 8px;
       vertical-align: middle;
-      color: var(--mat-sys-on-surface-variant);
-      font: var(--mat-sys-label-small);
+      color: var(--muted-foreground);
+      font: var(--fonte-rotulo-p);
     }
     mat-icon {
       width: 16px;
@@ -36,8 +36,8 @@ import { MatIconModule } from '@angular/material/icon';
     .alterada {
       padding: 0 6px;
       border-radius: 4px;
-      background: var(--mat-sys-secondary-container);
-      color: var(--mat-sys-on-secondary-container);
+      background: var(--accent);
+      color: var(--accent-foreground);
     }
   `,
 })

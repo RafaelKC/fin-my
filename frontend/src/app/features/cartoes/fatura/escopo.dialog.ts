@@ -46,8 +46,8 @@ export interface EscopoData<T extends string> {
     .botao {
       min-height: 44px;
       padding: 0 16px;
-      font: var(--mat-sys-label-large);
-      color: var(--mat-sys-primary);
+      font: var(--fonte-rotulo-g);
+      color: var(--primary);
       background: transparent;
       border: 0;
       border-radius: 24px;

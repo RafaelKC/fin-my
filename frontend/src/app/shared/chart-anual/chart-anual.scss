@@ -7,27 +7,27 @@
   display: block;
 }
 .zero {
-  stroke: var(--mat-sys-outline-variant);
+  stroke: var(--border);
   stroke-width: 1;
 }
 .entradas {
-  fill: var(--mat-sys-primary);
+  fill: var(--primary);
 }
 .saidas {
-  fill: var(--mat-sys-error);
+  fill: var(--destructive);
 }
 .saldo {
   fill: none;
-  stroke: var(--mat-sys-on-surface);
+  stroke: var(--foreground);
   stroke-width: 2;
 }
 .ponto {
-  fill: var(--mat-sys-surface);
-  stroke: var(--mat-sys-on-surface);
+  fill: var(--card);
+  stroke: var(--foreground);
   stroke-width: 2;
 }
 .rotulo {
-  fill: var(--mat-sys-on-surface-variant);
+  fill: var(--muted-foreground);
   font-size: 11px;
   text-anchor: middle;
 }
@@ -38,7 +38,7 @@
   margin: 8px 0 0;
   padding: 0;
   list-style: none;
-  font: var(--mat-sys-label-medium);
+  font: var(--fonte-rotulo);
 }
 .amostra {
   display: inline-block;
@@ -48,13 +48,13 @@
   border-radius: 2px;
   vertical-align: middle;
   &.entradas {
-    background: var(--mat-sys-primary);
+    background: var(--primary);
   }
   &.saidas {
-    background: var(--mat-sys-error);
+    background: var(--destructive);
   }
   &.saldo {
     height: 3px;
-    background: var(--mat-sys-on-surface);
+    background: var(--foreground);
   }
 }

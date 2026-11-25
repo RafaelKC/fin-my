@@ -7,15 +7,15 @@
 }
 h1 {
   margin: 0;
-  font: var(--mat-sys-headline-medium);
+  font: var(--fonte-titulo-g);
 }
 h2 {
   margin: 0;
-  font: var(--mat-sys-title-large);
+  font: var(--fonte-titulo);
 }
 .progresso {
   margin: 4px 0 8px;
-  color: var(--mat-sys-on-surface-variant);
+  color: var(--muted-foreground);
 }
 .trilha {
   display: flex;
@@ -24,17 +24,17 @@ h2 {
   margin: 0;
   padding: 0;
   list-style: none;
-  font: var(--mat-sys-label-small);
+  font: var(--fonte-rotulo-p);
 
   li {
     padding: 2px 8px;
-    border: 1px solid var(--mat-sys-outline-variant);
+    border: 1px solid var(--border);
     border-radius: 12px;
-    color: var(--mat-sys-on-surface-variant);
+    color: var(--muted-foreground);
   }
   .atual {
-    border-color: var(--mat-sys-primary);
-    color: var(--mat-sys-primary);
+    border-color: var(--primary);
+    color: var(--primary);
     font-weight: 600;
   }
   .feita::before {
@@ -53,8 +53,8 @@ h2 {
 .sucesso {
   padding: 8px 12px;
   border-radius: 8px;
-  background: var(--mat-sys-secondary-container);
-  color: var(--mat-sys-on-secondary-container);
+  background: var(--accent);
+  color: var(--accent-foreground);
 }
 .pessoas {
   margin: 0;
@@ -63,8 +63,8 @@ h2 {
 .aviso {
   padding: 8px 12px;
   border-radius: 8px;
-  background: var(--mat-sys-error-container);
-  color: var(--mat-sys-on-error-container);
+  background: var(--destructive-suave);
+  color: var(--destructive);
 }
 .acoes {
   display: flex;
@@ -72,7 +72,7 @@ h2 {
   align-items: center;
   gap: 8px;
   padding-top: 8px;
-  border-top: 1px solid var(--mat-sys-outline-variant);
+  border-top: 1px solid var(--border);
 }
 .principal,
 .secundario,
@@ -85,19 +85,19 @@ h2 {
 }
 .principal {
   border: 0;
-  background: var(--mat-sys-primary);
-  color: var(--mat-sys-on-primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
 .secundario {
-  border: 1px solid var(--mat-sys-outline);
+  border: 1px solid var(--border-forte);
   background: transparent;
-  color: var(--mat-sys-primary);
+  color: var(--primary);
 }
 .link {
   margin-left: auto;
   border: 0;
   background: transparent;
-  color: var(--mat-sys-on-surface-variant);
+  color: var(--muted-foreground);
   text-decoration: underline;
 }
 button:disabled {

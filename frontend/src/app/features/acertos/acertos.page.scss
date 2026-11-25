@@ -10,7 +10,7 @@
 }
 .titulo {
   margin: 0;
-  font: var(--mat-sys-title-large);
+  font: var(--fonte-titulo);
 }
 .seta {
   width: 48px;
@@ -28,7 +28,7 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  border: 1px solid var(--mat-sys-outline-variant);
+  border: 1px solid var(--border);
   border-radius: 12px;
 }
 .nome {
@@ -36,7 +36,7 @@
   align-items: center;
   gap: 8px;
   margin: 0;
-  font: var(--mat-sys-title-medium);
+  font: var(--fonte-titulo-p);
 }
 .cor {
   width: 16px;
@@ -44,8 +44,8 @@
   border-radius: 50%;
 }
 .selo {
-  font: var(--mat-sys-label-medium);
-  color: var(--mat-sys-on-surface-variant);
+  font: var(--fonte-rotulo);
+  color: var(--muted-foreground);
 }
 .numeros {
   display: grid;
@@ -54,16 +54,16 @@
   margin: 0;
 
   dt {
-    font: var(--mat-sys-label-medium);
-    color: var(--mat-sys-on-surface-variant);
+    font: var(--fonte-rotulo);
+    color: var(--muted-foreground);
   }
   dd {
     margin: 0;
-    font: var(--mat-sys-title-medium);
+    font: var(--fonte-titulo-p);
   }
 }
 .credito {
-  color: var(--mat-sys-primary);
+  color: var(--primary);
 }
 .numero {
   min-height: 44px;
@@ -81,9 +81,9 @@
   padding: 0 16px;
   border: 0;
   border-radius: 22px;
-  background: var(--mat-sys-primary);
-  color: var(--mat-sys-on-primary);
-  font: var(--mat-sys-label-large);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font: var(--fonte-rotulo-g);
   cursor: pointer;
 }
 .itens {
@@ -101,8 +101,8 @@
   }
   .data {
     grid-row: 2;
-    font: var(--mat-sys-label-medium);
-    color: var(--mat-sys-on-surface-variant);
+    font: var(--fonte-rotulo);
+    color: var(--muted-foreground);
   }
   .valor {
     grid-row: 1 / span 2;
@@ -111,5 +111,5 @@
   }
 }
 .erro {
-  color: var(--mat-sys-error);
+  color: var(--destructive);
 }

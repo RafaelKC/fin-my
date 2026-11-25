@@ -5,7 +5,7 @@
 }
 .agora h2 {
   margin: 0 0 8px;
-  font: var(--mat-sys-title-large);
+  font: var(--fonte-titulo);
 }
 .blocos {
   display: grid;
@@ -17,12 +17,12 @@
   flex-direction: column;
   gap: 8px;
   padding: 12px 16px;
-  border: 1px solid var(--mat-sys-outline-variant);
+  border: 1px solid var(--border);
   border-radius: 12px;
 
   h3 {
     margin: 0;
-    font: var(--mat-sys-title-small);
+    font: var(--fonte-subtitulo);
   }
   p {
     margin: 0;
@@ -47,7 +47,7 @@
   }
   .total {
     padding-top: 4px;
-    border-top: 1px solid var(--mat-sys-outline-variant);
+    border-top: 1px solid var(--border);
   }
 }
 .cor {
@@ -57,8 +57,8 @@
 }
 .nota,
 .vazio {
-  color: var(--mat-sys-on-surface-variant);
-  font: var(--mat-sys-label-medium);
+  color: var(--muted-foreground);
+  font: var(--fonte-rotulo);
 }
 .cabecalho {
   display: flex;
@@ -67,7 +67,7 @@
 }
 .titulo {
   margin: 0;
-  font: var(--mat-sys-title-large);
+  font: var(--fonte-titulo);
 }
 .seta {
   width: 48px;
@@ -87,13 +87,13 @@
 .chip {
   min-height: 44px;
   padding: 0 16px;
-  border: 1px solid var(--mat-sys-outline);
+  border: 1px solid var(--border-forte);
   border-radius: 8px;
   background: transparent;
   color: inherit;
   cursor: pointer;
   &[aria-pressed='true'] {
-    background: var(--mat-sys-secondary-container);
+    background: var(--accent);
   }
 }
 .visao {
@@ -115,8 +115,8 @@
     white-space: nowrap;
   }
   thead th {
-    font: var(--mat-sys-label-medium);
-    color: var(--mat-sys-on-surface-variant);
+    font: var(--fonte-rotulo);
+    color: var(--muted-foreground);
   }
   th[scope='row'] {
     text-align: left;
@@ -124,7 +124,7 @@
   }
   tbody tr {
     cursor: pointer;
-    border-bottom: 1px solid var(--mat-sys-outline-variant);
+    border-bottom: 1px solid var(--border);
   }
   tbody a {
     display: inline-block;
@@ -136,18 +136,18 @@
   tfoot th,
   tfoot td {
     font-weight: 600;
-    border-top: 2px solid var(--mat-sys-outline);
+    border-top: 2px solid var(--border-forte);
   }
   .hoje {
-    background: var(--mat-sys-secondary-container);
+    background: var(--accent);
     font-weight: 600;
   }
 }
 .negativo {
-  color: var(--mat-sys-error);
+  color: var(--destructive);
 }
 .erro {
-  color: var(--mat-sys-error);
+  color: var(--destructive);
 }
 .so-leitor {
   position: absolute;
@@ -170,8 +170,8 @@
   gap: 12px;
   padding: 12px 16px;
   border-radius: 12px;
-  background: var(--mat-sys-secondary-container);
-  color: var(--mat-sys-on-secondary-container);
+  background: var(--accent);
+  color: var(--accent-foreground);
   text-decoration: none;
 
   span {

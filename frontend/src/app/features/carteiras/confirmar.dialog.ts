@@ -56,26 +56,26 @@ export type ConfirmarResultado = string | null;
       min-height: 48px;
       margin-top: 4px;
       padding: 8px 12px;
-      font: var(--mat-sys-body-large);
+      font: var(--fonte-corpo-g);
       color: inherit;
       background: transparent;
-      border: 1px solid var(--mat-sys-outline);
+      border: 1px solid var(--border-forte);
       border-radius: 8px;
     }
     .botao {
       min-width: 44px;
       min-height: 44px;
       padding: 0 16px;
-      font: var(--mat-sys-label-large);
-      color: var(--mat-sys-primary);
+      font: var(--fonte-rotulo-g);
+      color: var(--primary);
       background: transparent;
       border: 0;
       border-radius: 24px;
       cursor: pointer;
     }
     .botao.principal {
-      color: var(--mat-sys-on-primary);
-      background: var(--mat-sys-primary);
+      color: var(--primary-foreground);
+      background: var(--primary);
     }
     .botao:disabled {
       opacity: 0.6;

@@ -12,7 +12,7 @@
   margin-bottom: 8px;
 
   h1 {
-    font: var(--mat-sys-headline-medium);
+    font: var(--fonte-titulo-g);
     margin: 0;
   }
 }
@@ -22,9 +22,9 @@
   align-items: center;
   min-height: 44px;
   padding: 0 20px;
-  font: var(--mat-sys-label-large);
-  color: var(--mat-sys-on-primary);
-  background: var(--mat-sys-primary);
+  font: var(--fonte-rotulo-g);
+  color: var(--primary-foreground);
+  background: var(--primary);
   border-radius: 24px;
   text-decoration: none;
 }
@@ -44,13 +44,13 @@
 
 .aviso {
   padding: 12px 16px;
-  color: var(--mat-sys-on-error-container);
-  background: var(--mat-sys-error-container);
+  color: var(--destructive);
+  background: var(--destructive-suave);
   border-radius: 8px;
 }
 
 .vazio {
-  color: var(--mat-sys-on-surface-variant);
+  color: var(--muted-foreground);
 }
 
 .lista {
@@ -64,8 +64,8 @@
 
 .cartao {
   padding: 12px 16px;
-  background: var(--mat-sys-surface-container-low);
-  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--muted);
+  border: 1px solid var(--border);
   border-radius: 12px;
 }
 
@@ -88,7 +88,7 @@
   min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
-  font: var(--mat-sys-title-medium);
+  font: var(--fonte-titulo-p);
 }
 
 .editar {
@@ -96,8 +96,8 @@
   align-items: center;
   min-width: 44px;
   min-height: 44px;
-  color: var(--mat-sys-primary);
-  font: var(--mat-sys-label-large);
+  color: var(--primary);
+  font: var(--fonte-rotulo-g);
 }
 
 .so-leitor {
@@ -112,13 +112,13 @@
 .selo {
   margin-left: 8px;
   padding: 2px 8px;
-  font: var(--mat-sys-label-small);
+  font: var(--fonte-rotulo-p);
   border-radius: 8px;
   vertical-align: middle;
 
   &.cinza {
-    color: var(--mat-sys-on-surface-variant);
-    background: var(--mat-sys-surface-variant);
+    color: var(--muted-foreground);
+    background: var(--muted);
   }
 }
 
@@ -129,21 +129,21 @@
   margin: 8px 0 0;
 
   dt {
-    font: var(--mat-sys-label-medium);
-    color: var(--mat-sys-on-surface-variant);
+    font: var(--fonte-rotulo);
+    color: var(--muted-foreground);
   }
 
   dd {
     display: flex;
     flex-direction: column;
     margin: 0;
-    font: var(--mat-sys-title-medium);
+    font: var(--fonte-titulo-p);
   }
 }
 
 .ajuda {
-  font: var(--mat-sys-body-small);
-  color: var(--mat-sys-on-surface-variant);
+  font: var(--fonte-corpo-p);
+  color: var(--muted-foreground);
 }
 
 .abertas {
@@ -153,11 +153,11 @@
 
   li {
     padding: 4px 0;
-    font: var(--mat-sys-body-medium);
+    font: var(--fonte-corpo);
   }
 
   .vencida {
-    color: var(--mat-sys-error);
+    color: var(--destructive);
 
     .ajuda {
       color: inherit;
@@ -169,7 +169,7 @@
   margin: 12px 0 0;
 
   &.negativo {
-    color: var(--mat-sys-error);
+    color: var(--destructive);
   }
 }
 

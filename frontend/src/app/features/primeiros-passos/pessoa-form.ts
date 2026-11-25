@@ -43,21 +43,21 @@ import { TagsService } from '../../shared/tag-picker/tags.service';
       min-height: 44px;
       padding: 0 12px;
       font: inherit;
-      border: 1px solid var(--mat-sys-outline);
+      border: 1px solid var(--border-forte);
       border-radius: 8px;
       background: transparent;
       color: inherit;
     }
     .erro {
-      color: var(--mat-sys-error);
+      color: var(--destructive);
     }
     .enviar {
       min-height: 44px;
       border: 0;
       border-radius: 22px;
       font: inherit;
-      background: var(--mat-sys-primary);
-      color: var(--mat-sys-on-primary);
+      background: var(--primary);
+      color: var(--primary-foreground);
       cursor: pointer;
     }
   `,
