@@ -122,6 +122,38 @@ test.describe('autorizar (US1.1) — API simulada', () => {
     expect(pediuTicket).toBe(false);
   });
 
+  test('finmy-android: consentimento com título e texto do app, e Autorizar pede o ticket do cliente', async ({
+    page,
+  }) => {
+    await page.route('**/api/v1/auth/refresh', (route) => route.fulfill({ json: sessao }));
+    let corpo: { clientId?: string } | undefined;
+    await page.route('**/api/v1/oauth/consent-tickets', (route) => {
+      corpo = route.request().postDataJSON();
+      return route.fulfill({
+        status: 201,
+        json: { ticket: 'ticket-opaco', expiresAt: '2099-01-01T00:02:00Z' },
+      });
+    });
+    await page.route('**/oauth/authorize**', (route) =>
+      route.fulfill({ contentType: 'text/html', body: '<h1>authorize</h1>' }),
+    );
+
+    const pedido = `client_id=finmy-android&redirect_uri=${encodeURIComponent('br.app.finmy:/oauth2redirect')}&code_challenge=abc123-challenge&code_challenge_method=S256&response_type=code&state=estado-1`;
+    await page.goto(`/autorizar?${pedido}`);
+
+    await expect(
+      page.getByRole('heading', { name: 'Autorizar o App Fin-My (Android)' }),
+    ).toBeVisible();
+    await expect(page.getByTestId('texto-consentimento')).toContainText(
+      'O App Fin-My (Android) poderá ver seus cartões e faturas no Espaço Casa da Lia para mostrar no widget.',
+    );
+    await expect(page.getByText('Claude')).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Autorizar' }).click();
+    await expect(page).toHaveURL(/\/oauth\/authorize\?.*consent_ticket=ticket-opaco/);
+    expect(corpo?.clientId).toBe('finmy-android');
+  });
+
   test('pedido sem os parâmetros do OAuth não oferece autorizar', async ({ page }) => {
     await page.route('**/api/v1/auth/refresh', (route) => route.fulfill({ json: sessao }));
 

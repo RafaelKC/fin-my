@@ -59,6 +59,25 @@ describe('AplicativosConectados (008 US1.2)', () => {
     );
   });
 
+  it('mostra o App Fin-My (Android) pelo nome e a confirmação cita o nome (009 FR-006)', () => {
+    abrir([
+      CLAUDE,
+      {
+        id: 'auth-3',
+        name: 'App Fin-My (Android)',
+        connectedAt: NOVO.connectedAt,
+        lastUsedAt: null,
+      },
+    ]);
+
+    expect(itens()[1].textContent).toContain('App Fin-My (Android)');
+    Array.from(itens()[1].querySelectorAll<HTMLButtonElement>('button'))
+      .find((b) => b.textContent?.includes('Desconectar'))!
+      .click();
+    fixture.detectChanges();
+    expect(itens()[1].textContent).toContain('Desconectar App Fin-My (Android)?');
+  });
+
   it('sem conexões explica como conectar', () => {
     abrir([]);
 

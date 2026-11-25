@@ -132,4 +132,25 @@ describe('AutorizarPage (008 US1.1)', () => {
     expect(el.querySelector('[data-testid="pedido-invalido"]')).not.toBeNull();
     expect(el.querySelectorAll('button')).toHaveLength(0);
   });
+
+  it('Claude: título e texto atuais', () => {
+    abrir();
+
+    expect(el.querySelector('h1')!.textContent).toBe('Autorizar o Claude');
+  });
+
+  it('finmy-android: título e texto próprios, sem mencionar o Claude, e o fluxo é o mesmo', () => {
+    abrir({ ...PEDIDO, client_id: 'finmy-android', redirect_uri: 'br.app.finmy:/oauth2redirect' });
+
+    expect(el.querySelector('h1')!.textContent).toBe('Autorizar o App Fin-My (Android)');
+    const texto = el.querySelector('[data-testid="texto-consentimento"]')!.textContent!;
+    expect(texto.replace(/\s+/g, ' ')).toBe(
+      ' O App Fin-My (Android) poderá ver seus cartões e faturas no Espaço Espaço da Ana para mostrar no widget. ',
+    );
+    expect(el.textContent).not.toContain('Claude');
+
+    botao('Autorizar').click();
+    const req = http.expectOne('/api/v1/oauth/consent-tickets');
+    expect(req.request.body).toMatchObject({ clientId: 'finmy-android' });
+  });
 });
