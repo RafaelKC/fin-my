@@ -15,14 +15,21 @@
       Você pode desconectar {{ android ? 'o app' : 'o Claude' }} a qualquer momento em Perfil →
       Aplicativos conectados.
     </p>
-    <div class="acoes">
-      <button type="button" class="autorizar" [disabled]="enviando()" (click)="autorizar()">
-        {{ enviando() ? 'Autorizando…' : 'Autorizar' }}
-      </button>
-      <button type="button" class="cancelar" [disabled]="enviando()" (click)="cancelar()">
-        Cancelar
-      </button>
-    </div>
+    @if (retornoParaApp(); as url) {
+      <div class="acoes" data-testid="voltar-ao-app">
+        <p class="ajuda">Autorizado. Toque para voltar ao app.</p>
+        <a class="autorizar voltar" [href]="url">Voltar ao app</a>
+      </div>
+    } @else {
+      <div class="acoes">
+        <button type="button" class="autorizar" [disabled]="enviando()" (click)="autorizar()">
+          {{ enviando() ? 'Autorizando…' : 'Autorizar' }}
+        </button>
+        <button type="button" class="cancelar" [disabled]="enviando()" (click)="cancelar()">
+          Cancelar
+        </button>
+      </div>
+    }
   } @else {
     <div class="aviso" role="alert" data-testid="pedido-invalido">
       <p>Pedido de autorização inválido. Volte ao Claude e adicione o conector de novo.</p>
