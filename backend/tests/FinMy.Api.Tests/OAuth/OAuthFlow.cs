@@ -68,6 +68,7 @@ public sealed class OAuthFlow(ApiFactory factory)
         location.GetLeftPart(UriPartial.Path).ShouldBe(Redirect);
         var query = HttpUtility.ParseQueryString(location.Query);
         query["error"].ShouldBeNull();
+        query["iss"].ShouldNotBeNull().ShouldNotEndWith("/"); // RFC 9207: igual ao issuer da descoberta
         return query["code"]!;
     }
 
