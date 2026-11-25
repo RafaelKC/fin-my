@@ -199,6 +199,37 @@ public class WidgetApiTests(PostgresFixture postgres) : ApiTestBase(postgres)
         }
     }
 
+    /// <summary>Gráfico do widget: as 6 últimas faturas até a atual, com os mesmos totais da rota da fatura.</summary>
+    [Fact]
+    public async Task Historico_traz_as_seis_ultimas_faturas_ate_a_atual_com_os_totais_da_rota_da_fatura()
+    {
+        var (app, _, _, verde, widget) = await NewLiaAsync();
+        await PurchaseAsync(app, verde.Id, "Mercado", "300,00", "2026-03-20");
+        await PurchaseAsync(app, verde.Id, "Farmácia", "45,90", "2026-01-21");
+        await PurchaseAsync(app, verde.Id, "Livro", "80,00", "2025-12-05");
+
+        var body = await OkAsync(widget, $"{CardsPath}/{verde.Id}/current-invoice");
+        var current = body.GetProperty("invoice").GetProperty("dueMonth").GetString()!;
+        var history = body.GetProperty("history").EnumerateArray().ToList();
+
+        history.Count.ShouldBe(6);
+        history[^1].GetProperty("dueMonth").GetString().ShouldBe(current);
+        var months = history.Select(h => DateOnly.ParseExact(h.GetProperty("dueMonth").GetString()! + "-01", "yyyy-MM-dd")).ToList();
+        for (var i = 1; i < months.Count; i++)
+        {
+            months[i].ShouldBe(months[i - 1].AddMonths(1));
+        }
+
+        foreach (var point in history)
+        {
+            var month = point.GetProperty("dueMonth").GetString();
+            var screen = await app.GetFromJsonAsync<JsonElement>($"/api/v1/credit-cards/{verde.Id}/invoices/{month}");
+            point.GetProperty("totalCents").GetInt64().ShouldBe(screen.GetProperty("totalCents").GetInt64(), month);
+        }
+
+        history.Sum(h => h.GetProperty("totalCents").GetInt64()).ShouldBe(30000 + 4590 + 8000);
+    }
+
     [Fact]
     public async Task Cartao_arquivado_ou_excluido_ou_desconhecido_e_404_credit_card_not_found()
     {

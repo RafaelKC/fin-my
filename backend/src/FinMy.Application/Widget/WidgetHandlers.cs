@@ -31,7 +31,11 @@ public sealed record WidgetInvoiceView(
     long PlannedCents,
     long? EstimateCents,
     long PaidCents,
-    long RemainingCents);
+    long RemainingCents,
+    IReadOnlyList<WidgetHistoryPoint> History);
+
+/// <summary>Total de uma fatura do cartão (gráfico do widget: as últimas faturas até a atual).</summary>
+public sealed record WidgetHistoryPoint(string DueMonth, long TotalCents);
 
 /// <summary>Cartões ativos do Espaço, por nome (somente leitura).</summary>
 public sealed class ListWidgetCardsHandler(ICreditCardStore cards, IClock clock)
@@ -54,14 +58,20 @@ public sealed class ListWidgetCardsHandler(ICreditCardStore cards, IClock clock)
 /// tela da fatura (<see cref="GetInvoiceHandler"/>) e o Planejado da mesma regra da 007 (<see cref="InvoiceForecast"/>), logo
 /// idênticos aos do app (SC-002).
 /// </summary>
-public sealed class GetWidgetCurrentInvoiceHandler(GetCreditCardHandler getCard, GetInvoiceHandler getInvoice, IClock clock)
+public sealed class GetWidgetCurrentInvoiceHandler(GetCreditCardHandler getCard, GetInvoiceHandler getInvoice, ListInvoicesHandler listInvoices, IClock clock)
 {
+    /// <summary>Faturas no gráfico do widget: as 5 anteriores e a atual.</summary>
+    public const int HistoryMonths = 6;
+
     public async Task<WidgetInvoiceView> HandleAsync(Guid creditCardId, CancellationToken cancellationToken)
     {
         var overview = await FindActiveAsync(creditCardId, cancellationToken);
         var detail = await getInvoice.HandleAsync(creditCardId, overview.CurrentInvoice.DueMonth.ToString(), null, cancellationToken);
         var invoice = detail.Summary;
         var today = clock.Today;
+        var current = overview.CurrentInvoice.DueMonth;
+        var history = await listInvoices.HandleAsync(
+            creditCardId, current.AddMonths(-(HistoryMonths - 1)).ToString(), current.ToString(), cancellationToken);
 
         return new WidgetInvoiceView(
             today,
@@ -76,7 +86,8 @@ public sealed class GetWidgetCurrentInvoiceHandler(GetCreditCardHandler getCard,
             InvoiceForecast.Planned(invoice.TotalCents, invoice.PaidCents, invoice.EstimateCents, today, invoice.ClosingDate),
             invoice.EstimateActive ? invoice.EstimateCents : null,
             invoice.PaidCents,
-            invoice.RemainingCents);
+            invoice.RemainingCents,
+            history.Select(h => new WidgetHistoryPoint(h.DueMonth.ToString(), h.TotalCents)).ToList());
     }
 
     private async Task<CreditCardOverviewView> FindActiveAsync(Guid creditCardId, CancellationToken cancellationToken)
