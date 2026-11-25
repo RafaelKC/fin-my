@@ -153,4 +153,35 @@ describe('AutorizarPage (008 US1.1)', () => {
     const req = http.expectOne('/api/v1/oauth/consent-tickets');
     expect(req.request.body).toMatchObject({ clientId: 'finmy-android' });
   });
+
+  it('retorno para app (esquema próprio): depois do ticket mostra "Voltar ao app" com a URL de autorização', () => {
+    abrir({ ...PEDIDO, client_id: 'finmy-android', redirect_uri: 'br.app.finmy:/oauth/callback' });
+
+    botao('Autorizar').click();
+    fixture.detectChanges();
+    http
+      .expectOne('/api/v1/oauth/consent-tickets')
+      .flush({ ticket: 't-app', expiresAt: '2026-11-24T10:02:00Z' });
+    fixture.detectChanges();
+
+    const link = el.querySelector<HTMLAnchorElement>('[data-testid="voltar-ao-app"] a')!;
+    expect(link.textContent?.trim()).toBe('Voltar ao app');
+    const url = new URL(link.getAttribute('href')!, 'http://localhost');
+    expect(url.pathname).toBe('/oauth/authorize');
+    expect(url.searchParams.get('consent_ticket')).toBe('t-app');
+    expect(destinos).toEqual([link.getAttribute('href')]);
+  });
+
+  it('retorno http (Claude) não mostra "Voltar ao app"', () => {
+    abrir();
+
+    botao('Autorizar').click();
+    fixture.detectChanges();
+    http
+      .expectOne('/api/v1/oauth/consent-tickets')
+      .flush({ ticket: 't', expiresAt: '2026-11-24T10:02:00Z' });
+    fixture.detectChanges();
+
+    expect(el.querySelector('[data-testid="voltar-ao-app"]')).toBeNull();
+  });
 });

@@ -44,3 +44,10 @@ h1 {
   background: transparent;
   border: 1px solid var(--border-forte);
 }
+
+.voltar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}

@@ -62,6 +62,13 @@ export class AutorizarPage {
 
   protected readonly enviando = signal(false);
   protected readonly erro = signal<string | null>(null);
+  /**
+   * Retorno para um app (redirect com esquema próprio, ex.: `br.app.finmy:/oauth/callback`): o Chrome do Android só abre o
+   * app se a navegação vier de um toque, e a navegação automática depois de pedir o ticket já não tem o gesto. Por isso,
+   * além de tentar navegar, a tela oferece o link "Voltar ao app" (um toque novo).
+   */
+  protected readonly retornoParaApp = signal<string | null>(null);
+  private readonly redirectParaApp = !/^https?:/i.test(this.query.get('redirect_uri') ?? '');
 
   protected autorizar(): void {
     if (this.enviando() || !this.pedidoValido) return;
@@ -74,7 +81,11 @@ export class AutorizarPage {
         codeChallenge: this.query.get('code_challenge'),
       })
       .subscribe({
-        next: ({ ticket }) => this.navigator.go(this.urlDeAutorizacao('consent_ticket', ticket)),
+        next: ({ ticket }) => {
+          const url = this.urlDeAutorizacao('consent_ticket', ticket);
+          if (this.redirectParaApp) this.retornoParaApp.set(url);
+          this.navigator.go(url);
+        },
         error: (error: unknown) => {
           this.enviando.set(false);
           this.erro.set(problemMessage(error));
