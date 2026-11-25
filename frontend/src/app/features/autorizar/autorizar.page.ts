@@ -8,6 +8,34 @@ import { PageNavigator } from '../../core/navigation/page-navigator';
 /** Parâmetros que só o Fin-My acrescenta; nunca são repassados do pedido original. */
 const PARAMETROS_PROPRIOS = ['consent_ticket', 'consent_denied'];
 
+/** Cliente do app Android (009 FR-006): texto próprio; qualquer outro cliente é tratado como o Claude (008). */
+export const CLIENTE_ANDROID = 'finmy-android';
+
+/** Título e permissão mostrados no consentimento, conforme o cliente que pediu a autorização. */
+export interface TextoDeConsentimento {
+  titulo: string;
+  nome: string;
+  permissao: string;
+  /** Fecha a frase depois do nome do Espaço, antes do ponto. */
+  complemento: string;
+}
+
+export function textoDoCliente(clientId: string | null): TextoDeConsentimento {
+  return clientId === CLIENTE_ANDROID
+    ? {
+        titulo: 'Autorizar o App Fin-My (Android)',
+        nome: 'O App Fin-My (Android)',
+        permissao: 'poderá ver seus cartões e faturas',
+        complemento: ' para mostrar no widget',
+      }
+    : {
+        titulo: 'Autorizar o Claude',
+        nome: 'O Claude',
+        permissao: 'poderá ver e registrar seus lançamentos',
+        complemento: '',
+      };
+}
+
 /**
  * Tela `/autorizar` (008 US1, research R2): o Claude mandou a pessoa para cá (via `/oauth/authorize`). O `authGuard` garante o
  * login preservando os parâmetros. "Autorizar" pede o ticket de consentimento e "Cancelar" nega; os dois terminam em
@@ -24,6 +52,8 @@ export class AutorizarPage {
   private readonly navigator = inject(PageNavigator);
   private readonly query = inject(ActivatedRoute).snapshot.queryParamMap;
 
+  protected readonly texto = textoDoCliente(this.query.get('client_id'));
+  protected readonly android = this.query.get('client_id') === CLIENTE_ANDROID;
   protected readonly espaco = inject(AuthService).tenant()?.name ?? '';
   protected readonly pedidoValido =
     !!this.query.get('client_id') &&

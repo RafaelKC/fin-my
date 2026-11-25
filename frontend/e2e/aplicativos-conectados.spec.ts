@@ -28,6 +28,20 @@ test.describe('aplicativos conectados (US1.2) — API simulada', () => {
     await expect(item.getByTestId('ultimo-uso')).toContainText('Último uso em');
   });
 
+  test('lista o App Fin-My (Android) pelo nome ao lado do Claude', async ({ page }) => {
+    const android = { ...claude, id: 'auth-2', name: 'App Fin-My (Android)', lastUsedAt: null };
+    await page.route('**/api/v1/me/connected-apps', (route) =>
+      route.fulfill({ json: [claude, android] }),
+    );
+
+    await page.goto('/perfil');
+
+    const itens = page.getByTestId('aplicativo-conectado');
+    await expect(itens).toHaveCount(2);
+    await expect(itens.nth(1)).toContainText('App Fin-My (Android)');
+    await expect(itens.nth(1)).toContainText('Ainda não usado');
+  });
+
   test('desconectar pede confirmação, chama a API e tira o Claude da lista', async ({ page }) => {
     let desconectou: string | undefined;
     await page.route('**/api/v1/me/connected-apps', (route) => route.fulfill({ json: [claude] }));

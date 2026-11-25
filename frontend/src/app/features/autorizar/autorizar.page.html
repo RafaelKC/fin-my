@@ -1,16 +1,19 @@
 <main class="pagina">
-  <h1>Autorizar o Claude</h1>
+  <h1>{{ texto.titulo }}</h1>
 
   @if (pedidoValido) {
     @if (erro(); as mensagem) {
       <div class="aviso" role="alert" data-testid="erro-autorizar">{{ mensagem }}</div>
     }
     <p class="consentimento" data-testid="texto-consentimento">
-      O Claude poderá ver e registrar seus lançamentos no Espaço
-      <strong data-testid="nome-do-espaco-consentimento">{{ espaco }}</strong>.
+      {{ texto.nome }} {{ texto.permissao }} no Espaço
+      <strong data-testid="nome-do-espaco-consentimento">{{ espaco }}</strong>{{
+        texto.complemento
+      }}.
     </p>
     <p class="ajuda">
-      Você pode desconectar o Claude a qualquer momento em Perfil → Aplicativos conectados.
+      Você pode desconectar {{ android ? 'o app' : 'o Claude' }} a qualquer momento em Perfil →
+      Aplicativos conectados.
     </p>
     <div class="acoes">
       <button type="button" class="autorizar" [disabled]="enviando()" (click)="autorizar()">
