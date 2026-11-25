@@ -30,3 +30,11 @@ JWT do app ou token do Claude → 401. Respostas em JSON, valores em centavos + 
 - `/autorizar`: título e texto conforme o cliente. Claude: texto atual da 008. `finmy-android`:
   "O App Fin-My (Android) poderá ver seus cartões e faturas no Espaço <nome> para mostrar no widget."
 - Perfil → Aplicativos conectados: nome do cliente na lista (Claude / App Fin-My (Android)).
+
+## Adendo 010 — `GET /api/v1/widget/overview`
+
+Mesmo token do widget. Resposta: `{ today, month, plannedIncome, plannedExpense, plannedFinal, actualIncome, actualExpense,
+actualFinal, totalBalance, pending: { count, toReceive, toPay }, upcoming: [{ kind: income|expense|invoice, description, date,
+amount, overdue }] (até 8: atrasadas primeiro, depois por data), settlements: [{ tagId, name, color, amount }] (≠ 0, maior
+primeiro), monthPath, settlementsPath }`, com cada valor como `{ cents, text }`. Números iguais aos de `GET /months/{m}`,
+`GET /now` e `GET /settlements/{m}`.

@@ -134,4 +134,28 @@ class WidgetApiTest {
         assertTrue(rig.api.cards() is ApiResult.Failure)
         assertTrue(rig.api.cards() is ApiResult.Failure)
     }
+
+    @Test
+    fun `resumo dos widgets le o contrato do overview`() = runTest {
+        server.enqueue(
+            json(
+                """{"today":"2026-11-25","month":"2026-11",
+                "plannedIncome":{"cents":300000,"text":"R$ 3.000,00"},"plannedExpense":{"cents":250000,"text":"R$ 2.500,00"},
+                "plannedFinal":{"cents":50000,"text":"R$ 500,00"},"actualIncome":{"cents":0,"text":"R$ 0,00"},
+                "actualExpense":{"cents":0,"text":"R$ 0,00"},"actualFinal":{"cents":0,"text":"R$ 0,00"},
+                "totalBalance":{"cents":0,"text":"R$ 0,00"},
+                "pending":{"count":1,"toReceive":{"cents":0,"text":"R$ 0,00"},"toPay":{"cents":8000,"text":"R$ 80,00"}},
+                "upcoming":[{"kind":"invoice","description":"Fatura Verde","date":"2026-11-25","amount":{"cents":30000,"text":"R$ 300,00"},"overdue":false}],
+                "settlements":[{"tagId":"t","name":"Bruna","color":"#e91e63","amount":{"cents":17000,"text":"R$ 170,00"}}],
+                "monthPath":"/mes/2026-11","settlementsPath":"/acertos/2026-11","novo":1}""",
+            ),
+        )
+
+        val result = rig.api.overview() as ApiResult.Ok
+
+        assertEquals("/api/v1/widget/overview", server.takeRequest().path)
+        assertEquals("R$ 500,00", result.value.plannedFinal.text)
+        assertEquals("Fatura Verde", result.value.upcoming.single().description)
+        assertEquals(17000L, result.value.settlements.single().amount.cents)
+    }
 }

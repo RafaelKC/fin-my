@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { AuthService } from '../core/auth/auth.service';
 import { sessao } from '../core/auth/testing';
 import { LancamentoLauncher } from '../features/lancamento/lancamento.launcher';
@@ -95,6 +95,21 @@ describe('Shell', () => {
     expect(botao?.textContent).toContain('Lançar');
     botao!.click();
     expect(abrir).toHaveBeenCalledOnce();
+  });
+
+  it('?lancar=1 (widget Lançar do app Android) abre o formulário rápido e limpa a URL', async () => {
+    const abrir = vi
+      .spyOn(TestBed.inject(LancamentoLauncher), 'abrir')
+      .mockReturnValue(undefined as never);
+    const fixture = TestBed.createComponent(Shell);
+    fixture.detectChanges();
+    const router = TestBed.inject(Router);
+
+    await router.navigateByUrl('/?lancar=1');
+    await fixture.whenStable();
+
+    expect(abrir).toHaveBeenCalledOnce();
+    expect(router.url).not.toContain('lancar');
   });
 
   it('tem o item "Acertos" levando a /acertos, depois do "+"', () => {

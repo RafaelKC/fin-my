@@ -58,6 +58,7 @@ class WidgetBridgePlugin : Plugin() {
                 is ApiResult.Ok -> {
                     WidgetWork.schedule(context)
                     WidgetState.refreshAll(context)
+                    br.app.finmy.widget.OverviewState.refreshAll(context)
                     call.resolve(JSObject().put("connected", true))
                 }
                 ApiResult.Offline -> call.reject("Sem conexão com o Fin-My.", "offline")
@@ -71,6 +72,7 @@ class WidgetBridgePlugin : Plugin() {
         scope.launch {
             WidgetServices.get(context).session.signOut()
             WidgetState.refreshAll(context)
+            br.app.finmy.widget.OverviewState.refreshAll(context)
             call.resolve()
         }
     }

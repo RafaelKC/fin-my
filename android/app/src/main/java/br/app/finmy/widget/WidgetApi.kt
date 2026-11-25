@@ -16,6 +16,10 @@ class WidgetApi(
     suspend fun cards(): ApiResult<CardsResponse> =
         get("/api/v1/widget/credit-cards", notFound = null) { WidgetJson.decodeFromString<CardsResponse>(it) }
 
+    /** Resumo dos widgets "Mês atual", "Próximos vencimentos" e "Acertos" (010). */
+    suspend fun overview(): ApiResult<OverviewResponse> =
+        get("/api/v1/widget/overview", notFound = null) { WidgetJson.decodeFromString(OverviewResponse.serializer(), it) }
+
     suspend fun currentInvoice(cardId: String): ApiResult<CurrentInvoiceResponse> =
         get("/api/v1/widget/credit-cards/$cardId/current-invoice", notFound = ApiResult.CardUnavailable) {
             WidgetJson.decodeFromString<CurrentInvoiceResponse>(it)
