@@ -11,8 +11,8 @@ public static class ModelBuilderExtensions
     public const string SoftDeleteFilter = "SoftDelete";
 
     private static readonly ValueConverter<Channel, string> ChannelConverter = new(
-        v => v.ToString().ToLowerInvariant(),
-        v => Enum.Parse<Channel>(v, true));
+        v => v.ToCode(),
+        v => ChannelCodes.Parse(v));
 
     /// <summary>
     /// Aplica as convenções do Fin-My a todas as entidades já registradas no modelo

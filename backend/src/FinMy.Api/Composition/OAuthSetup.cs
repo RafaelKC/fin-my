@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using FinMy.Application.Auth;
+using FinMy.Application.OAuth;
 using FinMy.Infrastructure.Auth;
 using FinMy.Infrastructure.Auth.OAuth;
 using Microsoft.Extensions.Options;
@@ -104,8 +105,15 @@ public static class OAuthSetup
     public static string ResolveAppUrl(IConfiguration configuration)
         => (configuration["APP_URL"] is { Length: > 0 } appUrl ? appUrl : "http://localhost:8080").TrimEnd('/');
 
-    /// <summary>Recurso protegido: o servidor MCP (<c>/mcp</c>).</summary>
+    /// <summary>Recurso protegido do conector do Claude: o servidor MCP (<c>/mcp</c>).</summary>
     public static string ResourceUrl(string appUrl) => $"{appUrl}/mcp";
+
+    /// <summary>Recurso protegido do widget Android (009 research R3): as rotas <c>/api/v1/widget</c>.</summary>
+    public static string WidgetResourceUrl(string appUrl) => $"{appUrl}/api/v1/widget";
+
+    /// <summary>Recurso dos tokens do cliente: o do widget para <c>finmy-android</c>, o do MCP para os demais.</summary>
+    public static string ResourceFor(string? clientId, string appUrl)
+        => AndroidApp.IsClient(clientId) ? WidgetResourceUrl(appUrl) : ResourceUrl(appUrl);
 
     // Chaves simétricas derivadas da chave do app: estáveis entre reinícios (códigos e tokens de referência continuam válidos),
     // sem um segredo a mais para configurar. O sal separa os usos da chave.

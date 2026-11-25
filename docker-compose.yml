@@ -47,6 +47,10 @@ services:
       Email__FromAddress: ${Email__FromAddress:-no-reply@finmy.local}
       Email__FromName: ${Email__FromName:-Fin-My}
       APP_URL: ${APP_URL:-http://localhost:8080}
+      # App Android (009): /.well-known/assetlinks.json só existe com o pacote e ao menos uma impressão digital.
+      Android__PackageName: ${Android__PackageName:-}
+      Android__CertSha256__0: ${Android__CertSha256__0:-}
+      Android__CertSha256__1: ${Android__CertSha256__1:-}
     depends_on:
       db:
         condition: service_healthy

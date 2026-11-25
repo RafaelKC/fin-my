@@ -1,3 +1,4 @@
+using FinMy.Infrastructure.Auth.OAuth;
 using FinMy.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,6 +28,7 @@ public static partial class MigrateCommand
 
             var pending = (await db.Database.GetPendingMigrationsAsync()).Count();
             await db.Database.MigrateAsync();
+            await scope.ServiceProvider.GetRequiredService<AndroidClientSeeder>().SeedAsync(CancellationToken.None);
             LogApplied(logger, pending);
             return 0;
         }

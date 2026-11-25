@@ -62,6 +62,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IConsentTicketService, ConsentTicketService>();
         services.AddScoped<IConnectedAppsStore, ConnectedAppsStore>();
         services.AddScoped<IClientRegistrationService, ClientRegistrationService>();
+        services.AddScoped<AndroidClientSeeder>();
         services.AddScoped<IDeletionStore, DeletionStore>();
         services.AddScoped<IWalletStore, WalletStore>();
         services.AddScoped<ITagStore, TagStore>();

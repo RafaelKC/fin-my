@@ -1,4 +1,5 @@
 using FinMy.Application.Abstractions;
+using FinMy.Domain.Common;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -32,7 +33,7 @@ public sealed class JwtTokenService(IOptions<JwtOptions> options, IClock clock) 
                 [TokenClaims.Tenant] = request.TenantId.ToString(),
                 [TokenClaims.Session] = request.SessionId.ToString(),
                 [TokenClaims.Name] = request.Name,
-                [TokenClaims.Channel] = request.Channel.ToString().ToLowerInvariant(),
+                [TokenClaims.Channel] = request.Channel.ToCode(),
                 [JwtRegisteredClaimNames.Jti] = Guid.NewGuid().ToString(),
             },
         };
