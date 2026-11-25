@@ -19,10 +19,10 @@ public class OAuthFlowTests(PostgresFixture postgres) : ApiTestBase(postgres)
 {
     private const string AppUrl = "http://finmy.exemplo.com";
 
-    private static readonly DateTimeOffset Start = DateTimeOffset.UtcNow;
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
-    private readonly FakeClock _clock = new(Start);
+    // Hora real no início de cada teste: o relógio do teste é comparado com DateTimeOffset.UtcNow nas asserções.
+    private readonly FakeClock _clock = new(DateTimeOffset.UtcNow);
 
     protected override IReadOnlyDictionary<string, string?>? Settings => new Dictionary<string, string?> { ["APP_URL"] = AppUrl };
 
