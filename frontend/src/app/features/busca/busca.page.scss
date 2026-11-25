@@ -55,12 +55,23 @@ h1 {
 .itens {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sombra-cartao);
+}
+.itens:empty {
+  display: none;
 }
 .item {
   display: flex;
   align-items: center;
   border-bottom: 1px solid var(--border);
+
+  &:last-child {
+    border-bottom: 0;
+  }
 }
 .linha {
   flex: 1;

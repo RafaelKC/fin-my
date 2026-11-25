@@ -1,3 +1,4 @@
+import { EDarkModes, ZardDarkMode } from '@/shared/services/dark-mode';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Icone } from '@/shared/ui/icone';
@@ -33,6 +34,14 @@ type CampoSenha = 'currentPassword' | 'newPassword';
   styleUrl: './perfil.page.scss',
 })
 export class PerfilPage {
+  /** Tema claro/escuro/sistema (Zard), guardado no aparelho. */
+  protected readonly tema = inject(ZardDarkMode);
+  protected readonly temas = [
+    { valor: EDarkModes.SYSTEM, rotulo: 'Do sistema' },
+    { valor: EDarkModes.LIGHT, rotulo: 'Claro' },
+    { valor: EDarkModes.DARK, rotulo: 'Escuro' },
+  ] as const;
+
   private readonly api = inject(ApiClient);
   private readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder).nonNullable;

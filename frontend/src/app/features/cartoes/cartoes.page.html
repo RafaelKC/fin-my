@@ -36,7 +36,9 @@
       @for (c of cartoes(); track c.id) {
         <li class="cartao" data-testid="cartao" [style.--cor-cartao]="c.color">
           <div class="topo">
-            <app-icone class="chip-cartao" nome="credit_card" tamanho="1.25rem" />
+            <span class="cor chip-cartao" [style.background]="c.color" aria-hidden="true"
+              ><app-icone nome="credit_card" tamanho="1.25rem"
+            /></span>
             <h2 class="nome">
               {{ c.name }}
               @if (c.archived) {

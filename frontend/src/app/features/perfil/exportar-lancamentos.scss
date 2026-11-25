@@ -1,8 +1,13 @@
 .secao {
-  margin-bottom: 32px;
+  margin-bottom: 16px;
+  padding: 20px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sombra-cartao);
 
   h2 {
-    font: var(--fonte-titulo);
+    font: var(--fonte-titulo-p);
     margin: 0 0 16px;
   }
 }

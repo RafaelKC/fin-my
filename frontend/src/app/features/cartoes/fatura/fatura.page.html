@@ -37,7 +37,7 @@
       Fecha em {{ diaEMes(f.closingDate) }} · vence em {{ diaEMes(f.dueDate) }}
     </p>
     <p class="situacao">
-      <span class="selo" [attr.data-status]="f.status" data-testid="situacao">{{
+      <span class="selo estado" [attr.data-status]="f.status" data-testid="situacao">{{
         situacao()
       }}</span>
     </p>
@@ -228,7 +228,7 @@
                     [attr.aria-label]="'Editar ' + c.displayDescription"
                     (click)="editar(c)"
                   >
-                    Editar
+                    <app-icone nome="edit" tamanho="1.125rem" />
                   </button>
                 }
                 <button
@@ -242,7 +242,7 @@
                   [attr.aria-label]="'Mover para a fatura anterior: ' + c.displayDescription"
                   (click)="mover(c, 'previous')"
                 >
-                  ‹ Fatura anterior
+                  <app-icone nome="chevron_left" tamanho="1rem" />Anterior
                 </button>
                 <button
                   z-button
@@ -255,7 +255,7 @@
                   [attr.aria-label]="'Mover para a próxima fatura: ' + c.displayDescription"
                   (click)="mover(c, 'next')"
                 >
-                  Próxima fatura ›
+                  Próxima<app-icone nome="chevron_right" tamanho="1rem" />
                 </button>
                 <button
                   z-button
@@ -268,7 +268,7 @@
                   [attr.aria-label]="'Excluir ' + c.displayDescription"
                   (click)="excluir(c)"
                 >
-                  Excluir
+                  <app-icone nome="delete" tamanho="1.125rem" />
                 </button>
               </div>
             </li>

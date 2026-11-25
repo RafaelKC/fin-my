@@ -68,14 +68,26 @@ h2 {
   padding-top: 8px;
   border-top: 1px solid var(--border);
 }
-.principal,
-.secundario,
 .link {
   min-height: 44px;
-  padding: 0 20px;
-  border-radius: 22px;
+  padding: 0 12px;
   font: inherit;
   cursor: pointer;
+}
+.barra-progresso {
+  height: 6px;
+  margin: 4px 0 12px;
+  overflow: hidden;
+  background: var(--muted);
+  border-radius: 999px;
+
+  span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--entrada));
+    border-radius: 999px;
+    transition: width 300ms ease-out;
+  }
 }
 .link {
   margin-left: auto;

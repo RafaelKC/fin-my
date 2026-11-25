@@ -160,6 +160,26 @@
     </div>
   </section>
 
+  <section class="secao" aria-labelledby="titulo-tema">
+    <h2 id="titulo-tema">Aparência</h2>
+    <p class="ajuda">Vale só para este aparelho.</p>
+    <div class="opcoes" role="radiogroup" aria-labelledby="titulo-tema">
+      @for (t of temas; track t.valor) {
+        <label class="opcao">
+          <input
+            type="radio"
+            name="tema"
+            [value]="t.valor"
+            [attr.data-testid]="'tema-' + t.valor"
+            [checked]="tema.currentTheme() === t.valor"
+            (change)="tema.toggleTheme(t.valor)"
+          />
+          {{ t.rotulo }}
+        </label>
+      }
+    </div>
+  </section>
+
   <app-exportar-lancamentos />
 
   <app-aplicativos-conectados />

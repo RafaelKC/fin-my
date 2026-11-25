@@ -1,3 +1,4 @@
+import { Icone } from '@/shared/ui/icone';
 import { SeloRecorrencia } from '../../../shared/selo-recorrencia/selo-recorrencia';
 import { SeloViaClaude } from '../../../shared/selo-via-claude/selo-via-claude';
 import {
@@ -51,7 +52,15 @@ const ROTULO_SITUACAO: Record<InvoiceStatus, string> = {
 @Component({
   selector: 'app-fatura-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ZardButtonComponent, RouterLink, BrlPipe, TagFilter, SeloViaClaude, SeloRecorrencia],
+  imports: [
+    ZardButtonComponent,
+    RouterLink,
+    BrlPipe,
+    TagFilter,
+    SeloViaClaude,
+    SeloRecorrencia,
+    Icone,
+  ],
   templateUrl: './fatura.page.html',
   styleUrl: './fatura.page.scss',
 })
