@@ -78,20 +78,34 @@ public sealed class ApiFactory(
         });
     }
 
-    /// <summary>Aplica as migrações reais no banco do teste (o mesmo caminho do comando <c>migrate</c>).</summary>
+    /// <summary>Aplica as migrações reais no banco do teste e semeia (o mesmo caminho do comando <c>migrate</c>).</summary>
     public async Task MigrateAsync()
     {
-        await using var scope = Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<FinMyDbContext>();
         if (UseProbeModel)
         {
-            await db.Database.EnsureCreatedAsync();
+            await using var scope = Services.CreateAsyncScope();
+            await scope.ServiceProvider.GetRequiredService<FinMyDbContext>().Database.EnsureCreatedAsync();
             return;
         }
 
-        await db.Database.MigrateAsync();
+        await ApplyMigrationsAsync();
+        await SeedAsync();
+    }
 
-        // Como o comando `migrate`: o cliente OAuth do app Android (009) é semeado junto.
+    /// <summary>Só as migrações (sem semeadura): é o que vai para o banco modelo.</summary>
+    public async Task ApplyMigrationsAsync()
+    {
+        await using var scope = Services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<FinMyDbContext>().Database.MigrateAsync();
+    }
+
+    /// <summary>
+    /// Como o comando `migrate`: o cliente OAuth do app Android (009) é semeado junto. Roda por teste, com as
+    /// configurações dele (ex.: <c>Android:RedirectUri</c>), por isso fica fora do banco modelo.
+    /// </summary>
+    public async Task SeedAsync()
+    {
+        await using var scope = Services.CreateAsyncScope();
         await scope.ServiceProvider.GetRequiredService<FinMy.Infrastructure.Auth.OAuth.AndroidClientSeeder>().SeedAsync(CancellationToken.None);
     }
 }

@@ -13,8 +13,7 @@ using Dinheiro = FinMy.Domain.Monetary.Money;
 namespace FinMy.Api.Tests.Isolation;
 
 /// <summary>Persistência da migração <c>Recurrences</c> (005 data-model.md): colunas, FKs compostas, CHECKs e unicidade da ocorrência.</summary>
-[Collection(ApiTestGroup.Name)]
-public class RecurrencePersistenceTests(PostgresFixture postgres)
+public class RecurrencePersistenceTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     private static readonly DateOnly Hoje = new(2026, 3, 10);
 

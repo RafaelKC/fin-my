@@ -10,8 +10,7 @@ namespace FinMy.Api.Tests.Isolation;
 /// Isolamento no nível dos dados (docs/arquitetura.md §3.7, parte a): para <b>cada</b> tipo <see cref="ITenantEntity"/>
 /// mapeado (descoberto por reflexão), o Espaço B não vê, não encontra nem altera linhas do Espaço A.
 /// </summary>
-[Collection(ApiTestGroup.Name)]
-public class TenantEntityIsolationTests(PostgresFixture postgres)
+public class TenantEntityIsolationTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     private static readonly System.Reflection.MethodInfo[] Helpers = typeof(TenantEntityIsolationTests)
         .GetMethods(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
