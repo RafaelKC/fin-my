@@ -1,5 +1,6 @@
 package br.app.finmy.widget
 
+import android.net.Uri
 import androidx.core.net.toUri
 import net.openid.appauth.AuthorizationRequest
 import net.openid.appauth.AuthorizationServiceConfiguration
@@ -22,4 +23,8 @@ object AuthConfig {
             .setScope("offline_access")
             .build()
     }
+
+    /** O redirect do login (`br.app.finmy:/oauth/callback?...`). */
+    fun isRedirect(url: Uri): Boolean =
+        url.scheme == "br.app.finmy" && (url.path ?: url.schemeSpecificPart.substringBefore('?')).endsWith("/oauth/callback")
 }

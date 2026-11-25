@@ -10,33 +10,37 @@ import android.widget.Button
 import android.widget.ListView
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.annotation.SuppressLint
+import android.net.Uri
+import android.webkit.CookieManager
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.OnBackPressedCallback
+import androidx.core.view.isVisible
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.lifecycle.lifecycleScope
 import br.app.finmy.R
 import kotlinx.coroutines.launch
-import net.openid.appauth.AuthorizationException
-import net.openid.appauth.AuthorizationResponse
-import net.openid.appauth.AuthorizationService
+import net.openid.appauth.AuthorizationRequest
 
 /**
- * Configuração do widget: entra (OAuth + PKCE no Custom Tab, se ainda não houver sessão) e escolhe o cartão.
+ * Configuração do widget: entra (OAuth + PKCE numa WebView desta tela, se ainda não houver sessão) e escolhe o cartão.
+ * A WebView (app próprio falando com o próprio servidor) substitui o Custom Tab: dentro da TWA o Chrome não entrega o
+ * redirect `br.app.finmy:/oauth/callback` ao app que a hospeda e o login nunca voltava para esta tela.
  * Também serve para "Entre de novo" e "Cartão indisponível — toque para escolher outro".
  */
 class WidgetConfigActivity : ComponentActivity() {
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
-    private var authService: AuthorizationService? = null
+    private var pendingRequest: AuthorizationRequest? = null
     private lateinit var services: WidgetComponents
 
     private lateinit var message: TextView
     private lateinit var progress: ProgressBar
     private lateinit var action: Button
     private lateinit var cardList: ListView
-
-    private val loginLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        handleLoginResult(result.data)
-    }
+    private lateinit var login: WebView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,13 +56,23 @@ class WidgetConfigActivity : ComponentActivity() {
         progress = findViewById(R.id.progress)
         action = findViewById(R.id.action)
         cardList = findViewById(R.id.cards)
+        login = findViewById(R.id.login)
+        setupLogin()
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (login.isVisible && login.canGoBack()) login.goBack() else finish()
+                }
+            },
+        )
         services = WidgetServices.get(this)
 
         if (savedInstanceState == null) start()
     }
 
     override fun onDestroy() {
-        authService?.dispose()
+        login.destroy()
         super.onDestroy()
     }
 
@@ -72,18 +86,42 @@ class WidgetConfigActivity : ComponentActivity() {
         show(messageRes, buttonRes = R.string.widget_config_login_button) { launchLogin() }
     }
 
-    private fun launchLogin() {
-        val service = authService ?: AuthorizationService(this).also { authService = it }
-        val request = AuthConfig.authorizationRequest(services.baseUrl)
-        loginLauncher.launch(service.getAuthorizationRequestIntent(request))
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun setupLogin() {
+        CookieManager.getInstance().setAcceptCookie(true)
+        login.settings.javaScriptEnabled = true
+        login.settings.domStorageEnabled = true
+        login.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                val url = request.url
+                if (!AuthConfig.isRedirect(url)) return false
+                handleRedirect(url)
+                return true
+            }
+        }
     }
 
-    private fun handleLoginResult(data: Intent?) {
-        val response = data?.let(AuthorizationResponse::fromIntent)
-        val error = data?.let(AuthorizationException::fromIntent)
-        val code = response?.authorizationCode
-        val verifier = response?.request?.codeVerifier
-        if (error != null || code == null || verifier == null) {
+    private fun launchLogin() {
+        val request = AuthConfig.authorizationRequest(services.baseUrl)
+        pendingRequest = request
+        progress.visibility = View.GONE
+        action.visibility = View.GONE
+        cardList.visibility = View.GONE
+        message.setText(R.string.widget_config_login)
+        login.visibility = View.VISIBLE
+        login.loadUrl(request.toUri().toString())
+    }
+
+    private fun handleRedirect(url: Uri) {
+        login.stopLoading()
+        login.visibility = View.GONE
+        val request = pendingRequest
+        pendingRequest = null
+        val code = url.getQueryParameter("code")
+        val verifier = request?.codeVerifier
+        if (url.getQueryParameter("error") != null || code == null || verifier == null ||
+            url.getQueryParameter("state") != request.state
+        ) {
             showLogin(R.string.widget_config_login_failed)
             return
         }
@@ -138,6 +176,7 @@ class WidgetConfigActivity : ComponentActivity() {
     }
 
     private fun showLoading() {
+        login.visibility = View.GONE
         message.setText(R.string.widget_config_loading)
         progress.visibility = View.VISIBLE
         action.visibility = View.GONE
@@ -145,6 +184,7 @@ class WidgetConfigActivity : ComponentActivity() {
     }
 
     private fun show(messageRes: Int, buttonRes: Int, onClick: () -> Unit) {
+        login.visibility = View.GONE
         message.setText(messageRes)
         progress.visibility = View.GONE
         cardList.visibility = View.GONE

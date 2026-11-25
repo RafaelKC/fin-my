@@ -37,6 +37,15 @@
         android:layout_marginTop="16dp"
         android:visibility="gone" />
 
+    <!-- Login do widget dentro do próprio app (o Chrome não devolve o redirect br.app.finmy: para a TWA que o hospeda). -->
+    <WebView
+        android:id="@+id/login"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="12dp"
+        android:layout_weight="1"
+        android:visibility="gone" />
+
     <ListView
         android:id="@+id/cards"
         android:layout_width="match_parent"
