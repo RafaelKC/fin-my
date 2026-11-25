@@ -27,15 +27,39 @@
     <p class="erro" role="alert" data-testid="erro-acertos">{{ mensagem }}</p>
   } @else if (linhas(); as lista) {
     @if (lista.length === 0) {
-      <p class="vazio" data-testid="sem-acertos">
-        Nenhuma tag de acerto neste mês. Marque uma tag como "de acerto" em
-        <a routerLink="/tags">Tags</a>.
-      </p>
+      <div class="vazio" data-testid="sem-acertos">
+        <app-icone nome="group" tamanho="2rem" class="vazio-icone" />
+        <p>
+          Nenhuma tag de acerto neste mês. Marque uma tag como "de acerto" em
+          <a routerLink="/tags">Tags</a>.
+        </p>
+      </div>
+    } @else if (comGrafico && lista.length > 1) {
+      <figure class="grafico" aria-hidden="true">
+        <figcaption>Saldo acumulado por pessoa</figcaption>
+        <z-chart
+          class="h-40 aspect-auto"
+          zType="bar"
+          zXAxisKey="pessoa"
+          [zHorizontal]="true"
+          [zData]="dadosGrafico()"
+          [zConfig]="configGrafico"
+          [zSeries]="seriesGrafico"
+          [zXAxis]="true"
+          [zYAxis]="false"
+          [zGrid]="false"
+          [zAccessibility]="false"
+        >
+          <z-chart-tooltip [zValueFormatter]="dica" />
+        </z-chart>
+      </figure>
     }
     @for (row of lista; track row.tagId) {
       <section class="cartao" data-testid="acerto" [attr.data-tag]="row.tagName">
         <h2 class="nome">
-          <span class="cor" [style.background]="row.tagColor" aria-hidden="true"></span>
+          <span class="avatar" [style.--cor-pessoa]="row.tagColor" aria-hidden="true">{{
+            row.tagName.charAt(0)
+          }}</span>
           {{ row.tagName }}
           @if (row.archived) {
             <span class="selo">arquivada</span>
@@ -75,7 +99,7 @@
             <dt>A receber</dt>
             <dd data-testid="a-receber">{{ row.toReceiveCents | brl }}</dd>
           </div>
-          <div>
+          <div class="saldo-bloco" [class.positivo]="row.accumulatedCents > 0">
             <dt>Saldo acumulado</dt>
             @if (ehCredito(row)) {
               <dd class="credito" data-testid="saldo">

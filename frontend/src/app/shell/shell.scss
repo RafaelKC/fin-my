@@ -2,6 +2,7 @@
 :host {
   display: grid;
   min-height: 100%;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   grid-template-areas:
     'topo'
@@ -36,19 +37,10 @@
 }
 
 .logo {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  font: 700 1rem/1 var(--fonte);
-  color: var(--primary-foreground);
-  background: linear-gradient(
-    135deg,
-    var(--primary),
-    color-mix(in oklch, var(--primary) 60%, var(--entrada))
-  );
-  border-radius: 9px;
-  box-shadow: var(--sombra-cartao);
+  width: 32px;
+  height: 32px;
+  flex: none;
+  filter: drop-shadow(0 2px 4px oklch(0.4 0.15 277 / 30%));
 }
 
 .marca-nome {

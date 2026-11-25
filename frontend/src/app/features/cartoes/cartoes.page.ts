@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { Icone } from '@/shared/ui/icone';
 import { BrlPipe, monthLabel } from '../../core/money';
 import { problemMessage } from '../../core/errors/problem-details';
 import { CreditCardOverview, InvoiceSummary } from './card.models';
@@ -20,7 +22,7 @@ export function diaEMes(data: string): string {
 @Component({
   selector: 'app-cartoes-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, BrlPipe],
+  imports: [ZardButtonComponent, Icone, RouterLink, BrlPipe],
   templateUrl: './cartoes.page.html',
   styleUrl: './cartoes.page.scss',
 })
@@ -45,6 +47,12 @@ export class CartoesPage {
   }
 
   /** Fatura vencida com valor em aberto aparece em vermelho (FR-025). */
+  /** Parte do limite já usada, de 0 a 100, para a barra do cartão. */
+  protected usoDoLimite(limite: number, disponivel: number): number {
+    if (limite <= 0) return 100;
+    return Math.min(100, Math.max(0, Math.round(((limite - disponivel) / limite) * 100)));
+  }
+
   protected vencida(fatura: InvoiceSummary): boolean {
     return fatura.status === 'overdue';
   }

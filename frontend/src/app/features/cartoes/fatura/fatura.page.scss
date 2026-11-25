@@ -1,7 +1,7 @@
 .pagina {
   box-sizing: border-box;
-  max-width: 36rem;
-  margin: 0 auto;
+  max-width: 720px;
+  margin: 0;
 }
 
 .voltar {
@@ -41,7 +41,7 @@
   font-size: 1.75rem;
   color: var(--primary);
   text-decoration: none;
-  border-radius: 24px;
+  border-radius: 999px;
 }
 
 .cor {
@@ -68,7 +68,7 @@
   font: var(--fonte-rotulo-g);
   color: var(--muted-foreground);
   background: var(--muted);
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
 
   &[data-status='paid'] {
     color: var(--accent-foreground);
@@ -87,9 +87,10 @@
   gap: 8px;
   margin: 0;
   padding: 12px 16px;
-  background: var(--muted);
+  background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sombra-cartao);
 
   dt {
     font: var(--fonte-rotulo);
@@ -128,9 +129,10 @@ h2 {
 
 .compra {
   padding: 8px 12px;
-  background: var(--muted);
+  background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sombra-cartao);
 }
 
 .linha {

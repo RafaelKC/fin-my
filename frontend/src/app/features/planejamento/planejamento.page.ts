@@ -11,6 +11,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Icone } from '@/shared/ui/icone';
 import { ZardDropdownImports } from '@/shared/components/dropdown';
+import { ChartAnual } from '../../shared/chart-anual/chart-anual';
+import { PontoAnual } from '../../shared/chart-anual/chart-anual-logic';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EMPTY, Subject, catchError, concatMap, of, switchMap, tap } from 'rxjs';
 import { asProblem, problemMessage } from '../../core/errors/problem-details';
@@ -92,7 +94,7 @@ interface Edicao {
 @Component({
   selector: 'app-planejamento-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ZardButtonComponent, BrlPipe, Icone, ...ZardDropdownImports],
+  imports: [ZardButtonComponent, BrlPipe, Icone, ...ZardDropdownImports, ChartAnual],
   templateUrl: './planejamento.page.html',
   styleUrl: './planejamento.page.scss',
 })
@@ -114,6 +116,15 @@ export class PlanejamentoPage {
   protected readonly ano = signal(0);
   protected readonly grade = signal<PlanningGrid | null>(null);
   protected readonly totais = signal<PlanningTotals | null>(null);
+  /** Pontos do gráfico do ano planejado (mesmo componente do Painel). */
+  protected readonly pontosGrafico = computed<PontoAnual[]>(() =>
+    (this.totais()?.months ?? []).map((m) => ({
+      rotulo: monthShortLabel(m.month).slice(0, 3),
+      entradasCents: m.incomeCents,
+      saidasCents: m.expenseCents,
+      saldoCents: m.finalBalanceCents,
+    })),
+  );
   protected readonly novas = signal<PlanningRow[]>([]);
   protected readonly carteiras = signal<Wallet[]>([]);
   protected readonly editando = signal<Edicao | null>(null);

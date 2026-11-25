@@ -25,6 +25,59 @@
     font: var(--fonte-titulo-p);
   }
 
+  /* ---------- Navegador de período (mês/ano): ‹ título › ---------- */
+  .cabecalho:has(> .seta) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    box-shadow: var(--sombra-cartao);
+  }
+
+  .cabecalho:has(> .seta) > .titulo,
+  .cabecalho:has(> .seta) > h1 {
+    flex: 1;
+    margin: 0;
+    text-align: center;
+    font: var(--fonte-titulo);
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .seta {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    color: var(--foreground);
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    transition:
+      background-color 120ms,
+      transform 120ms;
+  }
+
+  .seta:hover:not(:disabled) {
+    background: var(--muted);
+  }
+
+  .seta:active:not(:disabled) {
+    transform: scale(0.92);
+  }
+
+  .seta:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
   /* ---------- Campo: rótulo + controle + ajuda/erro ---------- */
   .campo {
     display: flex;
@@ -97,6 +150,26 @@
     border-radius: var(--radius-lg);
   }
 
+  /* Estado vazio com ícone: o ícone fica num círculo com a cor da marca. */
+  div.vazio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 28px 16px;
+  }
+
+  div.vazio > p {
+    margin: 0;
+  }
+
+  .vazio-icone {
+    color: var(--primary);
+    padding: 12px;
+    background: var(--accent);
+    border-radius: 999px;
+  }
+
   /* ---------- Selos (badges) ---------- */
   .selo {
     display: inline-flex;
@@ -122,8 +195,10 @@
     align-items: center;
     gap: 6px;
     min-height: 44px;
+    flex: none;
     padding: 0 14px;
     font: var(--fonte-rotulo);
+    white-space: nowrap;
     color: var(--foreground);
     background: var(--card);
     border: 1px solid var(--border-forte);
@@ -174,6 +249,10 @@
   /* ---------- Acessibilidade ---------- */
   .so-leitor {
     position: absolute;
+    /* Sem left/top, o texto ficaria na posição "estática" e, fora de um contêiner posicionado,
+       alargaria a página (o celular ampliava a janela de layout no planejamento). */
+    left: 0;
+    top: 0;
     width: 1px;
     height: 1px;
     padding: 0;
@@ -223,6 +302,106 @@
   table.tabela .num {
     text-align: end;
   }
+}
+
+/* Telas sem login (entrar, criar conta, senha, autorizar): cartão central com a marca. */
+@layer components {
+  :is(
+    app-entrar-page,
+    app-criar-conta-page,
+    app-esqueci-senha-page,
+    app-redefinir-senha-page,
+    app-autorizar-page
+  ) {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 100dvh;
+    padding: max(24px, env(safe-area-inset-top)) 16px 24px;
+    box-sizing: border-box;
+    background:
+      radial-gradient(
+        60% 50% at 0% 0%,
+        color-mix(in oklch, var(--primary) 16%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        50% 40% at 100% 100%,
+        color-mix(in oklch, var(--entrada) 14%, transparent),
+        transparent 70%
+      ),
+      var(--background);
+  }
+
+  :is(
+      app-entrar-page,
+      app-criar-conta-page,
+      app-esqueci-senha-page,
+      app-redefinir-senha-page,
+      app-autorizar-page
+    )
+    > .pagina {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--sombra-flutuante);
+    animation: surgir-auth 260ms ease-out;
+  }
+
+  :is(
+      app-entrar-page,
+      app-criar-conta-page,
+      app-esqueci-senha-page,
+      app-redefinir-senha-page,
+      app-autorizar-page
+    )
+    > .pagina::before {
+    content: 'Fin-My';
+    display: flex;
+    align-items: center;
+    height: 40px;
+    margin-bottom: 20px;
+    padding-left: 50px;
+    font: var(--fonte-titulo);
+    letter-spacing: -0.01em;
+    background: url('/icons/icone.svg') no-repeat left center / 40px 40px;
+  }
+
+  @media (min-width: 640px) {
+    :is(
+      app-entrar-page,
+      app-criar-conta-page,
+      app-esqueci-senha-page,
+      app-redefinir-senha-page,
+      app-autorizar-page
+    ) {
+      align-items: center;
+    }
+  }
+}
+
+@keyframes surgir-auth {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Faixa "Sem conexão" (app.html), fixa no topo e acima de tudo. */
+.sem-conexao {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: calc(6px + env(safe-area-inset-top)) 16px 6px;
+  font: var(--fonte-rotulo);
+  color: var(--background);
+  background: var(--foreground);
+  text-align: center;
 }
 
 /* Formulário rápido no celular: o painel do diálogo ocupa a tela inteira. */

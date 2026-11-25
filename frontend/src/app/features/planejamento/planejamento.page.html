@@ -251,6 +251,12 @@
         }
       </table>
     </div>
+    @if (pontosGrafico().length > 0) {
+      <section class="resumo-grafico" aria-labelledby="titulo-grafico-plano">
+        <h2 id="titulo-grafico-plano">Entradas, saídas e saldo planejados</h2>
+        <app-chart-anual [pontos]="pontosGrafico()" [descricao]="'Planejado de ' + ano()" />
+      </section>
+    }
   } @else if (erro() === null) {
     <p role="status">Carregando…</p>
   }

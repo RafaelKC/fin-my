@@ -1,7 +1,7 @@
 <main class="pagina">
   <header class="cabecalho">
     <h1>Cartões</h1>
-    <a class="nova" routerLink="/cartoes/novo">Novo cartão</a>
+    <a class="nova" z-button routerLink="/cartoes/novo"><app-icone nome="add" />Novo cartão</a>
   </header>
 
   <label class="filtro">
@@ -21,19 +21,22 @@
   @if (carregando()) {
     <p role="status">Carregando…</p>
   } @else if (cartoes().length === 0 && !erro()) {
-    <p class="vazio" data-testid="lista-vazia">
-      {{
-        arquivados()
-          ? 'Nenhum cartão arquivado.'
-          : 'Você ainda não tem cartões. Toque em "Novo cartão" para começar.'
-      }}
-    </p>
+    <div class="vazio" data-testid="lista-vazia">
+      <app-icone nome="credit_card" tamanho="2rem" class="vazio-icone" />
+      <p>
+        {{
+          arquivados()
+            ? 'Nenhum cartão arquivado.'
+            : 'Você ainda não tem cartões. Toque em "Novo cartão" para começar.'
+        }}
+      </p>
+    </div>
   } @else {
     <ul class="lista" data-testid="lista-cartoes">
       @for (c of cartoes(); track c.id) {
-        <li class="cartao" data-testid="cartao">
+        <li class="cartao" data-testid="cartao" [style.--cor-cartao]="c.color">
           <div class="topo">
-            <span class="cor" [style.background]="c.color" aria-hidden="true"></span>
+            <app-icone class="chip-cartao" nome="credit_card" tamanho="1.25rem" />
             <h2 class="nome">
               {{ c.name }}
               @if (c.archived) {
@@ -90,6 +93,9 @@
             c.availableLimitCents !== null &&
             c.availableLimitCents !== undefined
           ) {
+            <div class="uso" aria-hidden="true">
+              <span [style.width.%]="usoDoLimite(c.limitCents, c.availableLimitCents)"></span>
+            </div>
             <p
               class="limite"
               [class.negativo]="c.availableLimitCents < 0"

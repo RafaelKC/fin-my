@@ -36,6 +36,7 @@
           type="button"
           class="keypad__key"
           [class.keypad__key--wide]="k.wide"
+          [class.keypad__key--op]="ehOperador(k)"
           [attr.aria-label]="k.ariaLabel"
           [disabled]="disabled()"
           (click)="isBackspace(k) ? backspace() : press(k)"

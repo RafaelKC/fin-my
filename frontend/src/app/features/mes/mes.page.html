@@ -99,10 +99,50 @@
   }
 
   @if (carregando() && visao() === null && erro() === null) {
-    <p role="status" data-testid="carregando">Carregando…</p>
+    <div class="carregando" role="status" data-testid="carregando">
+      <span class="so-leitor">Carregando…</span>
+      <z-skeleton class="h-36 w-full rounded-2xl" />
+      <z-skeleton class="h-11 w-2/3 rounded-full" />
+      <z-skeleton class="h-16 w-full rounded-xl" />
+      <z-skeleton class="h-16 w-full rounded-xl" />
+      <z-skeleton class="h-16 w-full rounded-xl" />
+    </div>
   }
 
   @if (visao() !== null) {
+    @if (destaque(); as d) {
+      <section class="destaque" aria-label="Destaques do mês">
+        <div class="saldo">
+          <span class="saldo-rotulo">Saldo final previsto</span>
+          <strong class="saldo-valor" [class.negativo]="d.saldo.previsto < 0">{{
+            d.saldo.previsto | brl
+          }}</strong>
+          <span class="saldo-real">
+            Realizado até agora
+            <strong [class.negativo]="d.saldo.realizado < 0">{{ d.saldo.realizado | brl }}</strong>
+          </span>
+        </div>
+        <div class="balanco" aria-hidden="true">
+          <span class="barra-entradas" [style.width.%]="100 - d.parteSaidas"></span>
+          <span class="barra-saidas" [style.width.%]="d.parteSaidas"></span>
+        </div>
+        <dl class="numeros">
+          <div class="numero entrada">
+            <dt><app-icone nome="arrow_down_left" tamanho="1rem" /> Entradas</dt>
+            <dd>{{ d.entradas.previsto | brl }}</dd>
+          </div>
+          <div class="numero saida">
+            <dt><app-icone nome="arrow_up_right" tamanho="1rem" /> Saídas</dt>
+            <dd>{{ d.saidas.previsto | brl }}</dd>
+          </div>
+          <div class="numero">
+            <dt><app-icone nome="scale" tamanho="1rem" /> Resultado</dt>
+            <dd [class.negativo]="d.resultado.previsto < 0">{{ d.resultado.previsto | brl }}</dd>
+          </div>
+        </dl>
+      </section>
+    }
+
     <table class="resumo" data-testid="resumo">
       <caption class="so-leitor">
         Resumo de
@@ -171,7 +211,10 @@
         Nenhum lançamento com estas tags neste mês.
       </p>
     } @else if (mesVazio()) {
-      <p class="vazio" data-testid="mes-vazio">Nada lançado neste mês. Toque em + para lançar.</p>
+      <div class="vazio" data-testid="mes-vazio">
+        <app-icone nome="inbox" tamanho="2rem" class="vazio-icone" />
+        <p>Nada lançado neste mês. Toque em + para lançar.</p>
+      </div>
     } @else if (semResultadoNoFiltro()) {
       <p class="vazio" data-testid="filtro-vazio">Nenhum lançamento com esta situação.</p>
     }
@@ -184,7 +227,11 @@
       track grupo.id
     ) {
       @if (grupo.itens.length > 0 || (grupo.id === 'saidas' && faturas().length > 0)) {
-        <section class="lista" [attr.aria-labelledby]="'titulo-' + grupo.id">
+        <section
+          class="lista"
+          [class.de-entradas]="grupo.id === 'entradas'"
+          [attr.aria-labelledby]="'titulo-' + grupo.id"
+        >
           <h2 [id]="'titulo-' + grupo.id">{{ grupo.titulo }}</h2>
 
           @if (desktop()) {
@@ -337,7 +384,9 @@
                     <span class="meta">
                       <span class="cor" [style.background]="corCarteira(e.walletId)"></span>
                       {{ nomeCarteira(e.walletId) }} · {{ data(e.date) }} ·
-                      {{ rotuloSituacao(e) }}
+                      <span class="estado" [class.previsto]="e.status !== 'settled'">{{
+                        rotuloSituacao(e)
+                      }}</span>
                     </span>
                   </button>
                 </li>
@@ -367,7 +416,13 @@
                       </span>
                       <span class="valor-item">{{ f.plannedCents | brl }}</span>
                       <span class="meta">
-                        <span data-testid="fatura-situacao">{{ rotuloFatura(f) }}</span> · vence
+                        <span
+                          class="estado"
+                          data-testid="fatura-situacao"
+                          [attr.data-situacao]="f.status"
+                          >{{ rotuloFatura(f) }}</span
+                        >
+                        · vence
                         {{ data(f.dueDate) }} · Total
                         <span data-testid="fatura-total">{{ f.totalCents | brl }}</span> · Pago
                         <span data-testid="fatura-pago">{{ f.paidCents | brl }}</span> · Restante

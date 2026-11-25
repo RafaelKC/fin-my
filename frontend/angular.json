@@ -31,7 +31,11 @@
                 "input": "public"
               }
             ],
-            "styles": ["@fontsource-variable/inter/index.css", "src/styles.css"]
+            "styles": [
+              "@fontsource-variable/inter/index.css",
+              "@fontsource-variable/plus-jakarta-sans/index.css",
+              "src/styles.css"
+            ]
           },
           "configurations": {
             "production": {

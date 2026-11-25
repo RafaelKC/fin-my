@@ -1,2 +1,8 @@
+@if (offline()) {
+  <div class="sem-conexao" role="status" data-testid="sem-conexao">
+    <app-icone nome="wifi_off" tamanho="1rem" />
+    Sem conexão. Os dados voltam a atualizar quando a internet voltar.
+  </div>
+}
 <router-outlet />
 <z-sonner position="top-center" [theme]="tema.themeMode()" />

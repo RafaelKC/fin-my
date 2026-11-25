@@ -1,8 +1,7 @@
 .pagina {
   box-sizing: border-box;
-  max-width: 36rem;
-  margin: 0 auto;
-  padding: 24px 16px;
+  max-width: 720px;
+  margin: 0;
 }
 
 h1 {
@@ -30,7 +29,7 @@ h1 {
 .tag {
   padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
 }
 
 .linha {
@@ -82,7 +81,7 @@ h1 {
   color: inherit;
   background: transparent;
   border: 1px solid var(--border-forte);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
 }
 
 .cor-campo {

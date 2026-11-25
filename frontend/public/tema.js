@@ -10,6 +10,8 @@
     var isDark = theme === 'dark' || (isSystem && prefersDark);
     html.classList.toggle('dark', isDark);
     html.setAttribute('data-theme', theme || 'system');
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', isDark ? '#151519' : '#f9f9fb');
   } catch (_) {
     // armazenamento indisponível: segue no tema claro
   }

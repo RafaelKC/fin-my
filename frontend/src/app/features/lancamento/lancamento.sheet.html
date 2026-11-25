@@ -1,4 +1,5 @@
-<div class="folha">
+<div class="folha" [attr.data-tipo]="kind()">
+  <span class="alca" aria-hidden="true"></span>
   <header class="topo">
     <h2 class="titulo" id="lancamento-titulo">
       {{ editandoCompra ? 'Editar compra' : editando ? 'Editar lançamento' : 'Novo lançamento' }}
@@ -20,7 +21,8 @@
             [attr.aria-checked]="kind() === 'card'"
             (click)="escolherTipo('card')"
           >
-            Cartão
+            <app-icone nome="credit_card" tamanho="1.125rem" />
+            <span>Cartão</span>
           </button>
         }
         <button
@@ -30,7 +32,8 @@
           [attr.aria-checked]="kind() === 'expense'"
           (click)="escolherTipo('expense')"
         >
-          Saída
+          <app-icone nome="arrow_up_right" tamanho="1.125rem" />
+          <span>Saída</span>
         </button>
         <button
           type="button"
@@ -39,7 +42,8 @@
           [attr.aria-checked]="kind() === 'income'"
           (click)="escolherTipo('income')"
         >
-          Entrada
+          <app-icone nome="arrow_down_left" tamanho="1.125rem" />
+          <span>Entrada</span>
         </button>
         @if (!editando) {
           <button
@@ -49,7 +53,8 @@
             [attr.aria-checked]="kind() === 'transfer'"
             (click)="escolherTipo('transfer')"
           >
-            Transferência
+            <app-icone nome="swap" tamanho="1.125rem" />
+            <span>Transferência</span>
           </button>
         }
       </div>

@@ -13,6 +13,7 @@ import { routes } from './app.routes';
 import { authInterceptor } from './core/auth/auth.interceptor';
 import { provideServiceWorker } from '@angular/service-worker';
 import { provideZard } from '@/shared/core/provider/providezard';
+import { provideZardCharts } from '@/shared/components/chart/chart-echarts.provider';
 
 registerLocaleData(localePt, 'pt-BR');
 
@@ -28,5 +29,6 @@ export const appConfig: ApplicationConfig = {
       registrationStrategy: 'registerWhenStable:30000',
     }),
     provideZard(),
+    provideZardCharts(),
   ],
 };

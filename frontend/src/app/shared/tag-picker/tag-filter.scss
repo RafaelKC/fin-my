@@ -12,14 +12,21 @@
   gap: 4px;
   min-height: 44px;
   padding: 0 12px;
-  font: var(--fonte-rotulo-g);
-  color: inherit;
-  background: transparent;
+  font: var(--fonte-rotulo);
+  white-space: nowrap;
+  color: var(--foreground);
+  background: var(--card);
   border: 1px solid var(--border-forte);
-  border-radius: 8px;
+  border-radius: 999px;
   cursor: pointer;
+  transition: background-color 120ms;
+  &:hover {
+    background: var(--muted);
+  }
   &[aria-pressed='true'] {
+    color: var(--accent-foreground);
     background: var(--accent);
+    border-color: color-mix(in oklch, var(--primary) 40%, transparent);
   }
 }
 .painel {

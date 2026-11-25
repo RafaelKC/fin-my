@@ -15,14 +15,19 @@
 .bloco {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 16px;
+  gap: 10px;
+  padding: 16px;
+  background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sombra-cartao);
 
   h3 {
     margin: 0;
-    font: var(--fonte-subtitulo);
+    font: var(--fonte-rotulo-p);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted-foreground);
   }
   p {
     margin: 0;
@@ -39,15 +44,21 @@
   li {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    gap: 4px 8px;
+    align-items: baseline;
+    gap: 2px 8px;
+    padding: 4px 0;
+    font-variant-numeric: tabular-nums;
   }
   .nome {
     flex: 1;
+    min-width: 0;
+    font-weight: 500;
   }
   .total {
-    padding-top: 4px;
+    margin-top: 4px;
+    padding-top: 8px;
     border-top: 1px solid var(--border);
+    font-weight: 700;
   }
 }
 .cor {
@@ -60,26 +71,6 @@
   color: var(--muted-foreground);
   font: var(--fonte-rotulo);
 }
-.cabecalho {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.titulo {
-  margin: 0;
-  font: var(--fonte-titulo);
-}
-.seta {
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: 24px;
-  cursor: pointer;
-  color: inherit;
-}
 .leitura {
   display: flex;
   gap: 8px;
@@ -91,6 +82,10 @@
 }
 .tabela-rolavel {
   overflow-x: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sombra-cartao);
 }
 .tabela {
   width: 100%;
@@ -98,13 +93,21 @@
 
   th,
   td {
-    padding: 8px;
+    padding: 0 12px;
+    height: 44px;
     text-align: right;
     white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
   thead th {
-    font: var(--fonte-rotulo);
+    font: var(--fonte-rotulo-p);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     color: var(--muted-foreground);
+    background: color-mix(in oklch, var(--muted) 60%, transparent);
+  }
+  tbody tr:hover {
+    background: color-mix(in oklch, var(--muted) 55%, transparent);
   }
   th[scope='row'] {
     text-align: left;
@@ -113,6 +116,7 @@
   tbody tr {
     cursor: pointer;
     border-bottom: 1px solid var(--border);
+    transition: background-color 120ms;
   }
   tbody a {
     display: inline-block;
@@ -128,7 +132,8 @@
   }
   .hoje {
     background: var(--accent);
-    font-weight: 600;
+    font-weight: 700;
+    box-shadow: inset 3px 0 0 var(--primary);
   }
 }
 .negativo {
@@ -147,7 +152,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
   background: var(--accent);
   color: var(--accent-foreground);
   text-decoration: none;
@@ -156,4 +161,12 @@
     display: flex;
     flex-direction: column;
   }
+}
+
+.tabela td[data-testid='entradas'] {
+  color: var(--entrada);
+}
+
+.tabela td[data-testid='saidas'] {
+  color: var(--saida);
 }

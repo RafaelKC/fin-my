@@ -3,70 +3,361 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-width: 960px;
 }
-.cabecalho {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.titulo {
-  margin: 0;
-  font: var(--fonte-titulo);
-}
-.seta {
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: 24px;
-  cursor: pointer;
-  color: inherit;
-}
+
 .filtros,
 .grupo {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
+
+// No celular os chips rolam na horizontal em vez de quebrar em várias linhas.
+@media (max-width: 1023.98px) {
+  .grupo {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 -16px;
+    padding: 0 16px;
+  }
+}
+
 .cor {
   display: inline-block;
+  flex: none;
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  margin-right: 4px;
+  margin-right: 6px;
+  box-shadow: inset 0 0 0 1px oklch(0 0 0 / 12%);
 }
+
+.carregando {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// ---------- Destaque: saldo + entradas/saídas ----------
+.destaque {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  color: var(--primary-foreground);
+  background:
+    radial-gradient(
+      120% 90% at 100% 0%,
+      color-mix(in oklch, var(--entrada) 45%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(140deg, var(--primary), color-mix(in oklch, var(--primary) 70%, black));
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--sombra-flutuante);
+  animation: surgir 240ms ease-out;
+}
+
+:host-context(.dark) .destaque {
+  color: var(--foreground);
+  background:
+    radial-gradient(
+      120% 90% at 100% 0%,
+      color-mix(in oklch, var(--entrada) 22%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(140deg, color-mix(in oklch, var(--primary) 38%, var(--card)), var(--card));
+  border: 1px solid var(--border);
+}
+
+.saldo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.saldo-rotulo {
+  font: var(--fonte-rotulo);
+  opacity: 0.85;
+}
+
+.saldo-valor {
+  font: var(--fonte-display);
+  font-size: clamp(1.75rem, 8vw, 2.25rem);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+
+  &.negativo {
+    color: inherit;
+    text-decoration: underline wavy color-mix(in oklch, var(--saida) 80%, white) 1px;
+    text-underline-offset: 6px;
+  }
+}
+
+.saldo-real {
+  font: var(--fonte-corpo-p);
+  opacity: 0.85;
+
+  strong {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: inherit;
+  }
+}
+
+.balanco {
+  display: flex;
+  gap: 3px;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: oklch(1 0 0 / 18%);
+
+  span {
+    display: block;
+    border-radius: 999px;
+    transition: width 400ms ease-out;
+  }
+}
+
+.barra-entradas {
+  background: oklch(0.86 0.15 155);
+}
+
+.barra-saidas {
+  background: oklch(0.8 0.14 25);
+}
+
+.numeros {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.numero {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px;
+  background: oklch(1 0 0 / 12%);
+  border-radius: var(--radius-lg);
+
+  dt {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font: var(--fonte-rotulo-p);
+    opacity: 0.9;
+  }
+
+  dd {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font: var(--fonte-titulo-p);
+    font-size: clamp(0.8125rem, 3.4vw, 1rem);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  dd.negativo {
+    color: inherit;
+  }
+}
+
+:host-context(.dark) .numero {
+  background: color-mix(in oklch, var(--muted) 70%, transparent);
+}
+
+:host-context(.dark) .numero.entrada dt {
+  color: var(--entrada);
+}
+
+:host-context(.dark) .numero.saida dt {
+  color: var(--saida);
+}
+
+@media (min-width: 1024px) {
+  .destaque {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    grid-template-areas:
+      'saldo numeros'
+      'balanco balanco';
+    align-items: center;
+    gap: 16px 24px;
+    padding: 24px;
+  }
+
+  .saldo {
+    grid-area: saldo;
+  }
+
+  .numeros {
+    grid-area: numeros;
+  }
+
+  .balanco {
+    grid-area: balanco;
+  }
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+// ---------- Resumo Previsto | Realizado ----------
 .resumo {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  font: var(--fonte-corpo);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sombra-cartao);
+  overflow: hidden;
+
   th,
   td {
-    padding: 8px;
+    padding: 10px 14px;
     text-align: right;
+    border-bottom: 1px solid var(--border);
   }
+
+  thead th {
+    font: var(--fonte-rotulo-p);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted-foreground);
+    background: color-mix(in oklch, var(--muted) 60%, transparent);
+  }
+
+  thead td {
+    background: color-mix(in oklch, var(--muted) 60%, transparent);
+  }
+
+  tbody tr:last-child th,
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
   th[scope='row'] {
     text-align: left;
-    font-weight: normal;
+    font-weight: 500;
+  }
+
+  .valor {
+    font-variant-numeric: tabular-nums;
+  }
+
+  tr[data-testid='resumo-entradas'] .valor {
+    color: var(--entrada);
+  }
+
+  tr[data-testid='resumo-saidas'] .valor {
+    color: var(--saida);
+  }
+
+  tr[data-testid='resumo-saldo-final'] {
+    th,
+    td {
+      font-weight: 700;
+      background: color-mix(in oklch, var(--accent) 50%, transparent);
+    }
   }
 }
+
 .nota {
   display: block;
+  font: var(--fonte-corpo-p);
   color: var(--muted-foreground);
 }
+
 .negativo {
-  color: var(--destructive);
+  color: var(--saida);
 }
+
+.totais-filtro {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+
+  div {
+    flex: 1 1 120px;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  dt {
+    color: var(--muted-foreground);
+    font: var(--fonte-rotulo-p);
+  }
+
+  dd {
+    margin: 0;
+    font: var(--fonte-titulo-p);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// ---------- Listas ----------
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  h2 {
+    margin: 8px 0 0;
+    font: var(--fonte-titulo-p);
+  }
+}
+
 .itens {
   list-style: none;
   margin: 0;
   padding: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sombra-cartao);
+  overflow: hidden;
 }
+
 .item {
   display: flex;
   align-items: center;
+  gap: 4px;
+  padding: 0 8px 0 4px;
   border-bottom: 1px solid var(--border);
+  transition: background-color 120ms;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  &:active {
+    background: var(--muted);
+  }
+
+  &.sem-caixinha {
+    padding-left: 12px;
+  }
 }
+
 .caixinha {
   display: inline-flex;
   align-items: center;
@@ -74,82 +365,176 @@
   min-width: 44px;
   min-height: 44px;
   justify-content: center;
+  cursor: pointer;
 }
+
 .linha {
   flex: 1;
+  min-width: 0;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 2px;
+  padding: 10px 4px;
   text-align: left;
+  font: var(--fonte-corpo);
   background: transparent;
   border: 0;
   color: inherit;
-  min-height: 44px;
+  min-height: 56px;
   cursor: pointer;
+
   &.estatica {
     cursor: default;
-    padding: 8px;
   }
 }
+
+.descricao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  min-width: 0;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.valor-item {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.de-entradas .valor-item {
+  color: var(--entrada);
+}
+
 .meta {
   grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 4px;
   color: var(--muted-foreground);
   font: var(--fonte-corpo-p);
 }
+
+// ---------- Tabelas (computador) ----------
 .tabela {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  font: var(--fonte-corpo);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sombra-cartao);
+  overflow: hidden;
+
   th,
   td {
-    padding: 8px;
+    padding: 6px 12px;
     text-align: left;
+    border-bottom: 1px solid var(--border);
   }
+
+  thead th {
+    background: color-mix(in oklch, var(--muted) 60%, transparent);
+    font: var(--fonte-rotulo);
+    color: var(--muted-foreground);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  tbody tr {
+    transition: background-color 120ms;
+  }
+
+  tbody tr:hover {
+    background: color-mix(in oklch, var(--muted) 55%, transparent);
+  }
+
   .num {
     text-align: right;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
   }
 }
+
+.de-entradas .tabela td.num {
+  color: var(--entrada);
+}
+
 .ordena,
 .abrir,
 .recolher {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: transparent;
   border: 0;
   color: inherit;
   font: inherit;
   cursor: pointer;
   min-height: 44px;
-}
-.excluir {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 12px;
-  color: var(--destructive);
-  background: transparent;
-  border: 0;
-  cursor: pointer;
+  padding: 0;
+  text-align: left;
 }
 
-.totais-filtro {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin: 0;
-  div {
-    display: flex;
-    flex-direction: column;
-  }
-  dt {
-    color: var(--muted-foreground);
-    font: var(--fonte-corpo-p);
-  }
-  dd {
-    margin: 0;
-    font: var(--fonte-titulo-p);
+.abrir {
+  font-weight: 500;
+
+  &:hover {
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 }
+
+.recolher {
+  font: var(--fonte-titulo-p);
+}
+
+.excluir {
+  color: var(--destructive);
+}
+
 .selo-divisao {
   margin-left: 8px;
   padding: 0 6px;
-  border-radius: 4px;
+  border-radius: 999px;
   background: var(--accent);
   color: var(--accent-foreground);
   font: var(--fonte-rotulo-p);
+}
+
+// Situação como selo colorido: pago/recebido (verde-azulado), previsto (âmbar), vencida (vermelho).
+.estado {
+  padding: 0 8px;
+  font: var(--fonte-rotulo-p);
+  line-height: 1.6;
+  color: var(--pago);
+  background: var(--pago-suave);
+  border-radius: 999px;
+
+  &.previsto,
+  &[data-situacao='open'],
+  &[data-situacao='closed'] {
+    color: var(--previsto);
+    background: var(--previsto-suave);
+  }
+
+  &[data-situacao='overdue'] {
+    color: var(--saida);
+    background: var(--saida-suave);
+  }
+
+  &[data-situacao='no_amount_due'] {
+    color: var(--muted-foreground);
+    background: var(--muted);
+  }
 }
