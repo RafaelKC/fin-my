@@ -23,7 +23,7 @@ Normas: `docs/arquitetura.md`, constituição, research da 003, 007 e 008.
 
 ## Phase 3: Polish
 
-- [ ] T005 Validação: isolamento, quickstart contra a stack real com emulador (registrar no PR), `docs/arquitetura.md` (§ app Android e §14), README. Depende de todas
+- [x] T005 Validação: isolamento, quickstart contra a stack real com emulador (registrar no PR), `docs/arquitetura.md` (§ app Android e §14), README. Depende de todas
 
 ## Dependências (resumo)
 

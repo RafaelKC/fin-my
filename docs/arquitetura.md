@@ -37,6 +37,8 @@ Palavras MUST / MUST NOT / SHOULD / MAY no sentido da RFC 2119.
   shared/test-vectors/          # vetores JSON usados pelos testes do backend E do frontend
   docs/  specs/  .specify/
   integrations/claude/skill/    # SKILL.md da skill Fin-My (008)
+  android/                      # app Android (009): TWA + widget Glance (Gradle, Kotlin)
+  integrations/android/         # README: build, instalação, certificado da VPN, release assinado
   backend/Dockerfile  frontend/Dockerfile
   docker-compose.yml
   ```
@@ -319,6 +321,39 @@ do horizonte também é executada sob demanda ao abrir um mês/ano além do hori
   paridade com o REST (SC-002) e de isolamento entre Espaços via MCP (`McpIsolationTests`) + roteiro de
   conversas (008 SC-002/003) executado manualmente antes de liberar (`integrations/claude/`).
 
+## 12b. App Android (009) — TWA + widget
+
+- **Dois pedaços, um APK** (`android/`, pacote fixo `br.app.finmy`): (1) a **TWA** abre o próprio site em
+  tela cheia (mesma origem: cookie, service worker e atalhos iguais, sem código de tela nativo);
+  (2) o **widget "Fatura do cartão"** (Kotlin + Jetpack Glance) mostra Atual × Planejado, vencimento e
+  situação de um cartão escolhido. Sem Play Store: APK instalado à mão; release assinado localmente com
+  chave fora do repositório (`keystore.properties` ignorado pelo git).
+- **Verificação (Digital Asset Links)**: a API serve `GET /.well-known/assetlinks.json` (anônimo; o nginx já
+  encaminha `/.well-known/`) com `Android__PackageName` e `Android__CertSha256__N`. Sem configuração → 404.
+  Sem verificação a TWA funciona, mas o Chrome mostra a barra de endereço.
+- **Autenticação do widget**: o widget não enxerga o cookie do Chrome; usa o OAuth 2.1 + PKCE da 008 (§12)
+  como cliente público pré-registrado `finmy-android` (redirect `br.app.finmy:/oauth/callback`, seed
+  idempotente), via AppAuth e Custom Tab. Tokens guardados no aparelho cifrados com chave do Android
+  Keystore. A tela `/autorizar` e "Aplicativos conectados" mostram o nome e o texto de consentimento de
+  cada cliente ("Claude" / "App Fin-My (Android)").
+- **Rotas do widget** (somente leitura, `GET`): `/api/v1/widget/credit-cards` e
+  `/api/v1/widget/credit-cards/{id}/current-invoice`. Token com recurso `<APP_URL>/api/v1/widget` e
+  `channel=android_widget`; o seletor de esquema manda `/mcp` e `/api/v1/widget` para a validação do
+  OpenIddict e cada grupo exige o seu recurso: token do Claude não abre o widget, token do widget não abre
+  o MCP nem a API do app, e JWT do app não abre o widget (401). O handler é o mesmo da tela da fatura
+  (003) e do `InvoiceForecast` (007), então os números são idênticos (007/009 SC-002).
+- **Isolamento**: `ICurrentContext` é preenchido pelo token como no MCP, então tenant, filtros globais e
+  soft delete continuam automáticos (§3). Cartão de outro Espaço, arquivado ou excluído → 404
+  `credit_card.not_found`.
+- **Revogação**: desconectar em Perfil → Aplicativos conectados (ou trocar/redefinir a senha) derruba o
+  widget na chamada seguinte; ele passa a pedir "Entre de novo" (009 SC-003).
+- **Atualização do widget**: WorkManager periódico de 30 min (uma tarefa para todos os widgets) e botão de
+  atualizar; o último valor fica no estado do widget e é mostrado, marcado como antigo, se a rede falhar.
+- **CI**: job `android` (`./gradlew lint testDebugUnitTest assembleDebug`, Java 21) publica o APK debug
+  como artifact. Testes: JUnit + Robolectric.
+- **Testes de backend**: `WidgetApiTests` (contrato, paridade com a rota da fatura, isolamento entre
+  Espaços, canal e escopo, revogação), `AssetLinksTests`, `OAuthFlowTests` (cliente `finmy-android`).
+
 ## 13. Deploy
 
 - `backend/Dockerfile`: build multi-stage (`sdk` → `aspnet`), usuário não-root, healthcheck em
@@ -442,3 +477,19 @@ Mesma regra: quando uma feature futura mexer em um destes pontos, atualize a lis
 | 33 | Tag nova pelo Claude | Tag **comum** citada num lançamento e inexistente é criada no Espaço de quem pediu (004 US1.2); tag de **acerto** inexistente vira `ambiguous_or_not_found`. | Cadastros não são feitos pelo Claude, exceto esta tag comum (spec 008). |
 | 34 | OAuth do conector | OpenIddict com tabelas globais (autorizações, tokens, `oauth_consent_tickets`, `oauth_authorization_usage`); token com `sub`, `tid` e `channel=claude`; validação consulta a autorização a cada chamada, então desconectar ou redefinir a senha bloqueia o Claude de imediato (SC-004). Redirects do registro dinâmico limitados por `Mcp:AllowedRedirectUris`. | Revogação imediata e conector só com os retornos do Claude (research R2). |
 | 35 | Skill e validação manual | `integrations/claude/` guarda a skill, o README de publicação (HTTPS obrigatório) e o roteiro de 30 pedidos. A parte com o Claude de verdade (adicionar o conector, enviar a skill, rodar o roteiro) é manual, antes de liberar. | Depende de HTTPS público e de uma conta do Claude; não há como automatizar no CI. |
+
+### Feature 009 (app Android e widget)
+
+Mesma regra: quando uma feature futura mexer em um destes pontos, atualize a lista.
+
+| # | Tema | O que foi feito | Por quê |
+|---|---|---|---|
+| 36 | TWA em vez de Capacitor (§12b) | `androidbrowserhelper` (`LauncherActivity`) abre o PWA em tela cheia; `applicationId` fixo `br.app.finmy`, mesma chave de assinatura e `versionCode` sempre crescente. | Mantém cookie, service worker e atalhos do site sem duplicar telas; uma troca futura por Capacitor não perde a instalação (research R1). |
+| 37 | `assetlinks.json` na API | Rota anônima `/.well-known/assetlinks.json` lê `Android:PackageName` e `Android:CertSha256` (lista); sem pacote ou sem impressão digital → 404. | Verificação sem arquivo estático no nginx e sem rebuild do front para trocar a chave (research R2). |
+| 38 | Cliente `finmy-android` | Cliente público pré-registrado por seed idempotente, PKCE S256, `authorization_code` + `refresh_token`, redirect `br.app.finmy:/oauth/callback`; recurso `<APP_URL>/api/v1/widget` e canal `android_widget`. | O widget nativo não vê o cookie do app; reaproveita o servidor OAuth da 008 e a revogação por "Aplicativos conectados" (research R3). |
+| 39 | Rotas do widget separadas | `/api/v1/widget/*` só `GET`, com esquema de autenticação próprio (OpenIddict) e exigência do recurso certo; fora da lista de operações do OpenAPI do app e do `ApiIsolationTests`, e cobertas por `WidgetApiTests`. | Token do Claude e token do widget não são intercambiáveis entre si nem com o JWT do app (009 FR-004). |
+| 40 | "Fatura atual" | É a fatura em que cairia uma compra feita hoje (`InvoiceCycle`, como `invoice-for`); `today` no fuso `America/Sao_Paulo`; valores vêm dos serviços da tela da fatura e de `InvoiceForecast`, e `WidgetApiTests` compara com a rota da fatura (com e sem estimativa/pagamento). | Widget e tela não podem divergir (009 SC-002, RT-04). |
+| 41 | Tokens no aparelho | DataStore com valores cifrados por chave do Android Keystore (`SecretBox`); refresh com rotação (008); resposta 401 do refresh apaga a sessão e o widget mostra "Entre de novo". | Token em texto puro no armazenamento do app seria lido por backup/root (009 FR-007). |
+| 42 | Certificado de desenvolvimento | Só a build `debug` aceita certificados de usuário e, opcionalmente, um PEM (`-Pfinmy.devCert`) no `network_security_config`; a `release` não leva nenhum extra. | Testar pela VPN com certificado autoassinado sem enfraquecer o APK de release (research R6). |
+| 43 | Validação sem emulador | Os cenários do quickstart 009 foram provados por testes (backend, front, Robolectric), por `curl` contra a stack real (assetlinks, fluxo OAuth PKCE do `finmy-android`, rotas do widget, desconexão) e pelo APK debug gerado. Instalar o APK, ver o widget e a barra de endereço sumindo continuam passos manuais num aparelho (quickstart passos 4 a 7). | Emulador é pesado e o Chrome só verifica a TWA com HTTPS confiável e a chave real. |
+| 44 | Cabeçalhos só em ASCII | O `WWW-Authenticate` de "token de outro recurso" (Claude no widget, widget no `/mcp`) usa `error_description` em inglês e ASCII. Com "não" o Kestrel lançava `Invalid non-ASCII or control character in header` e a resposta virava 500. `WidgetApiTests` confere que os cabeçalhos dessas 401 são ASCII. | O `TestServer` dos testes não valida caracteres de cabeçalho; só a stack real mostrou o erro (quickstart 009 contra o compose). Texto para a pessoa vai no corpo (`problem+json`), nunca em cabeçalho. |
