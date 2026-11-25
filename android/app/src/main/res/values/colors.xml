@@ -6,4 +6,5 @@
     <color name="finmy_icon_end">#2A8F8A</color>
     <color name="finmy_icon_bar">#FFFFFF</color>
     <color name="finmy_icon_dot">#FFD166</color>
+    <color name="finmy_text">#1A1A1F</color>
 </resources>

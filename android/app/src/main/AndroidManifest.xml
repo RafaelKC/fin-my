@@ -52,6 +52,29 @@
             </intent-filter>
         </activity>
 
+        <!-- Widget "Fatura do cartão" (009 T004). -->
+        <receiver
+            android:name="br.app.finmy.widget.FaturaWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/fatura_widget_info" />
+        </receiver>
+
+        <!-- O sistema abre a configuração ao adicionar o widget. -->
+        <activity
+            android:name="br.app.finmy.widget.WidgetConfigActivity"
+            android:exported="true"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <!-- Entrega a imagem do splash ao Chrome. -->
         <provider
             android:name="androidx.core.content.FileProvider"
