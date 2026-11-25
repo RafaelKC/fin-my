@@ -22,7 +22,12 @@ data class CurrentInvoiceResponse(
     val card: CardRef,
     val invoice: InvoiceData,
     val appPath: String,
+    /** As últimas faturas até a atual (gráfico). Snapshots antigos não têm: lista vazia. */
+    val history: List<HistoryPoint> = emptyList(),
 )
+
+@Serializable
+data class HistoryPoint(val dueMonth: String, val totalCents: Long)
 
 @Serializable
 data class CardRef(val id: String, val name: String, val color: String)

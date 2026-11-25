@@ -26,9 +26,19 @@ sealed interface WidgetUi {
         val updatedLabel: String,
         val offline: Boolean,
         val appPath: String,
+        /** Atual ÷ Planejado, de 0 a 1 (barra de progresso). */
+        val progress: Float = 0f,
+        val statusCode: String = "open",
+        /** Barras do gráfico: as últimas faturas até a atual. */
+        val chart: List<ChartBar> = emptyList(),
     ) : WidgetUi
 
     companion object {
+        fun progress(totalCents: Long, plannedCents: Long): Float = when {
+            plannedCents <= 0 -> if (totalCents > 0) 1f else 0f
+            else -> (totalCents.toFloat() / plannedCents).coerceIn(0f, 1f)
+        }
+
         fun from(snapshot: WidgetSnapshot?, zone: ZoneId = ZoneId.systemDefault()): WidgetUi {
             if (snapshot == null) return NotConfigured
             return when (snapshot.state) {
@@ -51,6 +61,9 @@ sealed interface WidgetUi {
                         updatedLabel = if (time == null) "" else "atualizado às $time",
                         offline = snapshot.stale,
                         appPath = data.appPath,
+                        progress = progress(invoice.totalCents, invoice.plannedCents),
+                        statusCode = invoice.status,
+                        chart = data.history.map { ChartBar(PtBr.monthShort(it.dueMonth), it.totalCents, it.dueMonth == invoice.dueMonth) },
                     )
                 }
             }
@@ -58,9 +71,19 @@ sealed interface WidgetUi {
     }
 }
 
+/** Uma barra do gráfico de faturas. */
+data class ChartBar(val label: String, val cents: Long, val current: Boolean)
+
 /** Formatação pt-BR feita à mão: o resultado não depende do locale nem do ICU do aparelho. */
 object PtBr {
     const val FALLBACK_COLOR = 0xFF5B4FF0.toInt()
+
+    /** 123456 → "R$ 1.234,56" (só para o texto acessível do gráfico). */
+    fun cents(value: Long): String {
+        val abs = kotlin.math.abs(value)
+        val reais = (abs / 100).toString().reversed().chunked(3).joinToString(".").reversed()
+        return "${if (value < 0) "-" else ""}R$ $reais,${"%02d".format(abs % 100)}"
+    }
 
     /** "2026-12-25" → "25/12". */
     fun shortDate(iso: String): String {
@@ -73,6 +96,12 @@ object PtBr {
         val t = instant.atZone(zone)
         return "%02d:%02d".format(t.hour, t.minute)
     }
+
+    private val MONTHS = listOf("jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez")
+
+    /** "2026-12" → "dez". */
+    fun monthShort(yearMonth: String): String =
+        yearMonth.substringAfter('-').toIntOrNull()?.let { MONTHS.getOrNull(it - 1) } ?: yearMonth
 
     fun status(code: String): String = when (code) {
         "open" -> "Aberta"

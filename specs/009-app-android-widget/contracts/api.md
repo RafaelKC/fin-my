@@ -6,7 +6,7 @@ JWT do app ou token do Claude → 401. Respostas em JSON, valores em centavos + 
 | Método e rota | Resposta | Erros |
 |---|---|---|
 | `GET /api/v1/widget/credit-cards` | `{ today, cards: [{ id, name, color, closingDay, dueDay }] }` (só ativos, ordem por nome) | 401 |
-| `GET /api/v1/widget/credit-cards/{id}/current-invoice` | ver abaixo | 401, 404 `credit_card.not_found` (outro Espaço, arquivado ou excluído) |
+| `GET /api/v1/widget/credit-cards/{id}/current-invoice` | ver abaixo (inclui `history`: as 6 últimas faturas até a atual, `[{ dueMonth, totalCents }]`) | 401, 404 `credit_card.not_found` (outro Espaço, arquivado ou excluído) |
 | `GET /.well-known/assetlinks.json` (anônimo) | `[{ relation: ["delegate_permission/common.handle_all_urls"], target: { namespace: "android_app", package_name, sha256_cert_fingerprints } }]` | 404 sem configuração |
 
 ```json

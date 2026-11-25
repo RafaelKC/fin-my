@@ -146,4 +146,16 @@ class InvoiceRefresherTest {
         val back = rig.refresher.refresh(gone)
         assertEquals(SnapshotState.OK, back.state)
     }
+
+    @Test
+    fun `progresso e mes curto e reais do grafico`() {
+        assertEquals(0.375f, WidgetUi.progress(30000, 80000), 0.0001f)
+        assertEquals(1f, WidgetUi.progress(90000, 80000), 0.0001f)
+        assertEquals(0f, WidgetUi.progress(0, 0), 0.0001f)
+        assertEquals(1f, WidgetUi.progress(100, 0), 0.0001f)
+        assertEquals("dez", PtBr.monthShort("2026-12"))
+        assertEquals("jan", PtBr.monthShort("2027-01"))
+        assertEquals("R$ 1.234,56", PtBr.cents(123456))
+        assertEquals("R$ 0,05", PtBr.cents(5))
+    }
 }

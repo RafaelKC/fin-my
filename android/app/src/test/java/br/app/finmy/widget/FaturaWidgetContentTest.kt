@@ -7,6 +7,7 @@ import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.testing.unit.hasRunCallbackClickAction
 import androidx.glance.appwidget.testing.unit.hasStartActivityClickAction
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
+import androidx.glance.testing.unit.hasContentDescription
 import androidx.glance.testing.unit.hasText
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.test.runTest
@@ -36,42 +37,64 @@ class FaturaWidgetContentTest {
         updatedLabel = "atualizado às 14:05",
         offline = stale,
         appPath = "/cartoes/${Fixtures.CARD_ID}/faturas/2026-12",
+        progress = 0.375f,
+        statusCode = status,
+        chart = listOf(ChartBar("nov", 50000, false), ChartBar("dez", 30000, true)),
     )
 
-    private fun render(ui: WidgetUi, check: androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest.() -> Unit) = runTest {
+    private fun render(
+        ui: WidgetUi,
+        size: DpSize = DpSize(146.dp, 146.dp),
+        check: androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest.() -> Unit,
+    ) = runTest {
         runGlanceAppWidgetUnitTest {
-            setAppWidgetSize(DpSize(146.dp, 146.dp))
+            setAppWidgetSize(size)
             provideComposable { FaturaWidgetContent(ui, open, config) }
             check()
         }
     }
 
     @Test
-    fun `mostra cartao, Atual, Planejado, vencimento, situacao e restante`() = render(content()) {
+    fun `pequeno mostra cartao, valor atual em destaque, planejado, vencimento, situacao e restante`() = render(content()) {
         onNode(hasText("Azul")).assertExists()
-        onNode(hasText("Atual")).assertExists()
+        onNode(hasText("Fatura atual")).assertExists()
         onNode(hasText("R$ 300,00")).assertExists()
-        onNode(hasText("Planejado")).assertExists()
-        onNode(hasText("R$ 800,00")).assertExists()
+        onNode(hasText("Planejado R$ 800,00")).assertExists()
         onNode(hasText("Vence 25/12 · Aberta")).assertExists()
-        onNode(hasText("Falta R$ 120,00")).assertExists()
+        onNode(hasText("Falta R$ 120,00 · atualizado às 14:05")).assertExists()
+    }
+
+    @Test
+    fun `largo mostra a situacao em selo e o vencimento ao lado do planejado`() = render(content(), DpSize(300.dp, 146.dp)) {
+        onNode(hasText("Aberta")).assertExists()
+        onNode(hasText("Vence 25/12")).assertExists()
+        onNode(hasText("Planejado R$ 800,00")).assertExists()
+    }
+
+    @Test
+    fun `alto mostra o grafico das ultimas faturas com texto acessivel`() = render(content(), DpSize(300.dp, 280.dp)) {
+        onNode(hasContentDescription("Últimas faturas: nov R$ 500,00, dez R$ 300,00")).assertExists()
+    }
+
+    @Test
+    fun `pequeno nao mostra o grafico`() = render(content()) {
+        onNode(hasContentDescription("Últimas faturas: nov R$ 500,00, dez R$ 300,00")).assertDoesNotExist()
+    }
+
+    @Test
+    fun `fatura paga mostra Paga e nao mostra quanto falta`() = render(content("paid", remaining = "R$ 0,00")) {
+        onNode(hasText("Vence 25/12 · Paga")).assertExists()
         onNode(hasText("atualizado às 14:05")).assertExists()
     }
 
     @Test
-    fun `fatura paga mostra Paga e restante zerado`() = render(content("paid", remaining = "R$ 0,00")) {
-        onNode(hasText("Vence 25/12 · Paga")).assertExists()
-        onNode(hasText("Restante R$ 0,00")).assertExists()
-    }
-
-    @Test
     fun `sem rede mantem os valores e avisa com a hora`() = render(content(stale = true)) {
-        onNode(hasText("R$ 800,00")).assertExists()
-        onNode(hasText("Sem conexão · atualizado às 14:05")).assertExists()
+        onNode(hasText("Planejado R$ 800,00")).assertExists()
+        onNode(hasText("Falta R$ 120,00 · sem conexão · atualizado às 14:05")).assertExists()
     }
 
     @Test
-    fun `toque no corpo abre a fatura na TWA e o icone atualiza`() = render(content()) {
+    fun `toque no corpo abre a fatura no app e o icone atualiza`() = render(content()) {
         onNode(hasStartActivityClickAction(open)).assertExists()
         onNode(hasRunCallbackClickAction<RefreshAction>()).assertExists()
     }
@@ -79,7 +102,7 @@ class FaturaWidgetContentTest {
     @Test
     fun `Entre de novo e Cartao indisponivel abrem a configuracao`() {
         render(WidgetUi.NeedsLogin) {
-            onNode(hasText("Entre de novo")).assertExists()
+            onNode(hasText("Conecte o widget")).assertExists()
             onNode(hasStartActivityClickAction(config)).assertExists()
         }
         render(WidgetUi.CardUnavailable) {
@@ -97,7 +120,7 @@ class FaturaWidgetContentTest {
     }
 
     @Test
-    fun `intent da fatura vai para a TWA com a URL do site`() {
+    fun `intent da fatura vai para o app com a URL do site`() {
         assertEquals("https://fin-my.exemplo.com.br/cartoes/${Fixtures.CARD_ID}/faturas/2026-12", open.dataString)
         assertEquals("br.app.finmy.MainActivity", open.component?.className)
         assertEquals(Intent.ACTION_VIEW, open.action)
@@ -109,7 +132,7 @@ class FaturaWidgetContentTest {
         val dark = Surface.getColor(context)
         val darkText = OnSurface.getColor(context)
         assertNotEquals(dark, darkText)
-        assertEquals(androidx.compose.ui.graphics.Color(0xFF1E1E24), dark)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF17171C), dark)
     }
 
     @Test

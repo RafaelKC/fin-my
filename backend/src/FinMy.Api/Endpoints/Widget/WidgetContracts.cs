@@ -29,8 +29,12 @@ public sealed record WidgetInvoiceResponse(
     long RemainingCents,
     string RemainingText);
 
-/// <summary>Resposta de <c>GET /api/v1/widget/credit-cards/{id}/current-invoice</c>.</summary>
-public sealed record WidgetCurrentInvoiceResponse(DateOnly Today, WidgetCardRef Card, WidgetInvoiceResponse Invoice, string AppPath)
+/// <summary>Total de uma fatura no gráfico do widget.</summary>
+public sealed record WidgetHistoryResponse(string DueMonth, long TotalCents);
+
+/// <summary>Resposta de <c>GET /api/v1/widget/credit-cards/{id}/current-invoice</c>; <c>History</c> = as últimas faturas até a atual.</summary>
+public sealed record WidgetCurrentInvoiceResponse(
+    DateOnly Today, WidgetCardRef Card, WidgetInvoiceResponse Invoice, string AppPath, IReadOnlyList<WidgetHistoryResponse> History)
 {
     public static WidgetCurrentInvoiceResponse From(WidgetInvoiceView v) => new(
         v.Today,
@@ -41,5 +45,6 @@ public sealed record WidgetCurrentInvoiceResponse(DateOnly Today, WidgetCardRef 
             v.PlannedCents, FinMy.Application.Cards.InvoiceErrors.FormatBrl(v.PlannedCents),
             v.EstimateCents, v.PaidCents,
             v.RemainingCents, FinMy.Application.Cards.InvoiceErrors.FormatBrl(v.RemainingCents)),
-        $"/cartoes/{v.CardId}/faturas/{v.DueMonth}");
+        $"/cartoes/{v.CardId}/faturas/{v.DueMonth}",
+        v.History.Select(h => new WidgetHistoryResponse(h.DueMonth, h.TotalCents)).ToList());
 }
