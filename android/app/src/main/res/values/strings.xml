@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Fin-My</string>
+    <string name="shortcut_mes">Mês atual</string>
+    <string name="shortcut_painel">Painel</string>
+</resources>

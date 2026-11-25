@@ -17,6 +17,7 @@ Stack: .NET 10 · PostgreSQL 17 · Angular (PWA) · Docker Compose.
 | Backend (`FinMy.Api`, `Application`, `Domain`, `Infrastructure`) e testes | [`backend/`](backend/) · guia dos testes em [`backend/tests/README.md`](backend/tests/README.md) |
 | Front-end Angular e e2e (Playwright) | [`frontend/`](frontend/) · e2e em [`frontend/e2e/`](frontend/e2e/README.md) |
 | Integração com o Claude (conector MCP em `/mcp`, skill, publicação com HTTPS e roteiro de testes) | [`integrations/claude/`](integrations/claude/README.md) |
+| App Android (TWA do site; build do APK, instalação e certificado da VPN) | [`integrations/android/`](integrations/android/README.md) |
 | Vetores de teste compartilhados (front e back) | [`shared/`](shared/README.md) |
 | CI | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
 

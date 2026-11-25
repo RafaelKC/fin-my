@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="mes"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_mes">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="@string/shortcut_mes_url"
+            android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:targetPackage="br.app.finmy" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="painel"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_painel">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="@string/shortcut_painel_url"
+            android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:targetPackage="br.app.finmy" />
+    </shortcut>
+</shortcuts>
