@@ -15,9 +15,9 @@ export type CriadoVia = 'app' | 'claude' | 'system';
       margin-left: 8px;
       padding: 0 6px;
       border-radius: 4px;
-      background: var(--mat-sys-tertiary-container);
-      color: var(--mat-sys-on-tertiary-container);
-      font: var(--mat-sys-label-small);
+      background: var(--previsto-suave);
+      color: var(--previsto);
+      font: var(--fonte-rotulo-p);
       white-space: nowrap;
     }
   `,

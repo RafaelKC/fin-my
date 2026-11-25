@@ -1,8 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { today } from '../../core/money';
 import { Tag } from '../../shared/tag-picker/tag.models';
 import { bruna, carla, ifood } from '../../shared/tag-picker/testing';
@@ -11,6 +9,8 @@ import { compra } from '../cartoes/fatura/testing';
 import { cartao } from '../cartoes/testing';
 import { Entry } from './entry.models';
 import { LancamentoSheet, LancamentoSheetData } from './lancamento.sheet';
+import { DADOS_DIALOGO, DialogoRef } from '@/shared/ui/dialogo';
+import { Avisos } from '@/shared/ui/avisos';
 
 const TAGS: Tag[] = [bruna, carla, ifood];
 
@@ -52,12 +52,12 @@ describe('LancamentoSheet — Dividir (004 US4, FR-012)', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: MatDialogRef, useValue: { close: vi.fn() } },
-        { provide: MAT_DIALOG_DATA, useValue: opcoes.dados ?? null },
+        { provide: DialogoRef, useValue: { close: vi.fn() } },
+        { provide: DADOS_DIALOGO, useValue: opcoes.dados ?? null },
       ],
     });
     http = TestBed.inject(HttpTestingController);
-    vi.spyOn(TestBed.inject(MatSnackBar), 'open').mockReturnValue(undefined as never);
+    vi.spyOn(TestBed.inject(Avisos), 'open').mockReturnValue(undefined as never);
     fixture = TestBed.createComponent(LancamentoSheet);
     el = fixture.nativeElement;
     fixture.detectChanges();
@@ -332,8 +332,8 @@ describe('LancamentoSheet — selo "Dividida em N" (004 FR-014)', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: MatDialogRef, useValue: { close: vi.fn() } },
-        { provide: MAT_DIALOG_DATA, useValue: dados },
+        { provide: DialogoRef, useValue: { close: vi.fn() } },
+        { provide: DADOS_DIALOGO, useValue: dados },
       ],
     });
     http = TestBed.inject(HttpTestingController);

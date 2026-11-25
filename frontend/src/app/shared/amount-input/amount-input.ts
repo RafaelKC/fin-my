@@ -141,6 +141,11 @@ export class AmountInput implements ControlValueAccessor {
     return k.label === BACKSPACE;
   }
 
+  /** Operadores e parênteses ganham outra cor no teclado. */
+  protected ehOperador(k: AmountKey): boolean {
+    return !/^[0-9,]$/.test(k.label) && !this.isBackspace(k);
+  }
+
   private update(value: string): void {
     if (this.disabled() || value.length > MAX_LENGTH) {
       return;

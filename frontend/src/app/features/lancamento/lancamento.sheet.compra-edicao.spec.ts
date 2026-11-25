@@ -1,14 +1,14 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subject, of } from 'rxjs';
 import { carteira } from '../carteiras/testing';
 import { compra } from '../cartoes/fatura/testing';
 import { cartao } from '../cartoes/testing';
 import { CardPurchase } from './card-purchase.models';
 import { LancamentoSheet } from './lancamento.sheet';
+import { DADOS_DIALOGO, Dialogo, DialogoRef } from '@/shared/ui/dialogo';
+import { Avisos } from '@/shared/ui/avisos';
 
 const azul = cartao();
 const verde = cartao({ id: 'c-verde', name: 'Verde', closingDay: 1, dueDay: 10 });
@@ -32,12 +32,12 @@ describe('LancamentoSheet — editar compra no cartão (003 T009, FR-015)', () =
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: MatDialogRef, useValue: { close: fechar } },
-        { provide: MAT_DIALOG_DATA, useValue: { purchase } },
+        { provide: DialogoRef, useValue: { close: fechar } },
+        { provide: DADOS_DIALOGO, useValue: { purchase } },
       ],
     });
     http = TestBed.inject(HttpTestingController);
-    vi.spyOn(TestBed.inject(MatSnackBar), 'open').mockReturnValue({
+    vi.spyOn(TestBed.inject(Avisos), 'open').mockReturnValue({
       onAction: () => new Subject<void>(),
     } as never);
     fixture = TestBed.createComponent(LancamentoSheet);
@@ -113,7 +113,7 @@ describe('LancamentoSheet — editar compra no cartão (003 T009, FR-015)', () =
   it('409 de fatura paga pede confirmação e repete com confirmPaidInvoice', async () => {
     await abrir();
     const dialogo = vi
-      .spyOn(TestBed.inject(MatDialog), 'open')
+      .spyOn(TestBed.inject(Dialogo), 'open')
       .mockReturnValue({ afterClosed: () => of('') } as never);
     await salvar();
     http.expectOne('/api/v1/card-purchases/p1').flush(
@@ -160,7 +160,7 @@ describe('LancamentoSheet — editar compra no cartão (003 T009, FR-015)', () =
         installmentTotal: 3,
       });
     const escolher = (valor: string | null) =>
-      vi.spyOn(TestBed.inject(MatDialog), 'open').mockReturnValue({
+      vi.spyOn(TestBed.inject(Dialogo), 'open').mockReturnValue({
         afterClosed: () => of(valor),
       } as never);
 
@@ -208,7 +208,7 @@ describe('LancamentoSheet — editar compra no cartão (003 T009, FR-015)', () =
       expect(req.request.method).toBe('DELETE');
       req.flush({ deletionBatchId: 'lote-9' });
       expect(fechar).toHaveBeenCalled();
-      expect(TestBed.inject(MatSnackBar).open).toHaveBeenCalledWith(
+      expect(TestBed.inject(Avisos).open).toHaveBeenCalledWith(
         'Excluído',
         'Desfazer',
         expect.objectContaining({ duration: 8000 }),
@@ -218,7 +218,7 @@ describe('LancamentoSheet — editar compra no cartão (003 T009, FR-015)', () =
 
   it('compra à vista exclui direto, sem perguntar o escopo', async () => {
     await abrir();
-    const dialogo = vi.spyOn(TestBed.inject(MatDialog), 'open');
+    const dialogo = vi.spyOn(TestBed.inject(Dialogo), 'open');
     el.querySelector<HTMLElement>('[data-testid="excluir"]')!.click();
     await atualizar();
     expect(dialogo).not.toHaveBeenCalled();

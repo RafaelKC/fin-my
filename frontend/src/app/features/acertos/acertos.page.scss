@@ -3,89 +3,149 @@
   flex-direction: column;
   gap: 16px;
 }
-.cabecalho {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.titulo {
+
+.grafico {
   margin: 0;
-  font: var(--mat-sys-title-large);
+  padding: 12px 12px 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sombra-cartao);
+
+  figcaption {
+    padding: 0 4px;
+    font: var(--fonte-rotulo-p);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted-foreground);
+  }
 }
-.seta {
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: 24px;
-  cursor: pointer;
-  color: inherit;
-}
+
 .cartao {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   padding: 16px;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--sombra-cartao);
+  animation: surgir 220ms ease-out;
 }
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
 .nome {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin: 0;
-  font: var(--mat-sys-title-medium);
+  font: var(--fonte-titulo);
 }
-.cor {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
+
+// Avatar com a inicial da pessoa, na cor da tag.
+.avatar {
+  --cor-pessoa: var(--primary);
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  font: 700 1.05rem/1 var(--fonte-marca);
+  text-transform: uppercase;
+  color: white;
+  background: linear-gradient(
+    135deg,
+    var(--cor-pessoa),
+    color-mix(in oklch, var(--cor-pessoa) 60%, black)
+  );
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--cor-pessoa) 20%, transparent);
 }
-.selo {
-  font: var(--mat-sys-label-medium);
-  color: var(--mat-sys-on-surface-variant);
-}
+
 .numeros {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
   margin: 0;
 
-  dt {
-    font: var(--mat-sys-label-medium);
-    color: var(--mat-sys-on-surface-variant);
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 8px 10px;
+    background: color-mix(in oklch, var(--muted) 60%, transparent);
+    border-radius: var(--radius-lg);
   }
+
+  dt {
+    font: var(--fonte-rotulo-p);
+    color: var(--muted-foreground);
+  }
+
   dd {
     margin: 0;
-    font: var(--mat-sys-title-medium);
+    font: var(--fonte-titulo-p);
+    font-size: clamp(0.8125rem, 3.4vw, 1rem);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
   }
 }
-.credito {
-  color: var(--mat-sys-primary);
+
+// Saldo acumulado: o número principal do acerto, no topo e em destaque.
+.saldo-bloco {
+  order: -1;
+  grid-column: 1 / -1;
+  padding: 12px 14px !important;
+  background: var(--accent) !important;
+
+  dt {
+    color: var(--accent-foreground) !important;
+  }
+
+  dd {
+    font: var(--fonte-titulo-g) !important;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &.positivo dd {
+    color: var(--accent-foreground);
+  }
 }
+
+.credito {
+  color: var(--entrada);
+}
+
 .numero {
   min-height: 44px;
   padding: 0;
+  text-align: left;
   background: transparent;
   border: 0;
-  border-bottom: 1px dashed currentColor;
   color: inherit;
   font: inherit;
+  text-decoration: underline dotted var(--border-forte);
+  text-underline-offset: 4px;
   cursor: pointer;
+
+  &[aria-expanded='true'] {
+    color: var(--primary);
+    text-decoration-color: currentColor;
+  }
 }
-.botao {
-  align-self: flex-start;
-  min-height: 44px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: 22px;
-  background: var(--mat-sys-primary);
-  color: var(--mat-sys-on-primary);
-  font: var(--mat-sys-label-large);
-  cursor: pointer;
+
+.detalhe {
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
 }
+
 .itens {
   display: flex;
   flex-direction: column;
@@ -99,17 +159,23 @@
     grid-template-columns: 1fr auto;
     gap: 0 12px;
   }
+
   .data {
     grid-row: 2;
-    font: var(--mat-sys-label-medium);
-    color: var(--mat-sys-on-surface-variant);
+    font: var(--fonte-rotulo);
+    color: var(--muted-foreground);
   }
+
   .valor {
     grid-row: 1 / span 2;
     grid-column: 2;
     align-self: center;
+    font-variant-numeric: tabular-nums;
   }
 }
-.erro {
-  color: var(--mat-sys-error);
+
+@media (min-width: 640px) {
+  .numeros {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }

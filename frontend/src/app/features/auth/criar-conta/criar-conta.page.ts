@@ -1,12 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatIconModule } from '@angular/material/icon';
+import { Icone } from '@/shared/ui/icone';
 import { Router, RouterLink } from '@angular/router';
 import { ApiClient } from '../../../core/api/api-client';
 import { AuthService } from '../../../core/auth/auth.service';
 import { SessionResponse } from '../../../core/auth/session';
 import { asProblem, problemMessage } from '../../../core/errors/problem-details';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { CampoDirective } from '@/shared/ui/campo.directive';
 
 export const SENHA_MIN = 8;
 export const SENHA_MAX = 128;
@@ -19,7 +21,7 @@ type Campo = 'name' | 'email' | 'password';
 @Component({
   selector: 'app-criar-conta-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, MatIconModule],
+  imports: [ZardButtonComponent, CampoDirective, ReactiveFormsModule, RouterLink, Icone],
   templateUrl: './criar-conta.page.html',
   styleUrl: './criar-conta.page.scss',
 })

@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { problemMessage } from '../../core/errors/problem-details';
 import { formatBrl, monthShortLabel } from '../../core/money';
 import { CopyCandidateRow, CopyCandidates, PlanningCopyResult } from './planning.models';
 import { PlanningService } from './planning.service';
+import { DADOS_DIALOGO, DialogoRef } from '@/shared/ui/dialogo';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { ZardDialogFooterComponent, ZardDialogTitleComponent } from '@/shared/components/dialog';
 
 export interface CopiarData {
   /** Ano de destino; a origem é o ano anterior. */
@@ -21,11 +23,11 @@ export type CopiarResultado = PlanningCopyResult | null;
 @Component({
   selector: 'app-copiar-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule],
+  imports: [ZardButtonComponent, ZardDialogFooterComponent, ZardDialogTitleComponent],
   styleUrl: './dialogos.scss',
   template: `
-    <h2 mat-dialog-title>Copiar de {{ data.ano - 1 }} para {{ data.ano }}</h2>
-    <mat-dialog-content>
+    <h2 z-dialog-title>Copiar de {{ data.ano - 1 }} para {{ data.ano }}</h2>
+    <div class="dialogo-corpo">
       @if (carregando()) {
         <p role="status">Carregando…</p>
       } @else if (candidatos(); as c) {
@@ -71,12 +73,20 @@ export type CopiarResultado = PlanningCopyResult | null;
       @if (erro(); as mensagem) {
         <p class="erro" role="alert" data-testid="copiar-erro">{{ mensagem }}</p>
       }
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button type="button" class="botao" data-testid="cancelar" (click)="ref.close(null)">
+    </div>
+    <footer z-dialog-footer>
+      <button
+        z-button
+        zType="outline"
+        type="button"
+        class="botao"
+        data-testid="cancelar"
+        (click)="ref.close(null)"
+      >
         Cancelar
       </button>
       <button
+        z-button
         type="button"
         class="botao principal"
         data-testid="copiar-confirmar"
@@ -85,12 +95,12 @@ export type CopiarResultado = PlanningCopyResult | null;
       >
         Copiar
       </button>
-    </mat-dialog-actions>
+    </footer>
   `,
 })
 export class CopiarDialog {
-  protected readonly data = inject<CopiarData>(MAT_DIALOG_DATA);
-  protected readonly ref = inject<MatDialogRef<CopiarDialog, CopiarResultado>>(MatDialogRef);
+  protected readonly data = inject<CopiarData>(DADOS_DIALOGO);
+  protected readonly ref = inject<DialogoRef<CopiarDialog, CopiarResultado>>(DialogoRef);
   private readonly service = inject(PlanningService);
   /** Uma chave por diálogo: reenviar o mesmo pedido não copia duas vezes. */
   private readonly chave = crypto.randomUUID();

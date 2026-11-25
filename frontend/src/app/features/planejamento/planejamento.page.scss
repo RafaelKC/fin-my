@@ -4,59 +4,21 @@
   gap: 16px;
   min-width: 0;
 }
-.cabecalho {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.titulo {
-  margin: 0;
-  font: var(--mat-sys-title-large);
-}
-.seta {
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: 24px;
-  cursor: pointer;
-  color: inherit;
-}
 .acoes {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
-.botao {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 16px;
-  font: var(--mat-sys-label-large);
-  color: var(--mat-sys-on-primary);
-  background: var(--mat-sys-primary);
-  border: 0;
-  border-radius: 24px;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: default;
-  }
-}
-.erro {
-  margin: 0;
-  color: var(--mat-sys-error);
-}
-.aviso {
-  margin: 0;
-  color: var(--mat-sys-on-surface-variant);
-}
 .tabela-rolavel {
   overflow-x: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sombra-cartao);
+}
+.resumo-grafico h2 {
+  margin: 8px 0;
+  font: var(--fonte-titulo-p);
 }
 .tabela {
   width: 100%;
@@ -68,12 +30,12 @@
     padding: 0 4px;
     text-align: right;
     white-space: nowrap;
-    border-bottom: 1px solid var(--mat-sys-outline-variant);
-    background: var(--mat-sys-surface);
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
   }
   thead th {
-    font: var(--mat-sys-label-medium);
-    color: var(--mat-sys-on-surface-variant);
+    font: var(--fonte-rotulo);
+    color: var(--muted-foreground);
     padding: 8px 4px;
   }
   .rotulo {
@@ -98,27 +60,28 @@
     vertical-align: middle;
   }
   .nota {
-    color: var(--mat-sys-on-surface-variant);
-    font: var(--mat-sys-label-small);
+    color: var(--muted-foreground);
+    font: var(--fonte-rotulo-p);
   }
   .secao th {
     padding: 12px 8px 4px;
     text-align: left;
-    font: var(--mat-sys-title-small);
-    background: var(--mat-sys-surface-container);
+    font: var(--fonte-subtitulo);
+    background: var(--card);
   }
   .vazio td {
     padding: 8px;
     text-align: left;
-    color: var(--mat-sys-on-surface-variant);
+    color: var(--muted-foreground);
   }
   .celula {
+    position: relative;
     min-width: 6.5rem;
     height: 48px;
     padding: 0;
   }
   .hoje {
-    background: var(--mat-sys-secondary-container);
+    background: var(--accent);
   }
   .lista .valor {
     text-decoration: underline dotted;
@@ -130,7 +93,7 @@
   }
   tfoot tr:first-child th,
   tfoot tr:first-child td {
-    border-top: 2px solid var(--mat-sys-outline);
+    border-top: 2px solid var(--border-forte);
   }
 }
 .valor {
@@ -150,7 +113,7 @@
   cursor: pointer;
 }
 .efetivado .valor {
-  color: var(--mat-sys-on-surface-variant);
+  color: var(--muted-foreground);
 }
 .selo-efetivado {
   width: 14px;
@@ -158,8 +121,8 @@
   font-size: 14px;
 }
 .estimativa {
-  color: var(--mat-sys-on-surface-variant);
-  font: var(--mat-sys-label-small);
+  color: var(--muted-foreground);
+  font: var(--fonte-rotulo-p);
 }
 .campo {
   box-sizing: border-box;
@@ -169,10 +132,12 @@
   padding: 0 8px;
   text-align: right;
   font: inherit;
+  font-size: 16px; /* ≥ 16 px: o iOS não dá zoom ao focar */
+  font-variant-numeric: tabular-nums;
   color: inherit;
-  background: var(--mat-sys-surface);
-  border: 2px solid var(--mat-sys-primary);
-  border-radius: 4px;
+  background: var(--card);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-sm);
 }
 .menu-linha {
   width: 32px;
@@ -185,14 +150,7 @@
   cursor: pointer;
 }
 .negativo {
-  color: var(--mat-sys-error);
-}
-.so-leitor {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
+  color: var(--destructive);
 }
 @media (max-width: 1023.98px) {
   .tabela .rotulo {

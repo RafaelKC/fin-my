@@ -1,7 +1,7 @@
 <div class="pagina">
   @if (rotaDoGuia(); as rota) {
     <a class="continuar-config" [routerLink]="rota" data-testid="continuar-configuracao">
-      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">checklist</mat-icon>
+      <app-icone nome="checklist" />
       <span>
         <strong>Continuar configuração</strong>
         <span class="nota">Faltam etapas dos primeiros passos.</span>
@@ -121,7 +121,7 @@
       [disabled]="noMinimo()"
       (click)="ir(-1)"
     >
-      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">chevron_left</mat-icon>
+      <app-icone nome="chevron_left" />
     </button>
     <h1 class="titulo" data-testid="painel-titulo">{{ ano() }}</h1>
     <button
@@ -132,7 +132,7 @@
       [disabled]="noMaximo()"
       (click)="ir(1)"
     >
-      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">chevron_right</mat-icon>
+      <app-icone nome="chevron_right" />
     </button>
   </header>
 

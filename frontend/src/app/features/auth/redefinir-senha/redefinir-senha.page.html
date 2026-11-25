@@ -5,12 +5,12 @@
     <div class="confirmacao" role="status" data-testid="senha-redefinida">
       <p>Senha alterada. Suas outras sessões foram encerradas.</p>
     </div>
-    <p class="acao"><a class="enviar" routerLink="/entrar">Entrar</a></p>
+    <p class="acao"><a z-button class="enviar" routerLink="/entrar">Entrar</a></p>
   } @else if (tokenInvalido()) {
     <div class="aviso" role="alert" data-testid="link-invalido">
       <p>Este link expirou ou já foi usado. Peça um novo link.</p>
     </div>
-    <p class="acao"><a class="enviar" routerLink="/esqueci-senha">Pedir novo link</a></p>
+    <p class="acao"><a z-button class="enviar" routerLink="/esqueci-senha">Pedir novo link</a></p>
   } @else {
     <p class="intro">Escolha a nova senha da sua conta.</p>
 
@@ -23,6 +23,7 @@
         <label for="senha">Nova senha</label>
         <div class="senha">
           <input
+            appCampo
             id="senha"
             [type]="senhaVisivel() ? 'text' : 'password'"
             formControlName="password"
@@ -38,9 +39,7 @@
             [attr.aria-pressed]="senhaVisivel()"
             (click)="alternarSenha()"
           >
-            <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{
-              senhaVisivel() ? 'visibility_off' : 'visibility'
-            }}</mat-icon>
+            <app-icone [nome]="senhaVisivel() ? 'visibility_off' : 'visibility'" />
           </button>
         </div>
         <span class="ajuda" id="senha-ajuda">Mínimo de {{ senhaMin }} caracteres.</span>
@@ -49,7 +48,7 @@
         }
       </div>
 
-      <button type="submit" class="enviar" [disabled]="enviando()">
+      <button z-button type="submit" class="enviar" [disabled]="enviando()">
         {{ enviando() ? 'Salvando…' : 'Salvar' }}
       </button>
     </form>

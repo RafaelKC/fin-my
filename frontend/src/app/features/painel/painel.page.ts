@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatIconModule } from '@angular/material/icon';
+import { Icone } from '@/shared/ui/icone';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, of, switchMap } from 'rxjs';
 import { problemMessage } from '../../core/errors/problem-details';
@@ -32,7 +32,7 @@ import { PanelService } from './panel.service';
 @Component({
   selector: 'app-painel-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BrlPipe, ChartAnual, MatIconModule, RouterLink],
+  imports: [BrlPipe, ChartAnual, Icone, RouterLink],
   templateUrl: './painel.page.html',
   styleUrl: './painel.page.scss',
 })

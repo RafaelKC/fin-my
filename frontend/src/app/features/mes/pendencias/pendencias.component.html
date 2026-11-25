@@ -5,6 +5,8 @@
     pagar <span data-testid="pendencias-pagar">{{ resumo().toPayCents | brl }}</span>
   </p>
   <button
+    z-button
+    zType="outline"
     type="button"
     class="botao"
     data-testid="pendencias-alternar"
@@ -54,6 +56,8 @@
         </ul>
         <div class="acoes" role="group" aria-label="Ações nas pendências selecionadas">
           <button
+            z-button
+            zType="outline"
             type="button"
             class="botao"
             data-testid="pendencias-realizar"
@@ -63,6 +67,8 @@
             {{ rotuloRealizar() }}
           </button>
           <button
+            z-button
+            zType="outline"
             type="button"
             class="botao"
             data-testid="pendencias-trazer"
@@ -72,6 +78,8 @@
             Trazer para este mês
           </button>
           <button
+            z-button
+            zType="destructive"
             type="button"
             class="botao perigo"
             data-testid="pendencias-excluir"

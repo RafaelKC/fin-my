@@ -1,3 +1,4 @@
+import { ZardButtonComponent } from '@/shared/components/button';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -21,7 +22,7 @@ import { PessoaForm } from './pessoa-form';
 @Component({
   selector: 'app-primeiros-passos-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CarteiraFormPage, CartaoFormPage, RecorrenciaFormPage, PessoaForm],
+  imports: [CarteiraFormPage, CartaoFormPage, RecorrenciaFormPage, PessoaForm, ZardButtonComponent],
   templateUrl: './primeiros-passos.page.html',
   styleUrl: './primeiros-passos.page.scss',
 })

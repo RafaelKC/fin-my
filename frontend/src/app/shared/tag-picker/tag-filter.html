@@ -8,7 +8,7 @@
     [attr.aria-pressed]="ids().length > 0"
     (click)="alternarPainel()"
   >
-    <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">sell</mat-icon>
+    <app-icone nome="sell" />
     {{ rotulo() }}
   </button>
 
@@ -33,9 +33,7 @@
             >
               <span class="cor" [style.background]="t.color" aria-hidden="true"></span>
               @if (t.isSettlement) {
-                <mat-icon class="acerto" fontSet="material-symbols-outlined" aria-hidden="true"
-                  >person</mat-icon
-                >
+                <app-icone nome="person" class="acerto" />
               }
               {{ t.name }}
               @if (t.archived) {

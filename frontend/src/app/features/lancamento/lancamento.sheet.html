@@ -1,11 +1,12 @@
-<div class="folha">
+<div class="folha" [attr.data-tipo]="kind()">
+  <span class="alca" aria-hidden="true"></span>
   <header class="topo">
     <h2 class="titulo" id="lancamento-titulo">
       {{ editandoCompra ? 'Editar compra' : editando ? 'Editar lançamento' : 'Novo lançamento' }}
       <app-selo-via-claude [via]="criadoVia" />
     </h2>
     <button type="button" class="fechar" aria-label="Fechar" (click)="fechar()">
-      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">close</mat-icon>
+      <app-icone nome="close" />
     </button>
   </header>
 
@@ -20,7 +21,8 @@
             [attr.aria-checked]="kind() === 'card'"
             (click)="escolherTipo('card')"
           >
-            Cartão
+            <app-icone nome="credit_card" tamanho="1.125rem" />
+            <span>Cartão</span>
           </button>
         }
         <button
@@ -30,7 +32,8 @@
           [attr.aria-checked]="kind() === 'expense'"
           (click)="escolherTipo('expense')"
         >
-          Saída
+          <app-icone nome="arrow_up_right" tamanho="1.125rem" />
+          <span>Saída</span>
         </button>
         <button
           type="button"
@@ -39,7 +42,8 @@
           [attr.aria-checked]="kind() === 'income'"
           (click)="escolherTipo('income')"
         >
-          Entrada
+          <app-icone nome="arrow_down_left" tamanho="1.125rem" />
+          <span>Entrada</span>
         </button>
         @if (!editando) {
           <button
@@ -49,7 +53,8 @@
             [attr.aria-checked]="kind() === 'transfer'"
             (click)="escolherTipo('transfer')"
           >
-            Transferência
+            <app-icone nome="swap" tamanho="1.125rem" />
+            <span>Transferência</span>
           </button>
         }
       </div>
@@ -74,6 +79,7 @@
     <div class="campo">
       <label for="lancamento-descricao">Descrição</label>
       <input
+        appCampo
         id="lancamento-descricao"
         type="text"
         autocomplete="off"
@@ -109,6 +115,7 @@
         ehCartao() && emAndamento() ? 'Data da compra' : 'Data'
       }}</label>
       <input
+        appCampo
         id="lancamento-data"
         type="date"
         [value]="date()"
@@ -128,6 +135,8 @@
           <span class="rotulo">Cartão</span>
           <p class="ajuda" data-testid="sem-cartoes">Você ainda não tem cartões.</p>
           <button
+            z-button
+            zType="secondary"
             type="button"
             class="botao secundario"
             data-testid="novo-cartao"
@@ -138,6 +147,7 @@
         } @else {
           <label for="lancamento-cartao">Cartão</label>
           <select
+            z-native-select
             id="lancamento-cartao"
             [value]="cardId()"
             (change)="escolherCartao($any($event.target).value)"
@@ -158,6 +168,7 @@
             emAndamento() ? 'Total de parcelas' : 'Parcelas'
           }}</label>
           <select
+            z-native-select
             id="lancamento-parcelas"
             [value]="parcelas()"
             (change)="escolherParcelas($any($event.target).value)"
@@ -210,6 +221,7 @@
             </p>
             <label for="lancamento-proxima">Próxima parcela</label>
             <input
+              appCampo
               id="lancamento-proxima"
               type="number"
               inputmode="numeric"
@@ -220,6 +232,7 @@
             />
             <label for="lancamento-fatura-parcela">Fatura da parcela {{ proximaParcela() }}</label>
             <input
+              appCampo
               id="lancamento-fatura-parcela"
               type="month"
               [value]="faturaEmAndamento()"
@@ -244,13 +257,20 @@
           <span class="rotulo">Carteira</span>
           @if (!criandoCarteira()) {
             <p class="ajuda">Você ainda não tem carteiras.</p>
-            <button type="button" class="botao secundario" (click)="abrirCriarCarteira()">
+            <button
+              z-button
+              zType="secondary"
+              type="button"
+              class="botao secundario"
+              (click)="abrirCriarCarteira()"
+            >
               Criar carteira
             </button>
           } @else {
             <div class="mini" role="group" aria-label="Nova carteira">
               <label for="nova-carteira-nome">Nome da carteira</label>
               <input
+                appCampo
                 id="nova-carteira-nome"
                 type="text"
                 autocomplete="off"
@@ -260,6 +280,7 @@
               />
               <label for="nova-carteira-saldo">Saldo inicial</label>
               <input
+                appCampo
                 id="nova-carteira-saldo"
                 type="text"
                 inputmode="decimal"
@@ -274,6 +295,8 @@
                 <p class="erro" role="alert" data-testid="erro-nova-carteira">{{ mensagem }}</p>
               }
               <button
+                z-button
+                zType="secondary"
                 type="button"
                 class="botao secundario"
                 [disabled]="ocupado()"
@@ -286,6 +309,7 @@
         } @else {
           <label for="lancamento-carteira">{{ ehTransferencia() ? 'De' : 'Carteira' }}</label>
           <select
+            z-native-select
             id="lancamento-carteira"
             [value]="walletId()"
             (change)="escolherCarteira($any($event.target).value)"
@@ -304,6 +328,7 @@
         @if (ehTransferencia() && carteiras().length > 0) {
           <label for="lancamento-destino">Para</label>
           <select
+            z-native-select
             id="lancamento-destino"
             [value]="toWalletId()"
             (change)="escolherDestino($any($event.target).value)"
@@ -337,7 +362,14 @@
     }
 
     @if (podeDividir() && !dividindo()) {
-      <button type="button" class="botao secundario" data-testid="dividir" (click)="abrirDividir()">
+      <button
+        z-button
+        zType="secondary"
+        type="button"
+        class="botao secundario"
+        data-testid="dividir"
+        (click)="abrirDividir()"
+      >
         Dividir
       </button>
     }
@@ -385,6 +417,7 @@
           <div class="campo" data-testid="parte">
             <label [for]="'parte-pessoa-' + i">Parte {{ i + 1 }}</label>
             <select
+              z-native-select
               [id]="'parte-pessoa-' + i"
               (change)="escolherPessoaParte(i, $any($event.target).value)"
             >
@@ -396,6 +429,7 @@
             </select>
             @if (modoDivisao() === 'amounts') {
               <input
+                appCampo
                 type="text"
                 inputmode="decimal"
                 autocomplete="off"
@@ -505,6 +539,7 @@
           <div class="campo">
             <label for="lancamento-mes">Mês de referência</label>
             <input
+              appCampo
               id="lancamento-mes"
               type="month"
               [value]="refMonth()"
@@ -515,6 +550,7 @@
         <div class="campo">
           <label for="lancamento-obs">Observação</label>
           <textarea
+            appCampo
             id="lancamento-obs"
             rows="3"
             [attr.maxlength]="observacaoMax"
@@ -533,6 +569,7 @@
       <div class="mini" role="group" aria-label="Duplicar lançamento" data-testid="duplicar-painel">
         <label for="lancamento-data-duplicada">Nova data</label>
         <input
+          appCampo
           id="lancamento-data-duplicada"
           type="date"
           [value]="dataDuplicada()"
@@ -542,6 +579,7 @@
           <p class="erro" role="alert" data-testid="erro-duplicar">{{ mensagem }}</p>
         }
         <button
+          z-button
           type="button"
           class="botao principal"
           data-testid="duplicar-confirmar"
@@ -550,7 +588,13 @@
         >
           Duplicar
         </button>
-        <button type="button" class="botao secundario" (click)="cancelarDuplicar()">
+        <button
+          z-button
+          zType="secondary"
+          type="button"
+          class="botao secundario"
+          (click)="cancelarDuplicar()"
+        >
           Cancelar
         </button>
       </div>
@@ -563,6 +607,7 @@
         </p>
         <label for="repetir-fim">Término</label>
         <select
+          z-native-select
           id="repetir-fim"
           data-testid="repetir-fim"
           (change)="repetirFim.set($any($event.target).value)"
@@ -578,6 +623,7 @@
         @if (repetirFim() === 'until_month') {
           <label for="repetir-mes">Último mês</label>
           <input
+            appCampo
             id="repetir-mes"
             type="month"
             data-testid="repetir-mes"
@@ -588,6 +634,7 @@
         @if (repetirFim() === 'after_count') {
           <label for="repetir-qtd">Quantas ocorrências</label>
           <input
+            appCampo
             id="repetir-qtd"
             type="number"
             inputmode="numeric"
@@ -602,6 +649,7 @@
           <p class="erro" role="alert" data-testid="erro-repetir">{{ mensagem }}</p>
         }
         <button
+          z-button
           type="button"
           class="botao principal"
           data-testid="repetir-confirmar"
@@ -610,13 +658,22 @@
         >
           Repetir todo mês
         </button>
-        <button type="button" class="botao secundario" (click)="cancelarRepetir()">Cancelar</button>
+        <button
+          z-button
+          zType="secondary"
+          type="button"
+          class="botao secundario"
+          (click)="cancelarRepetir()"
+        >
+          Cancelar
+        </button>
       </div>
     }
   </div>
 
   <footer class="rodape">
     <button
+      z-button
       type="button"
       class="botao principal"
       data-testid="salvar"
@@ -627,6 +684,8 @@
     </button>
     @if (!editando) {
       <button
+        z-button
+        zType="secondary"
         type="button"
         class="botao secundario"
         data-testid="salvar-outro"
@@ -638,6 +697,8 @@
     } @else {
       @if (!editandoCompra) {
         <button
+          z-button
+          zType="secondary"
           type="button"
           class="botao secundario"
           data-testid="duplicar"
@@ -649,6 +710,8 @@
       }
       @if (podeRepetir && !repetindo()) {
         <button
+          z-button
+          zType="secondary"
           type="button"
           class="botao secundario"
           data-testid="repetir"
@@ -659,6 +722,8 @@
         </button>
       }
       <button
+        z-button
+        zType="destructive"
         type="button"
         class="botao perigo"
         data-testid="excluir"

@@ -1,15 +1,14 @@
 .pagina {
   box-sizing: border-box;
-  max-width: 36rem;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .voltar {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  color: var(--mat-sys-primary);
-  font: var(--mat-sys-label-large);
+  color: var(--primary);
+  font: var(--fonte-rotulo-g);
 }
 
 .cabecalho {
@@ -25,7 +24,7 @@
 
   h1 {
     margin: 0;
-    font: var(--mat-sys-headline-small);
+    font: var(--fonte-titulo);
   }
 
   p {
@@ -39,9 +38,9 @@
   width: 48px;
   height: 48px;
   font-size: 1.75rem;
-  color: var(--mat-sys-primary);
+  color: var(--primary);
   text-decoration: none;
-  border-radius: 24px;
+  border-radius: 999px;
 }
 
 .cor {
@@ -51,16 +50,10 @@
   margin-right: 6px;
   border-radius: 50%;
 }
-
-.ajuda {
-  font: var(--mat-sys-body-small);
-  color: var(--mat-sys-on-surface-variant);
-}
-
 .datas {
   margin: 8px 0 0;
   text-align: center;
-  color: var(--mat-sys-on-surface-variant);
+  color: var(--muted-foreground);
 }
 
 .situacao {
@@ -71,19 +64,19 @@
 .selo-divisao {
   display: inline-block;
   padding: 4px 12px;
-  font: var(--mat-sys-label-large);
-  color: var(--mat-sys-on-surface-variant);
-  background: var(--mat-sys-surface-variant);
-  border-radius: 12px;
+  font: var(--fonte-rotulo-g);
+  color: var(--muted-foreground);
+  background: var(--muted);
+  border-radius: var(--radius-xl);
 
   &[data-status='paid'] {
-    color: var(--mat-sys-on-primary-container);
-    background: var(--mat-sys-primary-container);
+    color: var(--accent-foreground);
+    background: var(--primary-suave);
   }
 
   &[data-status='overdue'] {
-    color: var(--mat-sys-on-error-container);
-    background: var(--mat-sys-error-container);
+    color: var(--destructive);
+    background: var(--destructive-suave);
   }
 }
 
@@ -93,34 +86,26 @@
   gap: 8px;
   margin: 0;
   padding: 12px 16px;
-  background: var(--mat-sys-surface-container-low);
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sombra-cartao);
 
   dt {
-    font: var(--mat-sys-label-medium);
-    color: var(--mat-sys-on-surface-variant);
+    font: var(--fonte-rotulo);
+    color: var(--muted-foreground);
   }
 
   dd {
     margin: 0;
-    font: var(--mat-sys-title-medium);
+    font: var(--fonte-titulo-p);
   }
 }
 
 .conferido {
   margin: 8px 0;
-  color: var(--mat-sys-on-surface-variant);
+  color: var(--muted-foreground);
 }
-
-.aviso {
-  margin: 8px 0;
-  padding: 12px 16px;
-  color: var(--mat-sys-on-error-container);
-  background: var(--mat-sys-error-container);
-  border-radius: 8px;
-}
-
 .acoes-fatura {
   display: flex;
   flex-wrap: wrap;
@@ -130,13 +115,8 @@
 
 h2 {
   margin: 16px 0 8px;
-  font: var(--mat-sys-title-medium);
+  font: var(--fonte-titulo-p);
 }
-
-.vazio {
-  color: var(--mat-sys-on-surface-variant);
-}
-
 .lista {
   display: flex;
   flex-direction: column;
@@ -148,9 +128,10 @@ h2 {
 
 .compra {
   padding: 8px 12px;
-  background: var(--mat-sys-surface-container-low);
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sombra-cartao);
 }
 
 .linha {
@@ -175,7 +156,7 @@ h2 {
 }
 
 .valor.credito {
-  color: var(--mat-sys-tertiary);
+  color: var(--entrada);
 }
 
 .botoes {
@@ -183,42 +164,6 @@ h2 {
   flex-wrap: wrap;
   gap: 4px;
 }
-
-.botao {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 16px;
-  font: var(--mat-sys-label-large);
-  color: var(--mat-sys-primary);
-  background: transparent;
-  border: 0;
-  border-radius: 24px;
-  cursor: pointer;
-
-  &.principal {
-    color: var(--mat-sys-on-primary);
-    background: var(--mat-sys-primary);
-  }
-
-  &.secundario {
-    border: 1px solid var(--mat-sys-outline);
-  }
-
-  &.pequeno {
-    padding: 0 12px;
-    font: var(--mat-sys-label-medium);
-  }
-
-  &.perigo {
-    color: var(--mat-sys-error);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: default;
-  }
-}
-
 .total-filtro {
   margin: 8px 0;
 }
@@ -228,7 +173,7 @@ h2 {
 
   h2 {
     margin: 0 0 4px;
-    font: var(--mat-sys-title-small);
+    font: var(--fonte-subtitulo);
   }
 
   ul {
@@ -260,9 +205,9 @@ h2 {
 }
 
 .selo-divisao {
-  font: var(--mat-sys-label-small);
-  color: var(--mat-sys-on-secondary-container);
-  background: var(--mat-sys-secondary-container);
+  font: var(--fonte-rotulo-p);
+  color: var(--accent-foreground);
+  background: var(--accent);
   padding: 2px 8px;
   border-radius: 10px;
 }
@@ -272,7 +217,7 @@ h2 {
 
   h2 {
     margin: 0 0 4px;
-    font: var(--mat-sys-title-medium);
+    font: var(--fonte-titulo-p);
   }
 
   p {
@@ -283,5 +228,39 @@ h2 {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+  }
+}
+
+// Situação da fatura com a cor de cada estado.
+.estado {
+  color: var(--previsto);
+  background: var(--previsto-suave);
+
+  &[data-status='paid'] {
+    color: var(--pago);
+    background: var(--pago-suave);
+  }
+
+  &[data-status='overdue'] {
+    color: var(--saida);
+    background: var(--saida-suave);
+  }
+
+  &[data-status='no_amount_due'] {
+    color: var(--muted-foreground);
+    background: var(--muted);
+  }
+}
+
+// Ações de cada compra: compactas, numa linha só.
+.compra .botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+
+  button {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 10px;
   }
 }

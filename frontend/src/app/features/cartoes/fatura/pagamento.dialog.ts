@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { parseValueExpression, today } from '../../../core/money';
 import { asProblem, problemMessage } from '../../../core/errors/problem-details';
 import { AmountInput } from '../../../shared/amount-input/amount-input';
@@ -9,6 +8,11 @@ import { Wallet } from '../../carteiras/wallet.models';
 import { centavosParaExpressao, novaChaveIdempotencia } from '../../lancamento/lancamento-logic';
 import { InvoicePayment } from './invoice.models';
 import { InvoicesService } from './invoices.service';
+import { DADOS_DIALOGO, DialogoRef } from '@/shared/ui/dialogo';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { CampoDirective } from '@/shared/ui/campo.directive';
+import { ZardDialogFooterComponent, ZardDialogTitleComponent } from '@/shared/components/dialog';
+import { ZardNativeSelectDirective } from '@/shared/components/native-select';
 
 export interface PagamentoDialogData {
   cardId: string;
@@ -26,10 +30,18 @@ export interface PagamentoDialogData {
 @Component({
   selector: 'app-pagamento-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, MatDialogModule, AmountInput],
+  imports: [
+    ZardButtonComponent,
+    CampoDirective,
+    ZardDialogFooterComponent,
+    ZardDialogTitleComponent,
+    ZardNativeSelectDirective,
+    FormsModule,
+    AmountInput,
+  ],
   template: `
-    <h2 mat-dialog-title>{{ data.pagamento ? 'Editar pagamento' : 'Pagar fatura' }}</h2>
-    <mat-dialog-content>
+    <h2 z-dialog-title>{{ data.pagamento ? 'Editar pagamento' : 'Pagar fatura' }}</h2>
+    <div class="dialogo-corpo">
       <app-amount-input
         label="Valor"
         [ngModel]="valor()"
@@ -38,6 +50,7 @@ export interface PagamentoDialogData {
       />
       <label for="pagamento-data">Data</label>
       <input
+        appCampo
         id="pagamento-data"
         class="campo"
         type="date"
@@ -46,6 +59,7 @@ export interface PagamentoDialogData {
       />
       <label for="pagamento-carteira">Carteira</label>
       <select
+        z-native-select
         id="pagamento-carteira"
         class="campo"
         [value]="carteira()"
@@ -58,10 +72,13 @@ export interface PagamentoDialogData {
       @if (erro(); as mensagem) {
         <p class="erro" role="alert" data-testid="erro-pagamento">{{ mensagem }}</p>
       }
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button type="button" class="botao" (click)="ref.close(false)">Cancelar</button>
+    </div>
+    <footer z-dialog-footer>
+      <button z-button zType="outline" type="button" class="botao" (click)="ref.close(false)">
+        Cancelar
+      </button>
       <button
+        z-button
         type="button"
         class="botao principal"
         data-testid="confirmar-pagamento"
@@ -70,7 +87,7 @@ export interface PagamentoDialogData {
       >
         {{ data.pagamento ? 'Salvar' : 'Pagar' }}
       </button>
-    </mat-dialog-actions>
+    </footer>
   `,
   styles: `
     label {
@@ -83,39 +100,17 @@ export interface PagamentoDialogData {
       min-height: 48px;
       margin-top: 4px;
       padding: 8px 12px;
-      font: var(--mat-sys-body-large);
+      font: var(--fonte-corpo-g);
       color: inherit;
       background: transparent;
-      border: 1px solid var(--mat-sys-outline);
+      border: 1px solid var(--border-forte);
       border-radius: 8px;
-    }
-    .erro {
-      color: var(--mat-sys-error);
-    }
-    .botao {
-      min-width: 44px;
-      min-height: 44px;
-      padding: 0 16px;
-      font: var(--mat-sys-label-large);
-      color: var(--mat-sys-primary);
-      background: transparent;
-      border: 0;
-      border-radius: 24px;
-      cursor: pointer;
-    }
-    .botao.principal {
-      color: var(--mat-sys-on-primary);
-      background: var(--mat-sys-primary);
-    }
-    .botao:disabled {
-      opacity: 0.6;
-      cursor: default;
     }
   `,
 })
 export class PagamentoDialog {
-  protected readonly data = inject<PagamentoDialogData>(MAT_DIALOG_DATA);
-  protected readonly ref = inject<MatDialogRef<PagamentoDialog, boolean>>(MatDialogRef);
+  protected readonly data = inject<PagamentoDialogData>(DADOS_DIALOGO);
+  protected readonly ref = inject<DialogoRef<PagamentoDialog, boolean>>(DialogoRef);
   private readonly invoices = inject(InvoicesService);
 
   protected readonly valor = signal(

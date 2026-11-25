@@ -29,6 +29,7 @@
       <div class="campo">
         <label for="nome">Nome</label>
         <input
+          appCampo
           id="nome"
           type="text"
           formControlName="name"
@@ -43,7 +44,7 @@
 
       <div class="campo">
         <label for="tipo">Tipo</label>
-        <select id="tipo" formControlName="type">
+        <select z-native-select id="tipo" formControlName="type">
           @for (t of tipos; track t.value) {
             <option [value]="t.value">{{ t.label }}</option>
           }
@@ -71,6 +72,7 @@
       <div class="campo">
         <label for="saldo">Saldo inicial</label>
         <input
+          appCampo
           id="saldo"
           type="text"
           inputmode="decimal"
@@ -90,10 +92,10 @@
 
       <div class="campo">
         <label for="data-saldo">Data do saldo inicial</label>
-        <input id="data-saldo" type="date" formControlName="initialBalanceDate" />
+        <input appCampo id="data-saldo" type="date" formControlName="initialBalanceDate" />
       </div>
 
-      <button type="submit" class="enviar" [disabled]="ocupado()">
+      <button z-button type="submit" class="enviar" [disabled]="ocupado()">
         {{ ocupado() ? 'Salvando…' : 'Salvar' }}
       </button>
       @if (!embutido()) {
@@ -104,16 +106,37 @@
     @if (carteira(); as c) {
       <section class="acoes" aria-label="Ações da carteira">
         @if (!c.archived && !c.isPrimary) {
-          <button type="button" class="acao" [disabled]="ocupado()" (click)="tornarPrincipal()">
+          <button
+            z-button
+            zType="outline"
+            type="button"
+            class="acao"
+            [disabled]="ocupado()"
+            (click)="tornarPrincipal()"
+          >
             Tornar principal
           </button>
         }
         @if (c.archived) {
-          <button type="button" class="acao" [disabled]="ocupado()" (click)="desarquivar()">
+          <button
+            z-button
+            zType="outline"
+            type="button"
+            class="acao"
+            [disabled]="ocupado()"
+            (click)="desarquivar()"
+          >
             Desarquivar
           </button>
         } @else {
-          <button type="button" class="acao" [disabled]="ocupado()" (click)="arquivar()">
+          <button
+            z-button
+            zType="outline"
+            type="button"
+            class="acao"
+            [disabled]="ocupado()"
+            (click)="arquivar()"
+          >
             Arquivar
           </button>
         }
@@ -122,7 +145,14 @@
             Esta carteira tem lançamentos: não pode ser excluída, apenas arquivada.
           </p>
         } @else {
-          <button type="button" class="acao perigo" [disabled]="ocupado()" (click)="excluir()">
+          <button
+            z-button
+            zType="destructive"
+            type="button"
+            class="acao perigo"
+            [disabled]="ocupado()"
+            (click)="excluir()"
+          >
             Excluir
           </button>
         }

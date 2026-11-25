@@ -1,32 +1,6 @@
-.aviso {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 16px;
-  padding: 12px;
-  border-radius: 8px;
-  background: var(--mat-sys-tertiary-container);
-  color: var(--mat-sys-on-tertiary-container);
-}
 .texto {
   flex: 1;
   margin: 0;
-}
-.botao {
-  min-height: 44px;
-  padding: 0 16px;
-  border: 1px solid var(--mat-sys-outline);
-  border-radius: 8px;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-  &.perigo {
-    color: var(--mat-sys-error);
-  }
 }
 .lista {
   flex-basis: 100%;
@@ -46,7 +20,7 @@
   padding: 0;
 }
 .item {
-  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  border-bottom: 1px solid var(--border);
 }
 .linha {
   display: grid;
@@ -58,14 +32,10 @@
 }
 .meta {
   grid-column: 2 / -1;
-  font: var(--mat-sys-body-small);
+  font: var(--fonte-corpo-p);
 }
 .acoes {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-.erro {
-  margin: 0;
-  color: var(--mat-sys-error);
 }

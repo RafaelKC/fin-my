@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatIconModule } from '@angular/material/icon';
+import { Icone, NomeIcone } from '@/shared/ui/icone';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { EDarkModes, ZardDarkMode } from '@/shared/services/dark-mode';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { AuthService } from '../core/auth/auth.service';
@@ -8,7 +10,7 @@ import { LancamentoLauncher } from '../features/lancamento/lancamento.launcher';
 
 interface ItemDeMenu {
   rotulo: string;
-  icone: string;
+  icone: NomeIcone;
   rota: string;
 }
 
@@ -21,7 +23,7 @@ interface ItemDeMenu {
 @Component({
   selector: 'app-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icone, ZardButtonComponent],
   host: { '(document:keydown.escape)': 'maisAberto.set(false)' },
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
@@ -56,6 +58,36 @@ export class Shell {
   ];
 
   protected readonly maisAberto = signal(false);
+
+  private readonly tema = inject(ZardDarkMode);
+
+  /** Tema escolhido no aparelho: sistema → claro → escuro → sistema. */
+  protected readonly iconeTema = computed<NomeIcone>(() => {
+    const atual = this.tema.currentTheme();
+    return atual === EDarkModes.LIGHT
+      ? 'light_mode'
+      : atual === EDarkModes.DARK
+        ? 'dark_mode'
+        : 'desktop';
+  });
+
+  protected readonly rotuloTema = computed(() => {
+    const atual = this.tema.currentTheme();
+    const nome =
+      atual === EDarkModes.LIGHT ? 'claro' : atual === EDarkModes.DARK ? 'escuro' : 'do sistema';
+    return `Tema ${nome}. Trocar tema`;
+  });
+
+  protected alternarTema(): void {
+    const atual = this.tema.currentTheme();
+    this.tema.toggleTheme(
+      atual === EDarkModes.SYSTEM
+        ? EDarkModes.LIGHT
+        : atual === EDarkModes.LIGHT
+          ? EDarkModes.DARK
+          : EDarkModes.SYSTEM,
+    );
+  }
 
   constructor() {
     // Navegar (por qualquer meio) fecha o painel "Mais".

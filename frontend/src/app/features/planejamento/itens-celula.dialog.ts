@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { BrlPipe } from '../../core/money';
 import { formatarData } from '../mes/mes-logic';
 import { PlanningCellItem } from './planning.models';
+import { DADOS_DIALOGO, DialogoRef } from '@/shared/ui/dialogo';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { ZardDialogFooterComponent, ZardDialogTitleComponent } from '@/shared/components/dialog';
 
 export interface ItensCelulaData {
   titulo: string;
@@ -18,11 +20,11 @@ const SITUACAO: Record<string, string> = { planned: 'Previsto', settled: 'Efetiv
 @Component({
   selector: 'app-itens-celula-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, BrlPipe],
+  imports: [ZardButtonComponent, ZardDialogFooterComponent, ZardDialogTitleComponent, BrlPipe],
   styleUrl: './dialogos.scss',
   template: `
-    <h2 mat-dialog-title>{{ data.titulo }}</h2>
-    <mat-dialog-content>
+    <h2 z-dialog-title>{{ data.titulo }}</h2>
+    <div class="dialogo-corpo">
       <p class="nota" data-testid="itens-aviso">
         Esta célula tem mais de um lançamento ou algum já efetivado. Edite cada lançamento
         individualmente.
@@ -33,24 +35,37 @@ const SITUACAO: Record<string, string> = { planned: 'Previsto', settled: 'Efetiv
             <span class="descricao">{{ i.description }}</span>
             <span class="nota">{{ data_(i.date) }} · {{ situacao(i.status) }}</span>
             <strong>{{ i.amountCents | brl }}</strong>
-            <button type="button" class="botao" data-testid="item-editar" (click)="ref.close(i.id)">
+            <button
+              z-button
+              zType="outline"
+              type="button"
+              class="botao"
+              data-testid="item-editar"
+              (click)="ref.close(i.id)"
+            >
               Editar
             </button>
           </li>
         }
       </ul>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button type="button" class="botao" data-testid="fechar" (click)="ref.close(null)">
+    </div>
+    <footer z-dialog-footer>
+      <button
+        z-button
+        zType="outline"
+        type="button"
+        class="botao"
+        data-testid="fechar"
+        (click)="ref.close(null)"
+      >
         Fechar
       </button>
-    </mat-dialog-actions>
+    </footer>
   `,
 })
 export class ItensCelulaDialog {
-  protected readonly data = inject<ItensCelulaData>(MAT_DIALOG_DATA);
-  protected readonly ref =
-    inject<MatDialogRef<ItensCelulaDialog, ItensCelulaResultado>>(MatDialogRef);
+  protected readonly data = inject<ItensCelulaData>(DADOS_DIALOGO);
+  protected readonly ref = inject<DialogoRef<ItensCelulaDialog, ItensCelulaResultado>>(DialogoRef);
   protected readonly data_ = formatarData;
   protected readonly situacao = (s: string): string => SITUACAO[s] ?? s;
 }

@@ -9,9 +9,10 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatDialog } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
+import { Icone } from '@/shared/ui/icone';
+import { ZardDropdownImports } from '@/shared/components/dropdown';
+import { ChartAnual } from '../../shared/chart-anual/chart-anual';
+import { PontoAnual } from '../../shared/chart-anual/chart-anual-logic';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EMPTY, Subject, catchError, concatMap, of, switchMap, tap } from 'rxjs';
 import { asProblem, problemMessage } from '../../core/errors/problem-details';
@@ -59,6 +60,8 @@ import {
 } from './planning.models';
 import { PlanningService } from './planning.service';
 import { PreencherData, PreencherDialog, PreencherResultado } from './preencher.dialog';
+import { Dialogo } from '@/shared/ui/dialogo';
+import { ZardButtonComponent } from '@/shared/components/button';
 
 /** Largura a partir da qual a grade é editada inline (abaixo disso, por diálogo). */
 const DESKTOP = '(min-width: 1024px)';
@@ -91,7 +94,7 @@ interface Edicao {
 @Component({
   selector: 'app-planejamento-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BrlPipe, MatIconModule, MatMenuModule],
+  imports: [ZardButtonComponent, BrlPipe, Icone, ...ZardDropdownImports, ChartAnual],
   templateUrl: './planejamento.page.html',
   styleUrl: './planejamento.page.scss',
 })
@@ -103,7 +106,7 @@ export class PlanejamentoPage {
   private readonly entries = inject(EntriesService);
   private readonly exclusao = inject(ExclusaoService);
   private readonly launcher = inject(LancamentoLauncher);
-  private readonly dialog = inject(MatDialog);
+  private readonly dialog = inject(Dialogo);
 
   private readonly campo = viewChild<ElementRef<HTMLInputElement>>('campoCelula');
   private readonly fila = new Subject<{ linha: LinhaTabela; mes: string; texto: string }>();
@@ -113,6 +116,15 @@ export class PlanejamentoPage {
   protected readonly ano = signal(0);
   protected readonly grade = signal<PlanningGrid | null>(null);
   protected readonly totais = signal<PlanningTotals | null>(null);
+  /** Pontos do gráfico do ano planejado (mesmo componente do Painel). */
+  protected readonly pontosGrafico = computed<PontoAnual[]>(() =>
+    (this.totais()?.months ?? []).map((m) => ({
+      rotulo: monthShortLabel(m.month).slice(0, 3),
+      entradasCents: m.incomeCents,
+      saidasCents: m.expenseCents,
+      saldoCents: m.finalBalanceCents,
+    })),
+  );
   protected readonly novas = signal<PlanningRow[]>([]);
   protected readonly carteiras = signal<Wallet[]>([]);
   protected readonly editando = signal<Edicao | null>(null);

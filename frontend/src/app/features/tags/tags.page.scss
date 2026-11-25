@@ -1,12 +1,10 @@
 .pagina {
   box-sizing: border-box;
-  max-width: 36rem;
-  margin: 0 auto;
-  padding: 24px 16px;
+  margin: 0;
 }
 
 h1 {
-  font: var(--mat-sys-headline-medium);
+  font: var(--fonte-titulo-g);
   margin: 0 0 8px;
 }
 
@@ -29,8 +27,8 @@ h1 {
 
 .tag {
   padding: 12px;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
 }
 
 .linha {
@@ -47,27 +45,12 @@ h1 {
 }
 
 .nome {
-  font: var(--mat-sys-title-medium);
+  font: var(--fonte-titulo-p);
 }
-
-.selo {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  font: var(--mat-sys-label-medium);
-  color: var(--mat-sys-primary);
-
-  mat-icon {
-    width: 18px;
-    height: 18px;
-    font-size: 18px;
-  }
-}
-
 .usos {
   margin-left: auto;
-  font: var(--mat-sys-body-small);
-  color: var(--mat-sys-on-surface-variant);
+  font: var(--fonte-corpo-p);
+  color: var(--muted-foreground);
 }
 
 .acoes {
@@ -76,33 +59,10 @@ h1 {
   gap: 4px;
   margin-top: 8px;
 }
-
-.botao {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 16px;
-  font: var(--mat-sys-label-large);
-  color: var(--mat-sys-primary);
-  background: transparent;
-  border: 0;
-  border-radius: 24px;
-  cursor: pointer;
-
-  &.principal {
-    color: var(--mat-sys-on-primary);
-    background: var(--mat-sys-primary);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: default;
-  }
-}
-
 .painel {
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid var(--mat-sys-outline-variant);
+  border-top: 1px solid var(--border);
 
   label {
     display: block;
@@ -116,22 +76,14 @@ h1 {
   min-height: 48px;
   margin-top: 4px;
   padding: 8px 12px;
-  font: var(--mat-sys-body-large);
+  font: var(--fonte-corpo-g);
   color: inherit;
   background: transparent;
-  border: 1px solid var(--mat-sys-outline);
-  border-radius: 8px;
+  border: 1px solid var(--border-forte);
+  border-radius: var(--radius-lg);
 }
 
 .cor-campo {
   width: 96px;
   padding: 4px;
-}
-
-.erro {
-  color: var(--mat-sys-error);
-}
-
-.vazio {
-  color: var(--mat-sys-on-surface-variant);
 }

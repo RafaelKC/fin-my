@@ -9,7 +9,8 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatIconModule } from '@angular/material/icon';
+import { Icone } from '@/shared/ui/icone';
+import { ZardSkeletonComponent } from '@/shared/components/skeleton';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EMPTY, Subject, catchError, combineLatest, merge, of, switchMap, tap } from 'rxjs';
 import { problemMessage } from '../../core/errors/problem-details';
@@ -57,6 +58,7 @@ import { MonthInvoiceLine, MonthView, SummaryColumn, Transfer } from './month.mo
 import { MonthsService } from './months.service';
 import { PendenciasComponent } from './pendencias/pendencias.component';
 import { PendenciasService } from './pendencias/pendencias.service';
+import { ZardButtonComponent } from '@/shared/components/button';
 
 const DESKTOP = '(min-width: 1024px)';
 
@@ -88,7 +90,16 @@ interface LinhaResumo {
 @Component({
   selector: 'app-mes-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BrlPipe, MatIconModule, PendenciasComponent, TagFilter, SeloViaClaude, SeloRecorrencia],
+  imports: [
+    ZardSkeletonComponent,
+    ZardButtonComponent,
+    BrlPipe,
+    Icone,
+    PendenciasComponent,
+    TagFilter,
+    SeloViaClaude,
+    SeloRecorrencia,
+  ],
   templateUrl: './mes.page.html',
   styleUrl: './mes.page.scss',
 })
@@ -216,6 +227,26 @@ export class MesPage {
         : []),
       par('saldo-final', 'Saldo final', 'finalBalanceCents', { destacaNegativo: true }),
     ];
+  });
+
+  /** Destaque do topo: saldo final e Entradas/Saídas/Resultado (os mesmos números do resumo). */
+  protected readonly destaque = computed(() => {
+    const linhas = this.linhasResumo();
+    const de = (id: string) => linhas.find((l) => l.id === id);
+    const saldo = de('saldo-final');
+    const entradas = de('entradas');
+    const saidas = de('saidas');
+    const resultado = de('resultado');
+    if (!saldo || !entradas || !saidas || !resultado) return null;
+    const total = Math.max(entradas.previsto, 0) + Math.max(saidas.previsto, 0);
+    return {
+      saldo,
+      entradas,
+      saidas,
+      resultado,
+      // Proporção das Saídas no total previsto, para a barra de equilíbrio.
+      parteSaidas: total > 0 ? Math.round((Math.max(saidas.previsto, 0) / total) * 100) : 0,
+    };
   });
 
   private chave = '';

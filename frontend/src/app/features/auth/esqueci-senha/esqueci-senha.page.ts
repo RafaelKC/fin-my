@@ -3,6 +3,8 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiClient } from '../../../core/api/api-client';
 import { problemMessage } from '../../../core/errors/problem-details';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { CampoDirective } from '@/shared/ui/campo.directive';
 
 export const EMAIL_MAX = 254;
 
@@ -13,7 +15,7 @@ export const MENSAGEM_LINK_ENVIADO = 'Se houver conta com este e-mail, enviaremo
 @Component({
   selector: 'app-esqueci-senha-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ZardButtonComponent, CampoDirective, ReactiveFormsModule, RouterLink],
   templateUrl: './esqueci-senha.page.html',
   styleUrl: './esqueci-senha.page.scss',
 })

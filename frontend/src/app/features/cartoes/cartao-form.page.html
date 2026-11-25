@@ -29,6 +29,7 @@
       <div class="campo">
         <label for="nome">Nome</label>
         <input
+          appCampo
           id="nome"
           type="text"
           formControlName="name"
@@ -45,6 +46,7 @@
         <div class="campo">
           <label for="fechamento">Dia de fechamento</label>
           <input
+            appCampo
             id="fechamento"
             type="number"
             inputmode="numeric"
@@ -61,6 +63,7 @@
         <div class="campo">
           <label for="vencimento">Dia de vencimento</label>
           <input
+            appCampo
             id="vencimento"
             type="number"
             inputmode="numeric"
@@ -79,6 +82,7 @@
       <div class="campo">
         <label for="carteira">Carteira de pagamento</label>
         <select
+          z-native-select
           id="carteira"
           formControlName="paymentWalletId"
           [attr.aria-invalid]="erroDaCarteira() ? 'true' : null"
@@ -114,6 +118,7 @@
       <div class="campo">
         <label for="limite">Limite (opcional)</label>
         <input
+          appCampo
           id="limite"
           type="text"
           inputmode="decimal"
@@ -131,7 +136,7 @@
         >
       </div>
 
-      <button type="submit" class="enviar" [disabled]="ocupado()">
+      <button z-button type="submit" class="enviar" [disabled]="ocupado()">
         {{ ocupado() ? 'Salvando…' : 'Salvar' }}
       </button>
       @if (!embutido()) {
@@ -142,11 +147,25 @@
     @if (cartao(); as c) {
       <section class="acoes" aria-label="Ações do cartão">
         @if (c.archived) {
-          <button type="button" class="acao" [disabled]="ocupado()" (click)="desarquivar()">
+          <button
+            z-button
+            zType="outline"
+            type="button"
+            class="acao"
+            [disabled]="ocupado()"
+            (click)="desarquivar()"
+          >
             Desarquivar
           </button>
         } @else {
-          <button type="button" class="acao" [disabled]="ocupado()" (click)="arquivar()">
+          <button
+            z-button
+            zType="outline"
+            type="button"
+            class="acao"
+            [disabled]="ocupado()"
+            (click)="arquivar()"
+          >
             Arquivar
           </button>
         }
@@ -155,7 +174,14 @@
             Este cartão tem compras ou pagamentos: não pode ser excluído, apenas arquivado.
           </p>
         } @else {
-          <button type="button" class="acao perigo" [disabled]="ocupado()" (click)="excluir()">
+          <button
+            z-button
+            zType="destructive"
+            type="button"
+            class="acao perigo"
+            [disabled]="ocupado()"
+            (click)="excluir()"
+          >
             Excluir
           </button>
         }

@@ -9,11 +9,12 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatIconModule } from '@angular/material/icon';
+import { Icone } from '@/shared/ui/icone';
 import { asProblem, problemMessage } from '../../core/errors/problem-details';
 import { buscarTags, chipsFrequentes, tagComNome } from './tag-picker-logic';
 import { MENSAGEM_DUAS_DE_ACERTO, TAGS_MAX, TAG_NOME_MAX, Tag } from './tag.models';
 import { TagsService } from './tags.service';
+import { CampoDirective } from '@/shared/ui/campo.directive';
 
 /**
  * Campo Tags do formulário rápido (004 US1, FR-003; contracts/ui-rotas.md): as 8 tags mais usadas
@@ -25,7 +26,7 @@ import { TagsService } from './tags.service';
 @Component({
   selector: 'app-tag-picker',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatIconModule],
+  imports: [CampoDirective, Icone],
   templateUrl: './tag-picker.html',
   styleUrl: './tag-picker.scss',
 })

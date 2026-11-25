@@ -188,8 +188,8 @@ test.describe('campo Tags (US1) — API simulada', () => {
   test('tags de acerto aparecem com o ícone de pessoa', async ({ page }) => {
     await simular(page);
     await abrir(page);
-    await expect(chip(page, 'Bruna').locator('mat-icon')).toHaveText('person');
-    await expect(chip(page, 'Ifood').locator('mat-icon')).toHaveCount(0);
+    await expect(chip(page, 'Bruna').locator('app-icone')).toHaveAttribute('data-icone', 'person');
+    await expect(chip(page, 'Ifood').locator('app-icone')).toHaveCount(0);
   });
 
   test('aba Cartão também tem o campo e envia tagIds na compra', async ({ page }) => {

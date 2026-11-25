@@ -37,7 +37,7 @@
       Fecha em {{ diaEMes(f.closingDate) }} · vence em {{ diaEMes(f.dueDate) }}
     </p>
     <p class="situacao">
-      <span class="selo" [attr.data-status]="f.status" data-testid="situacao">{{
+      <span class="selo estado" [attr.data-status]="f.status" data-testid="situacao">{{
         situacao()
       }}</span>
     </p>
@@ -79,6 +79,9 @@
       }
       <div class="botoes">
         <button
+          z-button
+          zType="outline"
+          zSize="sm"
           type="button"
           class="botao pequeno"
           data-testid="estimativa-editar"
@@ -89,6 +92,9 @@
         </button>
         @if (f.estimateCents) {
           <button
+            z-button
+            zType="destructive"
+            zSize="sm"
             type="button"
             class="botao pequeno perigo"
             data-testid="estimativa-remover"
@@ -126,12 +132,20 @@
 
     <div class="acoes-fatura">
       @if (podePagar()) {
-        <button type="button" class="botao principal" data-testid="pagar" (click)="pagar()">
+        <button
+          z-button
+          type="button"
+          class="botao principal"
+          data-testid="pagar"
+          (click)="pagar()"
+        >
           Pagar
         </button>
       }
       @if (f.canCarryOver) {
         <button
+          z-button
+          zType="secondary"
           type="button"
           class="botao secundario"
           data-testid="levar-restante"
@@ -205,16 +219,22 @@
               <div class="botoes">
                 @if (podeEditar(c)) {
                   <button
+                    z-button
+                    zType="outline"
+                    zSize="sm"
                     type="button"
                     class="botao pequeno"
                     data-testid="editar-compra"
                     [attr.aria-label]="'Editar ' + c.displayDescription"
                     (click)="editar(c)"
                   >
-                    Editar
+                    <app-icone nome="edit" tamanho="1.125rem" />
                   </button>
                 }
                 <button
+                  z-button
+                  zType="outline"
+                  zSize="sm"
                   type="button"
                   class="botao pequeno"
                   data-testid="mover-anterior"
@@ -222,9 +242,12 @@
                   [attr.aria-label]="'Mover para a fatura anterior: ' + c.displayDescription"
                   (click)="mover(c, 'previous')"
                 >
-                  ‹ Fatura anterior
+                  <app-icone nome="chevron_left" tamanho="1rem" />Anterior
                 </button>
                 <button
+                  z-button
+                  zType="outline"
+                  zSize="sm"
                   type="button"
                   class="botao pequeno"
                   data-testid="mover-seguinte"
@@ -232,9 +255,12 @@
                   [attr.aria-label]="'Mover para a próxima fatura: ' + c.displayDescription"
                   (click)="mover(c, 'next')"
                 >
-                  Próxima fatura ›
+                  Próxima<app-icone nome="chevron_right" tamanho="1rem" />
                 </button>
                 <button
+                  z-button
+                  zType="destructive"
+                  zSize="sm"
                   type="button"
                   class="botao pequeno perigo"
                   data-testid="excluir-compra"
@@ -242,7 +268,7 @@
                   [attr.aria-label]="'Excluir ' + c.displayDescription"
                   (click)="excluir(c)"
                 >
-                  Excluir
+                  <app-icone nome="delete" tamanho="1.125rem" />
                 </button>
               </div>
             </li>
@@ -269,6 +295,9 @@
               </div>
               <div class="botoes">
                 <button
+                  z-button
+                  zType="outline"
+                  zSize="sm"
                   type="button"
                   class="botao pequeno"
                   data-testid="editar-pagamento"
@@ -278,6 +307,9 @@
                   Editar
                 </button>
                 <button
+                  z-button
+                  zType="destructive"
+                  zSize="sm"
                   type="button"
                   class="botao pequeno perigo"
                   data-testid="excluir-pagamento"

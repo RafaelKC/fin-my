@@ -1,6 +1,7 @@
+import { EDarkModes, ZardDarkMode } from '@/shared/services/dark-mode';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatIconModule } from '@angular/material/icon';
+import { Icone } from '@/shared/ui/icone';
 import { ApiClient } from '../../core/api/api-client';
 import { DevicePrefsService, HomeScreen } from '../../core/prefs/device-prefs.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -8,6 +9,8 @@ import { TenantDto, UserDto } from '../../core/auth/session';
 import { asProblem, problemMessage } from '../../core/errors/problem-details';
 import { AplicativosConectados } from './aplicativos-conectados';
 import { ExportarLancamentos } from './exportar-lancamentos';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { CampoDirective } from '@/shared/ui/campo.directive';
 
 export const NOME_MAX = 60;
 export const SENHA_MIN = 8;
@@ -19,11 +22,26 @@ type CampoSenha = 'currentPassword' | 'newPassword';
 @Component({
   selector: 'app-perfil-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatIconModule, AplicativosConectados, ExportarLancamentos],
+  imports: [
+    ZardButtonComponent,
+    CampoDirective,
+    ReactiveFormsModule,
+    Icone,
+    AplicativosConectados,
+    ExportarLancamentos,
+  ],
   templateUrl: './perfil.page.html',
   styleUrl: './perfil.page.scss',
 })
 export class PerfilPage {
+  /** Tema claro/escuro/sistema (Zard), guardado no aparelho. */
+  protected readonly tema = inject(ZardDarkMode);
+  protected readonly temas = [
+    { valor: EDarkModes.SYSTEM, rotulo: 'Do sistema' },
+    { valor: EDarkModes.LIGHT, rotulo: 'Claro' },
+    { valor: EDarkModes.DARK, rotulo: 'Escuro' },
+  ] as const;
+
   private readonly api = inject(ApiClient);
   private readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder).nonNullable;

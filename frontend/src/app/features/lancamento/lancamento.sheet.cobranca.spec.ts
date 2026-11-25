@@ -1,12 +1,12 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { bruna, carla, ifood } from '../../shared/tag-picker/testing';
 import { carteira } from '../carteiras/testing';
 import { Entry } from './entry.models';
 import { EntradaPreenchida, LancamentoSheet } from './lancamento.sheet';
+import { DADOS_DIALOGO, DialogoRef } from '@/shared/ui/dialogo';
+import { Avisos } from '@/shared/ui/avisos';
 
 // 004 T007 — "Gerar cobrança": a Entrada vem pré-preenchida e nada é salvo sem "Salvar" (US3.1, US3.4).
 describe('LancamentoSheet — Entrada pré-preenchida (Gerar cobrança)', () => {
@@ -48,12 +48,12 @@ describe('LancamentoSheet — Entrada pré-preenchida (Gerar cobrança)', () => 
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: MatDialogRef, useValue: { close: vi.fn() } },
-        { provide: MAT_DIALOG_DATA, useValue: { preencher: dados } },
+        { provide: DialogoRef, useValue: { close: vi.fn() } },
+        { provide: DADOS_DIALOGO, useValue: { preencher: dados } },
       ],
     });
     http = TestBed.inject(HttpTestingController);
-    vi.spyOn(TestBed.inject(MatSnackBar), 'open').mockReturnValue(undefined as never);
+    vi.spyOn(TestBed.inject(Avisos), 'open').mockReturnValue(undefined as never);
     fixture = TestBed.createComponent(LancamentoSheet);
     el = fixture.nativeElement;
     fixture.detectChanges();

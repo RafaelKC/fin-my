@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { DADOS_DIALOGO, DialogoRef } from '@/shared/ui/dialogo';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { ZardDialogFooterComponent, ZardDialogTitleComponent } from '@/shared/components/dialog';
 
 export interface EscopoOpcao<T extends string> {
   valor: T;
@@ -16,17 +18,19 @@ export interface EscopoData<T extends string> {
 @Component({
   selector: 'app-escopo-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule],
+  imports: [ZardButtonComponent, ZardDialogFooterComponent, ZardDialogTitleComponent],
   template: `
-    <h2 mat-dialog-title>{{ data.titulo }}</h2>
+    <h2 z-dialog-title>{{ data.titulo }}</h2>
     @if (data.mensagem) {
-      <mat-dialog-content>
+      <div class="dialogo-corpo">
         <p>{{ data.mensagem }}</p>
-      </mat-dialog-content>
+      </div>
     }
-    <mat-dialog-actions class="acoes">
+    <footer z-dialog-footer>
       @for (o of data.opcoes; track o.valor) {
         <button
+          z-button
+          zType="outline"
           type="button"
           class="botao"
           [attr.data-testid]="'escopo-' + o.valor"
@@ -35,27 +39,19 @@ export interface EscopoData<T extends string> {
           {{ o.rotulo }}
         </button>
       }
-      <button type="button" class="botao" (click)="ref.close(null)">Cancelar</button>
-    </mat-dialog-actions>
+      <button z-button zType="outline" type="button" class="botao" (click)="ref.close(null)">
+        Cancelar
+      </button>
+    </footer>
   `,
   styles: `
     .acoes {
       flex-direction: column;
       align-items: stretch;
     }
-    .botao {
-      min-height: 44px;
-      padding: 0 16px;
-      font: var(--mat-sys-label-large);
-      color: var(--mat-sys-primary);
-      background: transparent;
-      border: 0;
-      border-radius: 24px;
-      cursor: pointer;
-    }
   `,
 })
 export class EscopoDialog<T extends string = string> {
-  protected readonly data = inject<EscopoData<T>>(MAT_DIALOG_DATA);
-  protected readonly ref = inject<MatDialogRef<EscopoDialog<T>, T | null>>(MatDialogRef);
+  protected readonly data = inject<EscopoData<T>>(DADOS_DIALOGO);
+  protected readonly ref = inject<DialogoRef<EscopoDialog<T>, T | null>>(DialogoRef);
 }

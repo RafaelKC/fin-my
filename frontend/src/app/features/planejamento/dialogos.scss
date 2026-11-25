@@ -6,60 +6,10 @@
   flex-direction: column;
   gap: 4px;
   margin-bottom: 12px;
-
-  input,
-  select {
-    box-sizing: border-box;
-    width: 100%;
-    min-height: 48px;
-    padding: 8px 12px;
-    font: var(--mat-sys-body-large);
-    color: inherit;
-    background: transparent;
-    border: 1px solid var(--mat-sys-outline);
-    border-radius: 8px;
-  }
-}
-.erro {
-  color: var(--mat-sys-error);
-  font: var(--mat-sys-label-medium);
-}
-.botao {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 16px;
-  font: var(--mat-sys-label-large);
-  color: var(--mat-sys-primary);
-  background: transparent;
-  border: 0;
-  border-radius: 24px;
-  cursor: pointer;
-
-  &.principal {
-    color: var(--mat-sys-on-primary);
-    background: var(--mat-sys-primary);
-  }
-  &:disabled {
-    opacity: 0.6;
-    cursor: default;
-  }
 }
 .opcoes {
   display: flex;
   gap: 8px;
-}
-.chip {
-  min-height: 44px;
-  padding: 0 16px;
-  color: inherit;
-  background: transparent;
-  border: 1px solid var(--mat-sys-outline);
-  border-radius: 8px;
-  cursor: pointer;
-
-  &[aria-pressed='true'] {
-    background: var(--mat-sys-secondary-container);
-  }
 }
 .meses {
   display: grid;
@@ -90,14 +40,14 @@
     align-items: center;
     gap: 4px 12px;
     padding-bottom: 8px;
-    border-bottom: 1px solid var(--mat-sys-outline-variant);
+    border-bottom: 1px solid var(--border);
   }
   .descricao {
     flex: 1 1 8rem;
   }
   .nota {
-    color: var(--mat-sys-on-surface-variant);
-    font: var(--mat-sys-label-medium);
+    color: var(--muted-foreground);
+    font: var(--fonte-rotulo);
   }
 }
 
@@ -111,7 +61,7 @@
 
   li {
     padding-bottom: 8px;
-    border-bottom: 1px solid var(--mat-sys-outline-variant);
+    border-bottom: 1px solid var(--border);
   }
   label,
   .copiar-estimativas {
@@ -123,8 +73,8 @@
   .copiar-valores {
     display: block;
     padding-left: 28px;
-    color: var(--mat-sys-on-surface-variant);
-    font: var(--mat-sys-label-medium);
+    color: var(--muted-foreground);
+    font: var(--fonte-rotulo);
   }
 }
 .copiar-estimativas {

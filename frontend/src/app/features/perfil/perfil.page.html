@@ -16,6 +16,7 @@
       <div class="campo">
         <label for="nome">Nome</label>
         <input
+          appCampo
           id="nome"
           type="text"
           formControlName="name"
@@ -28,7 +29,7 @@
           <span class="erro" id="nome-erro">{{ mensagem }}</span>
         }
       </div>
-      <button type="submit" class="enviar" [disabled]="salvandoNome()">
+      <button z-button type="submit" class="enviar" [disabled]="salvandoNome()">
         {{ salvandoNome() ? 'Salvando…' : 'Salvar nome' }}
       </button>
     </form>
@@ -48,6 +49,7 @@
       <div class="campo">
         <label for="espaco">Nome do Espaço</label>
         <input
+          appCampo
           id="espaco"
           type="text"
           formControlName="name"
@@ -59,7 +61,7 @@
           <span class="erro" id="espaco-erro">{{ mensagem }}</span>
         }
       </div>
-      <button type="submit" class="enviar" [disabled]="salvandoEspaco()">
+      <button z-button type="submit" class="enviar" [disabled]="salvandoEspaco()">
         {{ salvandoEspaco() ? 'Salvando…' : 'Salvar Espaço' }}
       </button>
     </form>
@@ -80,6 +82,7 @@
       <div class="campo">
         <label for="senha-atual">Senha atual</label>
         <input
+          appCampo
           id="senha-atual"
           [type]="senhaVisivel() ? 'text' : 'password'"
           formControlName="currentPassword"
@@ -97,6 +100,7 @@
         <label for="senha-nova">Nova senha</label>
         <div class="senha">
           <input
+            appCampo
             id="senha-nova"
             [type]="senhaVisivel() ? 'text' : 'password'"
             formControlName="newPassword"
@@ -112,9 +116,7 @@
             [attr.aria-pressed]="senhaVisivel()"
             (click)="alternarSenha()"
           >
-            <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{
-              senhaVisivel() ? 'visibility_off' : 'visibility'
-            }}</mat-icon>
+            <app-icone [nome]="senhaVisivel() ? 'visibility_off' : 'visibility'" />
           </button>
         </div>
         <span class="ajuda" id="senha-nova-ajuda">Mínimo de {{ senhaMin }} caracteres.</span>
@@ -123,7 +125,7 @@
         }
       </div>
 
-      <button type="submit" class="enviar" [disabled]="trocandoSenha()">
+      <button z-button type="submit" class="enviar" [disabled]="trocandoSenha()">
         {{ trocandoSenha() ? 'Salvando…' : 'Trocar senha' }}
       </button>
     </form>
@@ -155,6 +157,26 @@
         />
         Painel
       </label>
+    </div>
+  </section>
+
+  <section class="secao" aria-labelledby="titulo-tema">
+    <h2 id="titulo-tema">Aparência</h2>
+    <p class="ajuda">Vale só para este aparelho.</p>
+    <div class="opcoes" role="radiogroup" aria-labelledby="titulo-tema">
+      @for (t of temas; track t.valor) {
+        <label class="opcao">
+          <input
+            type="radio"
+            name="tema"
+            [value]="t.valor"
+            [attr.data-testid]="'tema-' + t.valor"
+            [checked]="tema.currentTheme() === t.valor"
+            (change)="tema.toggleTheme(t.valor)"
+          />
+          {{ t.rotulo }}
+        </label>
+      }
     </div>
   </section>
 

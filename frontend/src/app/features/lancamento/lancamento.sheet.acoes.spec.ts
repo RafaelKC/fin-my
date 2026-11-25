@@ -1,12 +1,12 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subject } from 'rxjs';
 import { carteira } from '../carteiras/testing';
 import { Entry } from './entry.models';
 import { LancamentoSheet, MENSAGEM_CONFLITO } from './lancamento.sheet';
+import { DADOS_DIALOGO, DialogoRef } from '@/shared/ui/dialogo';
+import { Avisos } from '@/shared/ui/avisos';
 
 const original: Entry = {
   id: 'e1',
@@ -36,13 +36,13 @@ describe('LancamentoSheet: editar, duplicar e excluir (US6)', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: MatDialogRef, useValue: { close: fechar } },
-        { provide: MAT_DIALOG_DATA, useValue: { entry: original } },
+        { provide: DialogoRef, useValue: { close: fechar } },
+        { provide: DADOS_DIALOGO, useValue: { entry: original } },
       ],
     });
     http = TestBed.inject(HttpTestingController);
     snack = vi
-      .spyOn(TestBed.inject(MatSnackBar), 'open')
+      .spyOn(TestBed.inject(Avisos), 'open')
       .mockReturnValue({ onAction: () => acao$ } as never);
     const fixture = TestBed.createComponent(LancamentoSheet);
     el = fixture.nativeElement;

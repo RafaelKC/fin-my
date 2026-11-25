@@ -1,11 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { NGX_ECHARTS_CONFIG } from 'ngx-echarts';
+import {
+  ZardChartImports,
+  type ZardChartConfig,
+  type ZardChartSeries,
+} from '@/shared/components/chart';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatIconModule } from '@angular/material/icon';
+import { Icone } from '@/shared/ui/icone';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, catchError, merge, of, switchMap, tap } from 'rxjs';
 import { problemMessage } from '../../core/errors/problem-details';
 import {
   BrlPipe,
+  formatBrl,
   isYearMonth,
   monthLabel,
   nextMonth,
@@ -25,6 +32,7 @@ import {
 } from './acertos-logic';
 import { SettlementItem, SettlementRow } from './settlement.models';
 import { SettlementsService } from './settlements.service';
+import { ZardButtonComponent } from '@/shared/components/button';
 
 const ROTULO_NUMERO: Record<NumeroDetalhavel, string> = {
   spent: 'Gasto',
@@ -47,7 +55,7 @@ interface Aberto {
 @Component({
   selector: 'app-acertos-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BrlPipe, MatIconModule, RouterLink],
+  imports: [ZardButtonComponent, BrlPipe, Icone, RouterLink, ...ZardChartImports],
   templateUrl: './acertos.page.html',
   styleUrl: './acertos.page.scss',
 })
@@ -62,6 +70,23 @@ export class AcertosPage {
 
   protected readonly mes = signal('');
   protected readonly linhas = signal<SettlementRow[] | null>(null);
+
+  /** Gráfico "quanto cada pessoa deve" (Zard chart); os números exatos estão nos cartões. */
+  protected readonly comGrafico = inject(NGX_ECHARTS_CONFIG, { optional: true }) !== null;
+  protected readonly configGrafico: ZardChartConfig = {
+    saldo: { label: 'Saldo acumulado', color: 'var(--chart-3)' },
+  };
+  protected readonly seriesGrafico: ZardChartSeries[] = [
+    { dataKey: 'saldo', type: 'bar', radius: [0, 6, 6, 0] },
+  ];
+  protected readonly dadosGrafico = computed(() =>
+    (this.linhas() ?? []).map((r) => ({
+      pessoa: r.tagName,
+      saldo: r.accumulatedCents / 100,
+      fill: r.tagColor,
+    })),
+  );
+  protected readonly dica = (valor: number) => formatBrl(Math.round(valor * 100));
   protected readonly erro = signal<string | null>(null);
   protected readonly aberto = signal<Aberto | null>(null);
   protected readonly itens = signal<SettlementItem[] | null>(null);

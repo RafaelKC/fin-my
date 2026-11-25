@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { MatIconModule } from '@angular/material/icon';
+import { Icone } from '@/shared/ui/icone';
 
 /**
  * Marca de ocorrência de recorrência nas listas (005): ícone quando o lançamento veio de uma
@@ -8,10 +8,10 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-selo-recorrencia',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatIconModule],
+  imports: [Icone],
   template: `@if (recorrenciaId()) {
     <span class="selo-recorrencia" data-testid="selo-recorrencia">
-      <mat-icon fontSet="material-symbols-outlined" aria-label="Recorrência">repeat</mat-icon>
+      <app-icone nome="repeat" rotulo="Recorrência" />
       @if (alterada()) {
         <span class="alterada" data-testid="selo-alterada">alterada</span>
       }
@@ -24,10 +24,10 @@ import { MatIconModule } from '@angular/material/icon';
       gap: 4px;
       margin-left: 8px;
       vertical-align: middle;
-      color: var(--mat-sys-on-surface-variant);
-      font: var(--mat-sys-label-small);
+      color: var(--muted-foreground);
+      font: var(--fonte-rotulo-p);
     }
-    mat-icon {
+    app-icone {
       width: 16px;
       height: 16px;
       font-size: 16px;
@@ -36,8 +36,8 @@ import { MatIconModule } from '@angular/material/icon';
     .alterada {
       padding: 0 6px;
       border-radius: 4px;
-      background: var(--mat-sys-secondary-container);
-      color: var(--mat-sys-on-secondary-container);
+      background: var(--accent);
+      color: var(--accent-foreground);
     }
   `,
 })

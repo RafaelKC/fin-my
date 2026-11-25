@@ -5,7 +5,7 @@
 }
 .agora h2 {
   margin: 0 0 8px;
-  font: var(--mat-sys-title-large);
+  font: var(--fonte-titulo);
 }
 .blocos {
   display: grid;
@@ -15,14 +15,19 @@
 .bloco {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 16px;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 12px;
+  gap: 10px;
+  padding: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sombra-cartao);
 
   h3 {
     margin: 0;
-    font: var(--mat-sys-title-small);
+    font: var(--fonte-rotulo-p);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted-foreground);
   }
   p {
     margin: 0;
@@ -39,15 +44,21 @@
   li {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    gap: 4px 8px;
+    align-items: baseline;
+    gap: 2px 8px;
+    padding: 4px 0;
+    font-variant-numeric: tabular-nums;
   }
   .nome {
     flex: 1;
+    min-width: 0;
+    font-weight: 500;
   }
   .total {
-    padding-top: 4px;
-    border-top: 1px solid var(--mat-sys-outline-variant);
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    font-weight: 700;
   }
 }
 .cor {
@@ -57,44 +68,12 @@
 }
 .nota,
 .vazio {
-  color: var(--mat-sys-on-surface-variant);
-  font: var(--mat-sys-label-medium);
-}
-.cabecalho {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.titulo {
-  margin: 0;
-  font: var(--mat-sys-title-large);
-}
-.seta {
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: 24px;
-  cursor: pointer;
-  color: inherit;
+  color: var(--muted-foreground);
+  font: var(--fonte-rotulo);
 }
 .leitura {
   display: flex;
   gap: 8px;
-}
-.chip {
-  min-height: 44px;
-  padding: 0 16px;
-  border: 1px solid var(--mat-sys-outline);
-  border-radius: 8px;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  &[aria-pressed='true'] {
-    background: var(--mat-sys-secondary-container);
-  }
 }
 .visao {
   display: flex;
@@ -103,6 +82,10 @@
 }
 .tabela-rolavel {
   overflow-x: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sombra-cartao);
 }
 .tabela {
   width: 100%;
@@ -110,13 +93,21 @@
 
   th,
   td {
-    padding: 8px;
+    padding: 0 12px;
+    height: 44px;
     text-align: right;
     white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
   thead th {
-    font: var(--mat-sys-label-medium);
-    color: var(--mat-sys-on-surface-variant);
+    font: var(--fonte-rotulo-p);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted-foreground);
+    background: color-mix(in oklch, var(--muted) 60%, transparent);
+  }
+  tbody tr:hover {
+    background: color-mix(in oklch, var(--muted) 55%, transparent);
   }
   th[scope='row'] {
     text-align: left;
@@ -124,7 +115,8 @@
   }
   tbody tr {
     cursor: pointer;
-    border-bottom: 1px solid var(--mat-sys-outline-variant);
+    border-bottom: 1px solid var(--border);
+    transition: background-color 120ms;
   }
   tbody a {
     display: inline-block;
@@ -136,25 +128,16 @@
   tfoot th,
   tfoot td {
     font-weight: 600;
-    border-top: 2px solid var(--mat-sys-outline);
+    border-top: 2px solid var(--border-forte);
   }
   .hoje {
-    background: var(--mat-sys-secondary-container);
-    font-weight: 600;
+    background: var(--accent);
+    font-weight: 700;
+    box-shadow: inset 3px 0 0 var(--primary);
   }
 }
 .negativo {
-  color: var(--mat-sys-error);
-}
-.erro {
-  color: var(--mat-sys-error);
-}
-.so-leitor {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
+  color: var(--destructive);
 }
 @media (min-width: 1024px) {
   .visao {
@@ -169,13 +152,46 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-radius: 12px;
-  background: var(--mat-sys-secondary-container);
-  color: var(--mat-sys-on-secondary-container);
+  border-radius: var(--radius-xl);
+  background: var(--accent);
+  color: var(--accent-foreground);
   text-decoration: none;
 
   span {
     display: flex;
     flex-direction: column;
+  }
+}
+
+.tabela td[data-testid='entradas'] {
+  color: var(--entrada);
+}
+
+.tabela td[data-testid='saidas'] {
+  color: var(--saida);
+}
+
+// Faturas: nome e vencimento empilhados à esquerda, valor à direita.
+[data-testid='agora-fatura'] {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+
+  .nome {
+    grid-column: 1;
+    color: inherit;
+    text-decoration: none;
+    min-height: 24px;
+  }
+
+  .nota {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  strong {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    font-variant-numeric: tabular-nums;
   }
 }

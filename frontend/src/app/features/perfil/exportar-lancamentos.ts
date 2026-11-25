@@ -4,6 +4,8 @@ import { ApiClient } from '../../core/api/api-client';
 import { MENSAGEM_ERRO_GENERICO, problemMessage } from '../../core/errors/problem-details';
 import { today } from '../../core/money';
 import { HttpErrorResponse } from '@angular/common/http';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { CampoDirective } from '@/shared/ui/campo.directive';
 
 /** Limite do intervalo exportado (research R4, igual ao do servidor). */
 export const EXPORTAR_MAX_MESES = 120;
@@ -28,7 +30,7 @@ export function nomeDoArquivo(disposition: string | null): string | null {
 @Component({
   selector: 'app-exportar-lancamentos',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ZardButtonComponent, CampoDirective, ReactiveFormsModule],
   templateUrl: './exportar-lancamentos.html',
   styleUrl: './exportar-lancamentos.scss',
 })

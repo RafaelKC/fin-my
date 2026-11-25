@@ -2,6 +2,9 @@
   <header class="topo">
     <h1>Primeiros passos</h1>
     <p class="progresso" data-testid="progresso">Etapa {{ indice() + 1 }} de {{ etapas.length }}</p>
+    <div class="barra-progresso" aria-hidden="true">
+      <span [style.width.%]="((indice() + 1) / etapas.length) * 100"></span>
+    </div>
     <ol class="trilha" aria-label="Etapas do guia">
       @for (e of etapas; track e.chave; let i = $index) {
         <li
@@ -53,6 +56,8 @@
       @case ('installments') {
         <button
           type="button"
+          z-button
+          zType="secondary"
           class="secundario"
           data-testid="abrir-parcelamento"
           (click)="abrirParcelamento()"
@@ -75,6 +80,7 @@
   <footer class="acoes">
     <button
       type="button"
+      z-button
       class="principal"
       data-testid="continuar"
       [disabled]="ocupado()"
@@ -84,6 +90,8 @@
     </button>
     <button
       type="button"
+      z-button
+      zType="secondary"
       class="secundario"
       data-testid="pular"
       [disabled]="ocupado()"

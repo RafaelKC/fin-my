@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { monthShortLabel, parseValueExpression, valueExpressionMessages } from '../../core/money';
 import { AmountInput } from '../../shared/amount-input/amount-input';
+import { DADOS_DIALOGO, DialogoRef } from '@/shared/ui/dialogo';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { ZardDialogFooterComponent, ZardDialogTitleComponent } from '@/shared/components/dialog';
 
 export interface PreencherData {
   titulo: string;
@@ -21,11 +23,17 @@ export interface PreencherResultado {
 @Component({
   selector: 'app-preencher-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, AmountInput],
+  imports: [
+    ZardButtonComponent,
+    ZardDialogFooterComponent,
+    ZardDialogTitleComponent,
+    ReactiveFormsModule,
+    AmountInput,
+  ],
   styleUrl: './dialogos.scss',
   template: `
-    <h2 mat-dialog-title>{{ data.titulo }}</h2>
-    <mat-dialog-content>
+    <h2 z-dialog-title>{{ data.titulo }}</h2>
+    <div class="dialogo-corpo">
       <app-amount-input [formControl]="valor" />
       <fieldset class="meses" data-testid="preencher-meses">
         <legend>Meses</legend>
@@ -45,12 +53,20 @@ export interface PreencherResultado {
       @if (erro(); as mensagem) {
         <p class="erro" role="alert">{{ mensagem }}</p>
       }
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button type="button" class="botao" data-testid="cancelar" (click)="ref.close(null)">
+    </div>
+    <footer z-dialog-footer>
+      <button
+        z-button
+        zType="outline"
+        type="button"
+        class="botao"
+        data-testid="cancelar"
+        (click)="ref.close(null)"
+      >
         Cancelar
       </button>
       <button
+        z-button
         type="button"
         class="botao principal"
         data-testid="preencher-confirmar"
@@ -59,13 +75,13 @@ export interface PreencherResultado {
       >
         Preencher
       </button>
-    </mat-dialog-actions>
+    </footer>
   `,
 })
 export class PreencherDialog {
-  protected readonly data = inject<PreencherData>(MAT_DIALOG_DATA);
+  protected readonly data = inject<PreencherData>(DADOS_DIALOGO);
   protected readonly ref =
-    inject<MatDialogRef<PreencherDialog, PreencherResultado | null>>(MatDialogRef);
+    inject<DialogoRef<PreencherDialog, PreencherResultado | null>>(DialogoRef);
 
   protected readonly valor = new FormControl('', { nonNullable: true });
   protected readonly escolhidos = signal<ReadonlySet<string>>(new Set(this.data.meses));

@@ -1,8 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subject } from 'rxjs';
 import { carteira } from '../carteiras/testing';
 import { compra } from '../cartoes/fatura/testing';
@@ -12,6 +10,8 @@ import { CardPurchase } from './card-purchase.models';
 import { EntriesService } from './entries.service';
 import { Entry } from './entry.models';
 import { LancamentoSheet } from './lancamento.sheet';
+import { DADOS_DIALOGO, DialogoRef } from '@/shared/ui/dialogo';
+import { Avisos } from '@/shared/ui/avisos';
 
 const seguro: Entry = {
   id: 'e1',
@@ -45,12 +45,12 @@ describe('LancamentoSheet: Repetir todo mês (005 US4)', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: MatDialogRef, useValue: { close: fechar } },
-        { provide: MAT_DIALOG_DATA, useValue: dados },
+        { provide: DialogoRef, useValue: { close: fechar } },
+        { provide: DADOS_DIALOGO, useValue: dados },
       ],
     });
     http = TestBed.inject(HttpTestingController);
-    vi.spyOn(TestBed.inject(MatSnackBar), 'open').mockReturnValue({
+    vi.spyOn(TestBed.inject(Avisos), 'open').mockReturnValue({
       onAction: () => new Subject<void>(),
     } as never);
     fixture = TestBed.createComponent(LancamentoSheet);

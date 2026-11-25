@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Icone } from '@/shared/ui/icone';
+import { ZardButtonComponent } from '@/shared/components/button';
 import { BrlPipe } from '../../core/money';
 import { problemMessage } from '../../core/errors/problem-details';
 import { Wallet } from './wallet.models';
@@ -9,7 +11,7 @@ import { WalletsService } from './wallets.service';
 @Component({
   selector: 'app-carteiras-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, BrlPipe],
+  imports: [RouterLink, BrlPipe, Icone, ZardButtonComponent],
   templateUrl: './carteiras.page.html',
   styleUrl: './carteiras.page.scss',
 })

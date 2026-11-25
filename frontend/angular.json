@@ -32,11 +32,9 @@
               }
             ],
             "styles": [
-              "@fontsource/roboto/latin-300.css",
-              "@fontsource/roboto/latin-400.css",
-              "@fontsource/roboto/latin-500.css",
-              "@fontsource/material-symbols-outlined/latin-400.css",
-              "src/styles.scss"
+              "@fontsource-variable/inter/index.css",
+              "@fontsource-variable/plus-jakarta-sans/index.css",
+              "src/styles.css"
             ]
           },
           "configurations": {
@@ -44,19 +42,22 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
+                  "maximumWarning": "600kB",
                   "maximumError": "1MB"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "8kB",
+                  "maximumError": "10kB"
                 }
               ],
               "outputHashing": "all",
               "optimization": {
                 "scripts": true,
-                "styles": { "minify": true, "inlineCritical": false },
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
                 "fonts": true
               },
               "serviceWorker": "ngsw-config.json"

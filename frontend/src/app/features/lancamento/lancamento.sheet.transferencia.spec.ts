@@ -1,12 +1,12 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { today } from '../../core/money';
 import { DevicePrefsService } from '../../core/prefs/device-prefs.service';
 import { carteira } from '../carteiras/testing';
 import { LancamentoSheet } from './lancamento.sheet';
+import { DialogoRef } from '@/shared/ui/dialogo';
+import { Avisos } from '@/shared/ui/avisos';
 
 const azul = carteira();
 const verde = carteira({ id: 'w-verde', name: 'Verde', isPrimary: false });
@@ -34,11 +34,11 @@ describe('LancamentoSheet — Transferência (US5)', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: MatDialogRef, useValue: { close: fechar } },
+        { provide: DialogoRef, useValue: { close: fechar } },
       ],
     });
     http = TestBed.inject(HttpTestingController);
-    vi.spyOn(TestBed.inject(MatSnackBar), 'open').mockReturnValue(undefined as never);
+    vi.spyOn(TestBed.inject(Avisos), 'open').mockReturnValue(undefined as never);
     fixture = TestBed.createComponent(LancamentoSheet);
     el = fixture.nativeElement;
     fixture.detectChanges();

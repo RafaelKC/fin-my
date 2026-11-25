@@ -6,33 +6,14 @@
 }
 
 h1 {
-  font: var(--mat-sys-headline-medium);
+  font: var(--fonte-titulo-g);
   margin: 0 0 16px;
 }
 
 .consentimento {
-  font: var(--mat-sys-body-large);
+  font: var(--fonte-corpo-g);
   margin: 0 0 8px;
 }
-
-.ajuda {
-  font: var(--mat-sys-body-small);
-  color: var(--mat-sys-on-surface-variant);
-  margin: 0 0 24px;
-}
-
-.aviso {
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  color: var(--mat-sys-on-error-container);
-  background: var(--mat-sys-error-container);
-  border-radius: 8px;
-
-  p {
-    margin: 0;
-  }
-}
-
 .acoes {
   display: flex;
   flex-direction: column;
@@ -42,8 +23,8 @@ h1 {
 .autorizar,
 .cancelar {
   min-height: 48px;
-  font: var(--mat-sys-label-large);
-  border-radius: 24px;
+  font: var(--fonte-rotulo-g);
+  border-radius: 999px;
   cursor: pointer;
 
   &:disabled {
@@ -53,13 +34,13 @@ h1 {
 }
 
 .autorizar {
-  color: var(--mat-sys-on-primary);
-  background: var(--mat-sys-primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
   border: 0;
 }
 
 .cancelar {
-  color: var(--mat-sys-primary);
+  color: var(--primary);
   background: transparent;
-  border: 1px solid var(--mat-sys-outline);
+  border: 1px solid var(--border-forte);
 }

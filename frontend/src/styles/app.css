@@ -1,0 +1,488 @@
+/*
+ * Padrões visuais compartilhados pelas telas do Fin-My, sobre os tokens do tema (styles.css).
+ * Botões, campos, selects e selos usam os componentes Zard (z-button, appCampo/inputVariants,
+ * z-native-select, z-badge); aqui ficam os padrões de página que não têm componente próprio:
+ * cabeçalho, campo (rótulo + controle), avisos, estados vazios, chips de filtro e números.
+ *
+ * Fica em @layer components: os estilos de cada componente Angular (sem camada) sempre vencem.
+ */
+@layer components {
+  /* ---------- Página ---------- */
+  .pagina {
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .pagina > h1,
+  .pagina > header > h1,
+  h1.titulo-pagina {
+    font: var(--fonte-titulo-g);
+    letter-spacing: -0.01em;
+    margin: 0 0 12px;
+  }
+
+  h2 {
+    font: var(--fonte-titulo-p);
+  }
+
+  /* ---------- Navegador de período (mês/ano): ‹ título › ---------- */
+  .cabecalho:has(> .seta) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    box-shadow: var(--sombra-cartao);
+  }
+
+  .cabecalho:has(> .seta) > .titulo,
+  .cabecalho:has(> .seta) > h1 {
+    flex: 1;
+    margin: 0;
+    text-align: center;
+    font: var(--fonte-titulo);
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .seta {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    color: var(--foreground);
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    transition:
+      background-color 120ms,
+      transform 120ms;
+  }
+
+  .seta:hover:not(:disabled) {
+    background: var(--muted);
+  }
+
+  .seta:active:not(:disabled) {
+    transform: scale(0.92);
+  }
+
+  .seta:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  /* ---------- Campo: rótulo + controle + ajuda/erro ---------- */
+  .campo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .campo > label,
+  .campo > legend,
+  .campo > .rotulo,
+  .rotulo {
+    padding: 0;
+    font: var(--fonte-rotulo-g);
+    color: var(--foreground);
+  }
+
+  .ajuda {
+    margin: 0;
+    font: var(--fonte-corpo-p);
+    color: var(--muted-foreground);
+  }
+
+  .erro {
+    margin: 0;
+    font: var(--fonte-corpo-p);
+    font-weight: 500;
+    color: var(--destructive);
+  }
+
+  /* Faixa de aviso/erro de tela (role="alert"). */
+  .aviso,
+  div.erro {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    font: var(--fonte-corpo);
+    color: var(--destructive);
+    background: var(--destructive-suave);
+    border: 1px solid color-mix(in oklch, var(--destructive) 25%, transparent);
+    border-radius: var(--radius-lg);
+  }
+
+  .aviso[role='status'] {
+    color: var(--previsto);
+    background: var(--previsto-suave);
+    border-color: color-mix(in oklch, var(--previsto) 25%, transparent);
+  }
+
+  .sucesso {
+    color: var(--entrada);
+  }
+
+  /* ---------- Estado vazio ---------- */
+  .vazio {
+    margin: 8px 0;
+    padding: 20px 16px;
+    text-align: center;
+    font: var(--fonte-corpo);
+    color: var(--muted-foreground);
+    background: color-mix(in oklch, var(--muted) 55%, transparent);
+    border: 1px dashed var(--border-forte);
+    border-radius: var(--radius-lg);
+  }
+
+  /* Estado vazio com ícone: o ícone fica num círculo com a cor da marca. */
+  div.vazio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 28px 16px;
+  }
+
+  div.vazio > p {
+    margin: 0;
+  }
+
+  .vazio-icone {
+    color: var(--primary);
+    padding: 12px;
+    background: var(--accent);
+    border-radius: 999px;
+  }
+
+  /* ---------- Selos (badges) ---------- */
+  .selo {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 8px;
+    font: var(--fonte-rotulo-p);
+    white-space: nowrap;
+    color: var(--accent-foreground);
+    background: var(--accent);
+    border-radius: 999px;
+    vertical-align: middle;
+  }
+
+  .selo.cinza {
+    color: var(--muted-foreground);
+    background: var(--muted);
+  }
+
+  /* ---------- Chips de filtro / escolha ---------- */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    flex: none;
+    padding: 0 14px;
+    font: var(--fonte-rotulo);
+    white-space: nowrap;
+    color: var(--foreground);
+    background: var(--card);
+    border: 1px solid var(--border-forte);
+    border-radius: 999px;
+    cursor: pointer;
+    transition:
+      background-color 120ms,
+      border-color 120ms,
+      color 120ms;
+  }
+
+  .chip:hover {
+    background: var(--muted);
+  }
+
+  .chip[aria-pressed='true'],
+  .chip[aria-checked='true'],
+  .chip[aria-selected='true'] {
+    color: var(--primary-foreground);
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+
+  /* ---------- Cartão de conteúdo ---------- */
+  .cartao {
+    background: var(--card);
+    color: var(--card-foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--sombra-cartao);
+  }
+
+  /* ---------- Números ---------- */
+  .valor,
+  .num {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .negativo {
+    color: var(--saida);
+  }
+
+  .positivo {
+    color: var(--entrada);
+  }
+
+  /* ---------- Acessibilidade ---------- */
+  .so-leitor {
+    position: absolute;
+    /* Sem left/top, o texto ficaria na posição "estática" e, fora de um contêiner posicionado,
+       alargaria a página (o celular ampliava a janela de layout no planejamento). */
+    left: 0;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Caixa de seleção nativa com a cor do tema e área de toque confortável. */
+  input[type='checkbox'],
+  input[type='radio'] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+
+  /* Tabelas de dados no estilo Zard (table). */
+  table.tabela {
+    width: 100%;
+    border-collapse: collapse;
+    font: var(--fonte-corpo);
+  }
+
+  table.tabela th {
+    height: 40px;
+    padding: 0 12px;
+    text-align: start;
+    font: var(--fonte-rotulo);
+    color: var(--muted-foreground);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  table.tabela td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  table.tabela tbody tr:hover {
+    background: color-mix(in oklch, var(--muted) 60%, transparent);
+  }
+
+  table.tabela .num {
+    text-align: end;
+  }
+}
+
+/*
+ * Largura das telas dentro da casca: centralizadas no espaço ao lado do menu, com respiro.
+ * Listas e mês ~1160 px; planejamento e painel usam mais (~1400 px); formulários ~640 px.
+ */
+@layer components {
+  app-shell main.conteudo > :not(router-outlet) {
+    display: block;
+    width: 100%;
+    max-width: 1160px;
+    margin-inline: auto;
+  }
+
+  app-shell main.conteudo > :is(app-planejamento-page, app-painel-page) {
+    max-width: 1400px;
+  }
+
+  app-shell
+    main.conteudo
+    > :is(
+      app-perfil-page,
+      app-carteira-form-page,
+      app-cartao-form-page,
+      app-recorrencia-form-page,
+      app-primeiros-passos-page
+    ) {
+    max-width: 640px;
+  }
+
+  app-shell
+    main.conteudo
+    > :is(
+      app-cartoes-page,
+      app-carteiras-page,
+      app-tags-page,
+      app-recorrencias-page,
+      app-acertos-page
+    ) {
+    max-width: 880px;
+  }
+}
+
+/* Telas sem login (entrar, criar conta, senha, autorizar): cartão central com a marca. */
+@layer components {
+  :is(
+    app-entrar-page,
+    app-criar-conta-page,
+    app-esqueci-senha-page,
+    app-redefinir-senha-page,
+    app-autorizar-page
+  ) {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 100dvh;
+    padding: max(24px, env(safe-area-inset-top)) 16px 24px;
+    box-sizing: border-box;
+    background:
+      radial-gradient(
+        60% 50% at 0% 0%,
+        color-mix(in oklch, var(--primary) 16%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        50% 40% at 100% 100%,
+        color-mix(in oklch, var(--entrada) 14%, transparent),
+        transparent 70%
+      ),
+      var(--background);
+  }
+
+  :is(
+      app-entrar-page,
+      app-criar-conta-page,
+      app-esqueci-senha-page,
+      app-redefinir-senha-page,
+      app-autorizar-page
+    )
+    > .pagina {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--sombra-flutuante);
+    animation: surgir-auth 260ms ease-out;
+  }
+
+  :is(
+      app-entrar-page,
+      app-criar-conta-page,
+      app-esqueci-senha-page,
+      app-redefinir-senha-page,
+      app-autorizar-page
+    )
+    > .pagina::before {
+    content: 'Fin-My';
+    display: flex;
+    align-items: center;
+    height: 40px;
+    margin-bottom: 20px;
+    padding-left: 50px;
+    font: var(--fonte-titulo);
+    letter-spacing: -0.01em;
+    background: url('/icons/icone.svg') no-repeat left center / 40px 40px;
+  }
+
+  @media (min-width: 640px) {
+    :is(
+      app-entrar-page,
+      app-criar-conta-page,
+      app-esqueci-senha-page,
+      app-redefinir-senha-page,
+      app-autorizar-page
+    ) {
+      align-items: center;
+    }
+  }
+}
+
+@keyframes surgir-auth {
+  from {
+    opacity: 0;
+  }
+}
+
+/* O conteúdo do diálogo de formulário ocupa a altura do painel e rola por dentro. */
+.dialogo-formulario [data-slot='dialog-body'],
+.dialogo-tela-cheia [data-slot='dialog-body'] {
+  flex: 1;
+  min-height: 0;
+}
+
+@keyframes folha-aparece {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Faixa "Sem conexão" (app.html), fixa no topo e acima de tudo. */
+.sem-conexao {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: calc(6px + env(safe-area-inset-top)) 16px 6px;
+  font: var(--fonte-rotulo);
+  color: var(--background);
+  background: var(--foreground);
+  text-align: center;
+}
+
+/* Formulário rápido no celular: o painel do diálogo ocupa a tela inteira. */
+@layer utilities {
+  .dialogo-tela-cheia {
+    /* Sem "zoom" de entrada: a folha ocupa a tela exata desde o primeiro quadro. */
+    transform: none !important;
+    animation: folha-aparece 180ms ease-out;
+    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    translate: none !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column;
+  }
+
+  .dialogo-formulario {
+    height: min(860px, 92dvh);
+    max-height: 92dvh;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden;
+  }
+}

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, model, signal } from '@angular/core';
-import { MatIconModule } from '@angular/material/icon';
+import { Icone } from '@/shared/ui/icone';
 import { problemMessage } from '../../core/errors/problem-details';
 import { ordenarPorUso } from './tag-picker-logic';
 import { Tag } from './tag.models';
@@ -12,7 +12,7 @@ import { TagsService } from './tags.service';
 @Component({
   selector: 'app-tag-filter',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatIconModule],
+  imports: [Icone],
   templateUrl: './tag-filter.html',
   styleUrl: './tag-filter.scss',
 })
