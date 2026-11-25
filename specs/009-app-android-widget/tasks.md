@@ -19,7 +19,7 @@ Normas: `docs/arquitetura.md`, constituição, research da 003, 007 e 008.
 ## Phase 2: Android
 
 - [x] T003 [US1] Projeto `android/` (research R1, R6, R7): TWA com `LauncherActivity`, `applicationId br.app.finmy`, `finmy.appUrl`, ícones/cores da identidade atual (`frontend/public/`), splash, atalhos, `network_security_config` de debug com `finmy.devCert` opcional, `keystore.properties` git-ignorado para release; job `android` no CI (lint, testes unitários, `assembleDebug`, APK como artifact); `integrations/android/README.md` (build, instalar APK, certificado da VPN no celular)
-- [ ] T004 [US2] Widget "Fatura do cartão" (research R3, R5): login AppAuth + PKCE com tokens cifrados, activity de configuração (entrar e escolher cartão), Glance com Atual/Planejado/vencimento/situação/restante, toque abre a fatura na TWA, atualizar manual e WorkManager 30 min, estados offline/"Entre de novo"/"Cartão indisponível", claro/escuro; testes unitários (cliente HTTP com MockWebServer, formatação pt-BR, estados) e Robolectric/Glance. Depende de T001, T003
+- [x] T004 [US2] Widget "Fatura do cartão" (research R3, R5): login AppAuth + PKCE com tokens cifrados, activity de configuração (entrar e escolher cartão), Glance com Atual/Planejado/vencimento/situação/restante, toque abre a fatura na TWA, atualizar manual e WorkManager 30 min, estados offline/"Entre de novo"/"Cartão indisponível", claro/escuro; testes unitários (cliente HTTP com MockWebServer, formatação pt-BR, estados) e Robolectric/Glance. Depende de T001, T003
 
 ## Phase 3: Polish
 
