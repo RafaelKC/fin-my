@@ -14,7 +14,7 @@ Normas: `docs/arquitetura.md`, constituição, research da 003, 007 e 008.
 ## Phase 1: Servidor
 
 - [x] T001 [US2] Cliente OAuth `finmy-android` (seed idempotente, research R3), recurso `<APP_URL>/api/v1/widget` nos tokens desse cliente, seletor de esquema e exigência de recurso por grupo de rotas (FR-004), `channel = android_widget`, `GET /api/v1/widget/credit-cards` e `GET /api/v1/widget/credit-cards/{id}/current-invoice` (research R4, contracts/api.md), `GET /.well-known/assetlinks.json` por configuração (research R2); `WidgetApiTests` (inclui SC-002 contra a rota da fatura, isolamento, 401 com JWT do app e com token do Claude, token do widget negado no `/mcp`), `AssetLinksTests`, fluxo OAuth completo do `finmy-android` em `OAuthFlowTests`
-- [ ] T002 [US2] Front: `/autorizar` e Aplicativos conectados com nome e texto por cliente (FR-006, contracts/api.md "Telas"); testes unitários e e2e (autorizar com `client_id=finmy-android`). Depende de T001
+- [x] T002 [US2] Front: `/autorizar` e Aplicativos conectados com nome e texto por cliente (FR-006, contracts/api.md "Telas"); testes unitários e e2e (autorizar com `client_id=finmy-android`). Depende de T001
 
 ## Phase 2: Android
 
