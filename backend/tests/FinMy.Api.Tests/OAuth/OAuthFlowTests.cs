@@ -108,7 +108,8 @@ public class OAuthFlowTests(PostgresFixture postgres) : ApiTestBase(postgres)
         (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("error").GetString().ShouldBe("invalid_redirect_uri");
 
         await using var scope = Factory.Services.CreateAsyncScope();
-        (await scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>().CountAsync()).ShouldBe(0);
+        // Só o cliente semeado do app Android (009) existe: o registro recusado não criou outro.
+        (await scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>().CountAsync()).ShouldBe(1);
     }
 
     [Theory]
@@ -293,6 +294,66 @@ public class OAuthFlowTests(PostgresFixture postgres) : ApiTestBase(postgres)
         asLeo.UserId.ShouldBe(leo.Session.User.Id);
         asLeo.TenantId.ShouldBe(leo.Session.Tenant.Id);
         asLeo.TenantId.ShouldNotBe(asLia.TenantId);
+    }
+
+    // ---- Cliente do app Android (009 T001) ----
+
+    [Fact]
+    public async Task Cliente_finmy_android_e_semeado_como_publico_com_PKCE_e_o_redirect_do_app_e_o_seed_e_idempotente()
+    {
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var seeder = scope.ServiceProvider.GetRequiredService<FinMy.Infrastructure.Auth.OAuth.AndroidClientSeeder>();
+        await seeder.SeedAsync(CancellationToken.None); // segunda vez: o ApiFactory já semeou ao migrar
+
+        var applications = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
+        (await applications.CountAsync()).ShouldBe(1);
+        var android = (await applications.FindByClientIdAsync(OAuthFlow.AndroidClientId)).ShouldNotBeNull();
+        (await applications.GetDisplayNameAsync(android)).ShouldBe("App Fin-My (Android)");
+        (await applications.GetClientTypeAsync(android)).ShouldBe("public");
+        (await applications.GetRedirectUrisAsync(android)).ShouldBe([OAuthFlow.AndroidRedirect]);
+        (await applications.GetRequirementsAsync(android)).ShouldContain("ft:pkce");
+        (await applications.GetPermissionsAsync(android)).ShouldContain("gt:refresh_token");
+    }
+
+    [Fact]
+    public async Task Fluxo_completo_do_finmy_android_emite_token_com_canal_android_widget_e_o_espaco_da_pessoa()
+    {
+        var lia = await SignUpAsync();
+
+        var tokens = await Flow.ConnectAndroidAsync(lia.AccessToken);
+
+        tokens.TokenType.ShouldBe("Bearer");
+        tokens.RefreshToken.ShouldNotBeNullOrWhiteSpace();
+        var who = await WhoAmIOkAsync(tokens.AccessToken);
+        who.Channel.ShouldBe("AndroidWidget");
+        who.UserId.ShouldBe(lia.Session.User.Id);
+        who.TenantId.ShouldBe(lia.Session.Tenant.Id);
+    }
+
+    [Fact]
+    public async Task Refresh_do_finmy_android_rotaciona_o_token_e_mantem_o_canal_do_widget()
+    {
+        var lia = await SignUpAsync();
+        var first = await Flow.ConnectAndroidAsync(lia.AccessToken);
+
+        var second = await OAuthFlow.TokensAsync(await Flow.RefreshAsync(OAuthFlow.AndroidClientId, first.RefreshToken));
+
+        second.RefreshToken.ShouldNotBe(first.RefreshToken);
+        (await WhoAmIOkAsync(second.AccessToken)).Channel.ShouldBe("AndroidWidget");
+        _clock.UtcNow += TimeSpan.FromSeconds(31); // passada a tolerância de reenvio do OpenIddict, o refresh antigo é reuso
+        (await Flow.RefreshAsync(OAuthFlow.AndroidClientId, first.RefreshToken)).StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Redirect_do_claude_nao_vale_para_o_finmy_android_e_o_do_android_nao_vale_para_outros_clientes()
+    {
+        var lia = await SignUpAsync();
+        var challenge = OAuthFlow.ChallengeOf(OAuthFlow.NewVerifier());
+        var claudeClient = await Flow.RegisterAsync();
+
+        (await Flow.RequestTicketAsync(lia.AccessToken, OAuthFlow.AndroidClientId, OAuthFlow.Redirect, challenge)).StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);
+        (await Flow.RequestTicketAsync(lia.AccessToken, claudeClient, OAuthFlow.AndroidRedirect, challenge)).StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);
+        (await Flow.Raw.PostAsJsonAsync("/oauth/register", new { client_name = "Falso", redirect_uris = new[] { OAuthFlow.AndroidRedirect } })).StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
     [Fact]

@@ -13,6 +13,6 @@ public sealed class McpEndpoints : IEndpointModule
     {
         ArgumentNullException.ThrowIfNull(app);
 
-        app.MapMcp(McpSetup.Path).RequireAuthorization().ExcludeFromDescription();
+        app.MapMcp(McpSetup.Path).RequireAuthorization(AuthenticationSetup.McpResourcePolicy).ExcludeFromDescription();
     }
 }

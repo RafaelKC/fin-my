@@ -18,6 +18,11 @@ public sealed class OAuthFlow(ApiFactory factory)
 {
     public const string Redirect = "https://claude.ai/api/mcp/auth_callback";
 
+    /// <summary>Cliente público pré-registrado do app Android (009) e o redirect dele.</summary>
+    public const string AndroidClientId = "finmy-android";
+
+    public const string AndroidRedirect = "br.app.finmy:/oauth/callback";
+
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 
     /// <summary>Cliente sem seguir redirects (o <c>302</c> do authorize é o que se quer ver).</summary>
@@ -35,9 +40,9 @@ public sealed class OAuthFlow(ApiFactory factory)
         return body.GetProperty("client_id").GetString()!;
     }
 
-    public static string AuthorizeUrl(string clientId, string challenge, string? ticket = null, string redirect = Redirect, string method = "S256", string state = "estado-1")
+    public static string AuthorizeUrl(string clientId, string challenge, string? ticket = null, string redirect = Redirect, string method = "S256", string state = "estado-1", string resource = "http://finmy.exemplo.com/mcp")
     {
-        var query = $"response_type=code&client_id={clientId}&redirect_uri={Uri.EscapeDataString(redirect)}&code_challenge={challenge}&code_challenge_method={method}&state={state}&resource={Uri.EscapeDataString("http://finmy.exemplo.com/mcp")}";
+        var query = $"response_type=code&client_id={clientId}&redirect_uri={Uri.EscapeDataString(redirect)}&code_challenge={challenge}&code_challenge_method={method}&state={state}&resource={Uri.EscapeDataString(resource)}";
         return $"/oauth/authorize?{query}{(ticket is null ? string.Empty : $"&consent_ticket={ticket}")}";
     }
 
@@ -61,11 +66,11 @@ public sealed class OAuthFlow(ApiFactory factory)
     }
 
     /// <summary>Código devolvido no redirect do authorize (falha o teste se o redirect trouxer erro).</summary>
-    public static async Task<string> CodeFromAsync(HttpResponseMessage response)
+    public static async Task<string> CodeFromAsync(HttpResponseMessage response, string redirect = Redirect)
     {
         response.StatusCode.ShouldBe(HttpStatusCode.Redirect, await ReadAsync(response));
         var location = response.Headers.Location!;
-        location.GetLeftPart(UriPartial.Path).ShouldBe(Redirect);
+        location.GetLeftPart(UriPartial.Path).ShouldBe(redirect);
         var query = HttpUtility.ParseQueryString(location.Query);
         query["error"].ShouldBeNull();
         query["iss"].ShouldNotBeNull().ShouldNotEndWith("/"); // RFC 9207: igual ao issuer da descoberta
@@ -104,6 +109,17 @@ public sealed class OAuthFlow(ApiFactory factory)
         var ticket = await TicketAsync(appToken, clientId, ChallengeOf(verifier));
         var code = await CodeFromAsync(await Raw.GetAsync(AuthorizeUrl(clientId, ChallengeOf(verifier), ticket)));
         return (clientId, await TokensAsync(await ExchangeAsync(clientId, code, verifier)));
+    }
+
+    /// <summary>O login do widget (AppAuth + PKCE) até os tokens: ticket de consentimento, authorize e troca do código, como <c>finmy-android</c>.</summary>
+    public async Task<TokenResponse> ConnectAndroidAsync(string appToken)
+    {
+        var verifier = NewVerifier();
+        var ticket = await TicketAsync(appToken, AndroidClientId, ChallengeOf(verifier), AndroidRedirect);
+        var code = await CodeFromAsync(
+            await Raw.GetAsync(AuthorizeUrl(AndroidClientId, ChallengeOf(verifier), ticket, AndroidRedirect, resource: "http://finmy.exemplo.com/api/v1/widget")),
+            AndroidRedirect);
+        return await TokensAsync(await ExchangeAsync(AndroidClientId, code, verifier, AndroidRedirect));
     }
 
     public async Task<HttpResponseMessage> WhoAmIAsync(string? bearer, string path = OAuthProbeEndpoints.WhoAmIPath)

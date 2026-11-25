@@ -3,7 +3,9 @@ using FinMy.Api.Errors;
 using FinMy.Api.Mcp;
 using FinMy.Application;
 using FinMy.Application.Auth;
+using FinMy.Application.OAuth;
 using FinMy.Infrastructure;
+using FinMy.Infrastructure.Auth.OAuth;
 using FinMy.Infrastructure.Email;
 using Microsoft.AspNetCore.HttpOverrides;
 
@@ -18,6 +20,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddFinMyInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<SmtpEmailOptions>(configuration.GetSection(SmtpEmailOptions.SectionName));
+        services.Configure<AndroidOptions>(configuration.GetSection(AndroidOptions.SectionName));
 
         return services.AddInfrastructure(sp => sp.GetRequiredService<IConfiguration>().GetConnectionString(ConnectionName)
             ?? throw new InvalidOperationException($"A string de conexão '{ConnectionName}' não está configurada (ConnectionStrings__{ConnectionName})."));

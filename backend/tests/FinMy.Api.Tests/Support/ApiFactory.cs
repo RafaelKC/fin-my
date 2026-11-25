@@ -90,5 +90,8 @@ public sealed class ApiFactory(
         }
 
         await db.Database.MigrateAsync();
+
+        // Como o comando `migrate`: o cliente OAuth do app Android (009) é semeado junto.
+        await scope.ServiceProvider.GetRequiredService<FinMy.Infrastructure.Auth.OAuth.AndroidClientSeeder>().SeedAsync(CancellationToken.None);
     }
 }

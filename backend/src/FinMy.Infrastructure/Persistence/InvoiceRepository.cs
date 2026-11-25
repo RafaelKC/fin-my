@@ -24,7 +24,7 @@ public sealed class InvoiceRepository(FinMyDbContext db, IClock clock) : IInvoic
         var context = db.CurrentContext;
         var tenantId = context.TenantId ?? throw new MissingTenantContextException();
         var by = context.UserId ?? (context.IsSystem ? SystemUser.Id : throw new MissingUserContextException());
-        var via = context.Channel.ToString().ToLowerInvariant();
+        var via = context.Channel.ToCode();
         var now = clock.UtcNow;
         var closing = InvoiceCycle.ClosingDate(dueMonth, card.ClosingDay, card.DueDay);
         var due = InvoiceCycle.DueDate(dueMonth, card.DueDay);

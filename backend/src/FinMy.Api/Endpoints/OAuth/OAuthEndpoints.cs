@@ -124,13 +124,14 @@ public sealed class OAuthEndpoints : IEndpointModule
         identity.SetClaim(Claims.Subject, consent.UserId.ToString());
         identity.SetClaim(Claims.Name, consent.UserName);
         identity.SetClaim(TenantClaim, consent.TenantId.ToString());
-        identity.SetClaim(ChannelClaim, ChannelClaude);
+        var baseUrl = appUrl.BaseUrl.TrimEnd('/');
+        identity.SetClaim(ChannelClaim, AndroidApp.IsClient(request.ClientId) ? Channel.AndroidWidget.ToCode() : ChannelClaude);
         identity.SetDestinations(_ => [Destinations.AccessToken]);
 
         var principal = new ClaimsPrincipal(identity);
         var scopes = request.GetScopes().Add(Scopes.OfflineAccess).Distinct().ToImmutableArray();
         principal.SetScopes(scopes);
-        principal.SetResources(OAuthSetup.ResourceUrl(appUrl.BaseUrl.TrimEnd('/')));
+        principal.SetResources(OAuthSetup.ResourceFor(request.ClientId, baseUrl));
 
         // Autorização permanente: é ela que "Aplicativos conectados" lista e revoga (T002) e que a validação confere a cada chamada.
         var authorization = await authorizations.CreateAsync(

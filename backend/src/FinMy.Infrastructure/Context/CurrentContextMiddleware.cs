@@ -55,7 +55,7 @@ public sealed class CurrentContextMiddleware(RequestDelegate next)
 
     // O canal `system` nunca vem num token: só jobs entram em escopo de sistema.
     private static bool TryParseChannel(string? value, out Channel channel)
-        => Enum.TryParse(value, ignoreCase: true, out channel) && channel is Channel.App or Channel.Claude;
+        => ChannelCodes.TryParse(value, out channel) && channel is Channel.App or Channel.Claude or Channel.AndroidWidget;
 }
 
 public static class CurrentContextMiddlewareExtensions
