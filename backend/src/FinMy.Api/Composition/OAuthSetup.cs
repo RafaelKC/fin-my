@@ -72,6 +72,19 @@ public static class OAuthSetup
                     context.Metadata["token_endpoint_auth_methods_supported"] = new OpenIddictParameter(System.Text.Json.JsonSerializer.SerializeToElement(PublicClientAuthMethods));
                     return default;
                 }));
+
+                // RFC 9207: o `iss` do redirect do authorize precisa ser igual ao `issuer` da descoberta (sem barra final).
+                server.AddEventHandler<OpenIddictServerEvents.ApplyAuthorizationResponseContext>(handler => handler
+                    .UseInlineHandler(context =>
+                    {
+                        if (context.Response.Iss is { Length: > 0 } iss)
+                        {
+                            context.Response.Iss = iss.TrimEnd('/');
+                        }
+
+                        return default;
+                    })
+                    .SetOrder(OpenIddictServerHandlers.Authentication.AttachIssuer.Descriptor.Order + 1));
             })
             .AddValidation(validation =>
             {
