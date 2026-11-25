@@ -12,8 +12,7 @@ using Dinheiro = FinMy.Domain.Monetary.Money;
 namespace FinMy.Api.Tests.Isolation;
 
 /// <summary>Persistência das tabelas de ligação e das colunas de acerto da 004 (data-model.md): Espaço, FKs compostas e unicidade.</summary>
-[Collection(ApiTestGroup.Name)]
-public class TagLinksPersistenceTests(PostgresFixture postgres)
+public class TagLinksPersistenceTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     private static readonly DateOnly Hoje = new(2026, 3, 10);
 

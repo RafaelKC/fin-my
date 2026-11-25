@@ -42,6 +42,7 @@ public class RedactingJsonFormatterTests
     }
 }
 
+[Collection(GlobalStateGroup.Name)]
 public class LoggingOutputTests(PostgresFixture postgres) : ApiTestBase(postgres)
 {
     protected override IEndpointModule[] ExtraEndpoints => [new TestEndpoints()];

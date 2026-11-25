@@ -6,8 +6,7 @@ using Npgsql;
 namespace FinMy.Api.Tests.Composition;
 
 /// <summary>Executa <c>dotnet FinMy.Api.dll migrate</c> como processo, como o compose faz.</summary>
-[Collection(ApiTestGroup.Name)]
-public class MigrateCommandTests(PostgresFixture postgres)
+public class MigrateCommandTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
 {
     private static async Task<(int ExitCode, string Output)> RunMigrateAsync(string connection, string? androidRedirect = null)
     {
