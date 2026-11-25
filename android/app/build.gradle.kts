@@ -24,6 +24,8 @@ val keystoreProps = Properties().apply {
     if (keystorePropsFile.isFile) keystorePropsFile.inputStream().use { load(it) }
 }
 
+val robolectricJars: Configuration by configurations.creating
+
 android {
     namespace = "br.app.finmy"
     compileSdk = 36
@@ -79,6 +81,11 @@ android {
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
+        unitTests.all { test ->
+            // Robolectric offline: o jar do Android vem do Gradle, sem download em tempo de teste.
+            test.systemProperty("robolectric.offline", "true")
+            test.systemProperty("robolectric.dependency.dir", robolectricJars.resolve().first().parent)
+        }
     }
 
     lint {
@@ -100,6 +107,8 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.16")
     testImplementation("androidx.test:core:1.7.0")
+    // Deve casar com o SDK de @Config(sdk = [34]) no teste (Android 14).
+    robolectricJars("org.robolectric:android-all-instrumented:14-robolectric-10818077-i7")
 }
 
 // network_security_config da build debug: aceita certificados instalados no aparelho (CA de usuário,
