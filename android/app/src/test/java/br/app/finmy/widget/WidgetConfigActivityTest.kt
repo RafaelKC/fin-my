@@ -7,6 +7,9 @@ import android.view.View
 import android.widget.Button
 import android.widget.ListView
 import android.widget.TextView
+import android.net.Uri
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.testing.WorkManagerTestInitHelper
 import br.app.finmy.R
@@ -144,5 +147,76 @@ class WidgetConfigActivityTest {
         settle { activity.findViewById<Button>(R.id.action).visibility == View.VISIBLE }
 
         assertEquals(context.getString(R.string.widget_config_empty), activity.findViewById<TextView>(R.id.message).text.toString())
+    }
+
+    private fun redirect(url: String) = object : WebResourceRequest {
+        override fun getUrl(): Uri = Uri.parse(url)
+        override fun isForMainFrame() = true
+        override fun isRedirect() = true
+        override fun hasGesture() = false
+        override fun getMethod() = "GET"
+        override fun getRequestHeaders(): Map<String, String> = emptyMap()
+    }
+
+    @Test
+    fun `Entrar abre o login na WebView da propria tela com PKCE e o redirect do app`() {
+        val activity = launch().get()
+        settle { activity.findViewById<Button>(R.id.action).visibility == View.VISIBLE }
+
+        activity.findViewById<Button>(R.id.action).performClick()
+
+        val web = activity.findViewById<WebView>(R.id.login)
+        assertEquals(View.VISIBLE, web.visibility)
+        val url = Uri.parse(shadowOf(web).lastLoadedUrl)
+        assertEquals("/oauth/authorize", url.path)
+        assertEquals("finmy-android", url.getQueryParameter("client_id"))
+        assertEquals("br.app.finmy:/oauth/callback", url.getQueryParameter("redirect_uri"))
+        assertEquals("S256", url.getQueryParameter("code_challenge_method"))
+    }
+
+    @Test
+    fun `o redirect do login troca o codigo pelo token e mostra os cartoes`() {
+        server.enqueue(MockResponse().setBody(Fixtures.tokenJson()))
+        server.enqueue(MockResponse().setBody(Fixtures.cardsJson()))
+        val activity = launch().get()
+        settle { activity.findViewById<Button>(R.id.action).visibility == View.VISIBLE }
+        activity.findViewById<Button>(R.id.action).performClick()
+        val web = activity.findViewById<WebView>(R.id.login)
+        val state = Uri.parse(shadowOf(web).lastLoadedUrl).getQueryParameter("state")
+
+        val handled = shadowOf(web).webViewClient.shouldOverrideUrlLoading(web, redirect("br.app.finmy:/oauth/callback?code=abc&state=$state"))
+
+        assertTrue(handled)
+        val list = activity.findViewById<ListView>(R.id.cards)
+        settle { list.visibility == View.VISIBLE }
+        assertEquals(View.GONE, web.visibility)
+        val token = server.takeRequest()
+        assertEquals("/oauth/token", token.path)
+        assertTrue(token.body.readUtf8().contains("code=abc"))
+        runBlocking { assertTrue(rig.session.hasSession()) }
+    }
+
+    @Test
+    fun `redirect com state errado nao troca o codigo`() {
+        val activity = launch().get()
+        settle { activity.findViewById<Button>(R.id.action).visibility == View.VISIBLE }
+        activity.findViewById<Button>(R.id.action).performClick()
+        val web = activity.findViewById<WebView>(R.id.login)
+
+        shadowOf(web).webViewClient.shouldOverrideUrlLoading(web, redirect("br.app.finmy:/oauth/callback?code=abc&state=outro"))
+        ShadowLooper.idleMainLooper()
+
+        assertEquals(context.getString(R.string.widget_config_login_failed), activity.findViewById<TextView>(R.id.message).text.toString())
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun `outras URLs continuam na WebView`() {
+        val activity = launch().get()
+        settle { activity.findViewById<Button>(R.id.action).visibility == View.VISIBLE }
+        activity.findViewById<Button>(R.id.action).performClick()
+        val web = activity.findViewById<WebView>(R.id.login)
+
+        assertEquals(false, shadowOf(web).webViewClient.shouldOverrideUrlLoading(web, redirect("https://100.113.21.47:8443/autorizar?x=1")))
     }
 }
