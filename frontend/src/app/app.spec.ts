@@ -7,6 +7,13 @@ import { appConfig } from './app.config';
 
 describe('App', () => {
   beforeEach(async () => {
+    // O toaster (ngx-sonner) lê a preferência de tema do sistema; o jsdom não tem matchMedia.
+    window.matchMedia = ((media: string) => ({
+      matches: false,
+      media,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    })) as unknown as typeof window.matchMedia;
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [...appConfig.providers, provideHttpClientTesting()],

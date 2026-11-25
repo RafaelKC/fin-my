@@ -6,7 +6,10 @@ import type { ZardTooltipPositionVariants } from './tooltip.variants';
 export type ZardTooltipSide = ZardTooltipPositionVariants | 'inline-start' | 'inline-end';
 
 /** `inline-start` is the physical left in LTR and the physical right in RTL; physical sides pass through. */
-export function resolveTooltipSide(side: ZardTooltipSide, rtl: boolean): ZardTooltipPositionVariants {
+export function resolveTooltipSide(
+  side: ZardTooltipSide,
+  rtl: boolean,
+): ZardTooltipPositionVariants {
   if (side === 'inline-start') {
     return rtl ? 'right' : 'left';
   }

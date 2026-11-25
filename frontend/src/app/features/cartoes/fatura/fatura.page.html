@@ -79,6 +79,9 @@
       }
       <div class="botoes">
         <button
+          z-button
+          zType="outline"
+          zSize="sm"
           type="button"
           class="botao pequeno"
           data-testid="estimativa-editar"
@@ -89,6 +92,9 @@
         </button>
         @if (f.estimateCents) {
           <button
+            z-button
+            zType="destructive"
+            zSize="sm"
             type="button"
             class="botao pequeno perigo"
             data-testid="estimativa-remover"
@@ -126,12 +132,20 @@
 
     <div class="acoes-fatura">
       @if (podePagar()) {
-        <button type="button" class="botao principal" data-testid="pagar" (click)="pagar()">
+        <button
+          z-button
+          type="button"
+          class="botao principal"
+          data-testid="pagar"
+          (click)="pagar()"
+        >
           Pagar
         </button>
       }
       @if (f.canCarryOver) {
         <button
+          z-button
+          zType="secondary"
           type="button"
           class="botao secundario"
           data-testid="levar-restante"
@@ -205,6 +219,9 @@
               <div class="botoes">
                 @if (podeEditar(c)) {
                   <button
+                    z-button
+                    zType="outline"
+                    zSize="sm"
                     type="button"
                     class="botao pequeno"
                     data-testid="editar-compra"
@@ -215,6 +232,9 @@
                   </button>
                 }
                 <button
+                  z-button
+                  zType="outline"
+                  zSize="sm"
                   type="button"
                   class="botao pequeno"
                   data-testid="mover-anterior"
@@ -225,6 +245,9 @@
                   ‹ Fatura anterior
                 </button>
                 <button
+                  z-button
+                  zType="outline"
+                  zSize="sm"
                   type="button"
                   class="botao pequeno"
                   data-testid="mover-seguinte"
@@ -235,6 +258,9 @@
                   Próxima fatura ›
                 </button>
                 <button
+                  z-button
+                  zType="destructive"
+                  zSize="sm"
                   type="button"
                   class="botao pequeno perigo"
                   data-testid="excluir-compra"
@@ -269,6 +295,9 @@
               </div>
               <div class="botoes">
                 <button
+                  z-button
+                  zType="outline"
+                  zSize="sm"
                   type="button"
                   class="botao pequeno"
                   data-testid="editar-pagamento"
@@ -278,6 +307,9 @@
                   Editar
                 </button>
                 <button
+                  z-button
+                  zType="destructive"
+                  zSize="sm"
                   type="button"
                   class="botao pequeno perigo"
                   data-testid="excluir-pagamento"

@@ -21,25 +21,7 @@
   label {
     font: var(--fonte-rotulo-g);
   }
-
-  input {
-    box-sizing: border-box;
-    width: 100%;
-    min-height: 48px;
-    padding: 8px 12px;
-    font: var(--fonte-corpo-g);
-    color: inherit;
-    background: transparent;
-    border: 1px solid var(--border-forte);
-    border-radius: 8px;
-  }
 }
-
-.ajuda {
-  font: var(--fonte-corpo-p);
-  color: var(--muted-foreground);
-}
-
 .aviso,
 .confirmacao {
   padding: 12px 16px;
@@ -49,28 +31,7 @@
     margin: 0;
   }
 }
-
-.aviso {
-  color: var(--destructive);
-  background: var(--destructive-suave);
-}
-
 .confirmacao {
   color: var(--accent-foreground);
   background: var(--accent);
-}
-
-.enviar {
-  min-height: 48px;
-  font: var(--fonte-rotulo-g);
-  color: var(--primary-foreground);
-  background: var(--primary);
-  border: 0;
-  border-radius: 24px;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: progress;
-  }
 }

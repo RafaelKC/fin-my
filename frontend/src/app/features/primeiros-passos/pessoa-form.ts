@@ -2,9 +2,12 @@ import { ChangeDetectionStrategy, Component, inject, output, signal } from '@ang
 import { asProblem, problemMessage } from '../../core/errors/problem-details';
 import { TAG_NOME_MAX } from '../../shared/tag-picker/tag.models';
 import { TagsService } from '../../shared/tag-picker/tags.service';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { CampoDirective } from '@/shared/ui/campo.directive';
 
 /** Cadastro de uma pessoa que devolve dinheiro: cria uma Tag de acerto (004 FR-001; 006 US3.1). */
 @Component({
+  imports: [ZardButtonComponent, CampoDirective],
   selector: 'app-pessoa-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -12,6 +15,7 @@ import { TagsService } from '../../shared/tag-picker/tags.service';
       <div class="campo">
         <label for="pessoa-nome">Nome da pessoa</label>
         <input
+          appCampo
           id="pessoa-nome"
           type="text"
           autocomplete="off"
@@ -23,7 +27,7 @@ import { TagsService } from '../../shared/tag-picker/tags.service';
           <span class="erro" role="alert" data-testid="erro-pessoa">{{ mensagem }}</span>
         }
       </div>
-      <button type="submit" class="enviar" [disabled]="ocupado()">
+      <button z-button type="submit" class="enviar" [disabled]="ocupado()">
         {{ ocupado() ? 'Salvando…' : 'Adicionar pessoa' }}
       </button>
     </form>
@@ -38,27 +42,6 @@ import { TagsService } from '../../shared/tag-picker/tags.service';
       display: flex;
       flex-direction: column;
       gap: 4px;
-    }
-    input {
-      min-height: 44px;
-      padding: 0 12px;
-      font: inherit;
-      border: 1px solid var(--border-forte);
-      border-radius: 8px;
-      background: transparent;
-      color: inherit;
-    }
-    .erro {
-      color: var(--destructive);
-    }
-    .enviar {
-      min-height: 44px;
-      border: 0;
-      border-radius: 22px;
-      font: inherit;
-      background: var(--primary);
-      color: var(--primary-foreground);
-      cursor: pointer;
     }
   `,
 })

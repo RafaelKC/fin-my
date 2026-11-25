@@ -112,7 +112,10 @@ export class ZardToggleGroupComponent implements ControlValueAccessor {
 
   protected readonly disabledState = linkedSignal(() => this.zDisabled());
   // Reset whenever zValue changes, so a new controlled value wins over earlier clicks or writeValue calls
-  private readonly internalValue = linkedSignal<string | string[] | undefined, string | string[] | undefined>({
+  private readonly internalValue = linkedSignal<
+    string | string[] | undefined,
+    string | string[] | undefined
+  >({
     source: this.zValue,
     computation: () => undefined,
   });
@@ -174,7 +177,7 @@ export class ZardToggleGroupComponent implements ControlValueAccessor {
     } else {
       const currentArray = Array.isArray(currentValue) ? currentValue : [];
       if (currentArray.includes(item.value)) {
-        newValue = currentArray.filter(v => v !== item.value);
+        newValue = currentArray.filter((v) => v !== item.value);
       } else {
         newValue = [...currentArray, item.value];
       }

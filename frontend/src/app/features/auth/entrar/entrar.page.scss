@@ -29,30 +29,10 @@ h1 {
   label {
     font: var(--fonte-rotulo-g);
   }
-
-  input {
-    box-sizing: border-box;
-    width: 100%;
-    min-height: 48px;
-    padding: 8px 12px;
-    font: var(--fonte-corpo-g);
-    color: inherit;
-    background: transparent;
-    border: 1px solid var(--border-forte);
-    border-radius: 8px;
-
-    &[aria-invalid='true'] {
-      border-color: var(--destructive);
-    }
-  }
 }
 
 .senha {
   position: relative;
-
-  input {
-    padding-right: 52px;
-  }
 }
 
 .mostrar {
@@ -69,60 +49,6 @@ h1 {
   border: 0;
   cursor: pointer;
 }
-
-.ajuda {
-  font: var(--fonte-corpo-p);
-  color: var(--muted-foreground);
-}
-
-.erro {
-  font: var(--fonte-corpo-p);
-  color: var(--destructive);
-}
-
-.aviso {
-  padding: 12px 16px;
-  color: var(--destructive);
-  background: var(--destructive-suave);
-  border-radius: 8px;
-
-  p {
-    margin: 0;
-  }
-
-  .atalhos {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-top: 8px;
-  }
-
-  a {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 44px;
-    min-height: 44px;
-    color: inherit;
-    font-weight: 500;
-  }
-}
-
-.enviar {
-  min-height: 48px;
-  font: var(--fonte-rotulo-g);
-  color: var(--primary-foreground);
-  background: var(--primary);
-  border: 0;
-  border-radius: 24px;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: progress;
-  }
-}
-
 .rodape {
   display: flex;
   flex-wrap: wrap;

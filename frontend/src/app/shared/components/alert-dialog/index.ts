@@ -1,5 +1,8 @@
 export { type OnClickCallback as AlertDialogOnClickCallback } from './alert-dialog-container.component';
-export { ZardAlertDialogContainerComponent, ZardAlertDialogOptions } from './alert-dialog-container.component';
+export {
+  ZardAlertDialogContainerComponent,
+  ZardAlertDialogOptions,
+} from './alert-dialog-container.component';
 export * from './alert-dialog-host';
 export * from './alert-dialog-panel.component';
 export * from './alert-dialog-ref';

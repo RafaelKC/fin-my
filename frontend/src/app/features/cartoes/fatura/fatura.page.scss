@@ -51,12 +51,6 @@
   margin-right: 6px;
   border-radius: 50%;
 }
-
-.ajuda {
-  font: var(--fonte-corpo-p);
-  color: var(--muted-foreground);
-}
-
 .datas {
   margin: 8px 0 0;
   text-align: center;
@@ -112,15 +106,6 @@
   margin: 8px 0;
   color: var(--muted-foreground);
 }
-
-.aviso {
-  margin: 8px 0;
-  padding: 12px 16px;
-  color: var(--destructive);
-  background: var(--destructive-suave);
-  border-radius: 8px;
-}
-
 .acoes-fatura {
   display: flex;
   flex-wrap: wrap;
@@ -132,11 +117,6 @@ h2 {
   margin: 16px 0 8px;
   font: var(--fonte-titulo-p);
 }
-
-.vazio {
-  color: var(--muted-foreground);
-}
-
 .lista {
   display: flex;
   flex-direction: column;
@@ -183,42 +163,6 @@ h2 {
   flex-wrap: wrap;
   gap: 4px;
 }
-
-.botao {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 16px;
-  font: var(--fonte-rotulo-g);
-  color: var(--primary);
-  background: transparent;
-  border: 0;
-  border-radius: 24px;
-  cursor: pointer;
-
-  &.principal {
-    color: var(--primary-foreground);
-    background: var(--primary);
-  }
-
-  &.secundario {
-    border: 1px solid var(--border-forte);
-  }
-
-  &.pequeno {
-    padding: 0 12px;
-    font: var(--fonte-rotulo);
-  }
-
-  &.perigo {
-    color: var(--destructive);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: default;
-  }
-}
-
 .total-filtro {
   margin: 8px 0;
 }

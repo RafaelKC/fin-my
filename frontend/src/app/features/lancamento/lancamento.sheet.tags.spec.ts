@@ -1,8 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { of } from 'rxjs';
 import { today } from '../../core/money';
 import { Tag } from '../../shared/tag-picker/tag.models';
@@ -12,6 +10,8 @@ import { compra } from '../cartoes/fatura/testing';
 import { cartao } from '../cartoes/testing';
 import { Entry } from './entry.models';
 import { LancamentoSheet, LancamentoSheetData } from './lancamento.sheet';
+import { DADOS_DIALOGO, Dialogo, DialogoRef } from '@/shared/ui/dialogo';
+import { Avisos } from '@/shared/ui/avisos';
 
 const mercado = tag({ id: 't-mercado', name: 'Mercado', uses90d: 7 });
 
@@ -57,12 +57,12 @@ describe('LancamentoSheet — campo Tags (004 US1, FR-003)', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: MatDialogRef, useValue: { close: vi.fn() } },
-        { provide: MAT_DIALOG_DATA, useValue: opcoes.dados ?? null },
+        { provide: DialogoRef, useValue: { close: vi.fn() } },
+        { provide: DADOS_DIALOGO, useValue: opcoes.dados ?? null },
       ],
     });
     http = TestBed.inject(HttpTestingController);
-    vi.spyOn(TestBed.inject(MatSnackBar), 'open').mockReturnValue(undefined as never);
+    vi.spyOn(TestBed.inject(Avisos), 'open').mockReturnValue(undefined as never);
     fixture = TestBed.createComponent(LancamentoSheet);
     el = fixture.nativeElement;
     fixture.detectChanges();
@@ -208,7 +208,7 @@ describe('LancamentoSheet — campo Tags (004 US1, FR-003)', () => {
     expect(chip('Mercado').getAttribute('aria-pressed')).toBe('true');
     await clicar('[data-tag="Ifood"]');
 
-    const dialog = TestBed.inject(MatDialog);
+    const dialog = TestBed.inject(Dialogo);
     vi.spyOn(dialog, 'open').mockReturnValue({ afterClosed: () => of('all') } as never);
     await clicar('[data-testid="salvar"]');
 

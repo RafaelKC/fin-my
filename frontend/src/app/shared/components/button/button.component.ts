@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  effect,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -40,14 +41,9 @@ import {
   host: {
     'data-slot': 'button',
     '[class]': 'classes()',
-    '[attr.data-disabled]': 'isNotInsideOfButtonOrLink() && zDisabled() || null',
     '[attr.data-icon-only]': 'iconOnly() || null',
     '[attr.data-size]': 'zSize()',
     '[attr.data-variant]': 'zType()',
-    '[attr.aria-disabled]': 'isNotInsideOfButtonOrLink() && zDisabled() || null',
-    '[attr.disabled]': 'isNotInsideOfButtonOrLink() && zDisabled() ? "" : null',
-    '[attr.role]': 'isNotInsideOfButtonOrLink() ? "button" : null',
-    '[attr.tabindex]': 'isNotInsideOfButtonOrLink() ? "0" : null',
   },
   exportAs: 'zButton',
 })
@@ -67,6 +63,21 @@ export class ZardButtonComponent implements OnDestroy {
   private _mutationObserver: MutationObserver | null = null;
 
   constructor() {
+    // Fin-My: os atributos de botão (role, tabindex, disabled) só valem para o elemento
+    // <z-button>. Num <button>/<a> nativo eles apagariam o `[disabled]` do template.
+    const el = this.elementRef.nativeElement as HTMLElement;
+    if (el.tagName !== 'BUTTON' && el.tagName !== 'A') {
+      effect(() => {
+        const fora = this.isNotInsideOfButtonOrLink();
+        const desabilitado = fora && this.zDisabled();
+        alternarAtributo(el, 'role', fora ? 'button' : null);
+        alternarAtributo(el, 'tabindex', fora ? '0' : null);
+        alternarAtributo(el, 'disabled', desabilitado ? '' : null);
+        alternarAtributo(el, 'aria-disabled', desabilitado ? 'true' : null);
+        alternarAtributo(el, 'data-disabled', desabilitado ? 'true' : null);
+      });
+    }
+
     afterNextRender(() => {
       if (typeof window === 'undefined' || typeof MutationObserver === 'undefined') {
         return;
@@ -76,7 +87,7 @@ export class ZardButtonComponent implements OnDestroy {
         const el = this.elementRef.nativeElement;
         const hasIcon = el.querySelector('ng-icon') !== null;
         const children = Array.from<Node>(el.childNodes);
-        const hasText = children.some(node => {
+        const hasText = children.some((node) => {
           if (node.nodeType === 3) {
             return node.textContent?.trim() !== '';
           }
@@ -132,4 +143,9 @@ export class ZardButtonComponent implements OnDestroy {
     }
     return true;
   });
+}
+
+function alternarAtributo(el: HTMLElement, nome: string, valor: string | null): void {
+  if (valor === null) el.removeAttribute(nome);
+  else el.setAttribute(nome, valor);
 }

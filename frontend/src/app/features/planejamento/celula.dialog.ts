@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { parseValueExpression, valueExpressionMessages } from '../../core/money';
 import { AmountInput } from '../../shared/amount-input/amount-input';
+import { DADOS_DIALOGO, DialogoRef } from '@/shared/ui/dialogo';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { ZardDialogFooterComponent, ZardDialogTitleComponent } from '@/shared/components/dialog';
 
 export interface CelulaData {
   titulo: string;
@@ -17,34 +19,60 @@ export type CelulaResultado = string | null;
 @Component({
   selector: 'app-celula-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, AmountInput],
+  imports: [
+    ZardButtonComponent,
+    ZardDialogFooterComponent,
+    ZardDialogTitleComponent,
+    ReactiveFormsModule,
+    AmountInput,
+  ],
   styleUrl: './dialogos.scss',
   template: `
-    <h2 mat-dialog-title>{{ data.titulo }}</h2>
-    <mat-dialog-content>
+    <h2 z-dialog-title>{{ data.titulo }}</h2>
+    <div class="dialogo-corpo">
       <app-amount-input [formControl]="valor" />
       @if (erro(); as mensagem) {
         <p class="erro" role="alert">{{ mensagem }}</p>
       }
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
+    </div>
+    <footer z-dialog-footer>
       @if (data.valorInicial !== '') {
-        <button type="button" class="botao" data-testid="celula-limpar" (click)="ref.close('')">
+        <button
+          z-button
+          zType="outline"
+          type="button"
+          class="botao"
+          data-testid="celula-limpar"
+          (click)="ref.close('')"
+        >
           Limpar
         </button>
       }
-      <button type="button" class="botao" data-testid="cancelar" (click)="ref.close(null)">
+      <button
+        z-button
+        zType="outline"
+        type="button"
+        class="botao"
+        data-testid="cancelar"
+        (click)="ref.close(null)"
+      >
         Cancelar
       </button>
-      <button type="button" class="botao principal" data-testid="celula-salvar" (click)="salvar()">
+      <button
+        z-button
+        type="button"
+        class="botao principal"
+        data-testid="celula-salvar"
+        (click)="salvar()"
+      >
         Salvar
       </button>
-    </mat-dialog-actions>
+    </footer>
   `,
 })
 export class CelulaDialog {
-  protected readonly data = inject<CelulaData>(MAT_DIALOG_DATA);
-  protected readonly ref = inject<MatDialogRef<CelulaDialog, CelulaResultado>>(MatDialogRef);
+  protected readonly data = inject<CelulaData>(DADOS_DIALOGO);
+  protected readonly ref = inject<DialogoRef<CelulaDialog, CelulaResultado>>(DialogoRef);
   protected readonly valor = new FormControl(this.data.valorInicial, { nonNullable: true });
   protected readonly erro = signal<string | null>(null);
 

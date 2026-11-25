@@ -29,6 +29,7 @@ export interface OpcoesDialogo<D> {
 @Injectable({ providedIn: 'root' })
 export class Dialogo {
   private readonly zard = inject(ZardDialogService);
+  private readonly abertos = new Set<ZardDialogRef<unknown, unknown>>();
 
   open<C, D = unknown, R = unknown>(
     componente: Type<C>,
@@ -38,7 +39,7 @@ export class Dialogo {
     if (opcoes.telaCheia) classes.push('dialogo-tela-cheia');
     classes.push(opcoes.width ? 'sm:max-w-none' : 'sm:max-w-md');
     if (opcoes.classes) classes.push(opcoes.classes);
-    return this.zard.create<C, D>({
+    const ref = this.zard.create<C, D>({
       zContent: componente,
       zData: opcoes.data,
       zHideFooter: true,
@@ -47,5 +48,14 @@ export class Dialogo {
       zWidth: opcoes.telaCheia ? undefined : opcoes.width,
       zCustomClasses: classes,
     }) as unknown as ZardDialogRef<C, R>;
+    const comoDesconhecido = ref as unknown as ZardDialogRef<unknown, unknown>;
+    this.abertos.add(comoDesconhecido);
+    ref.afterClosed().subscribe(() => this.abertos.delete(comoDesconhecido));
+    return ref;
+  }
+
+  /** Fecha todos os diálogos abertos por este serviço. */
+  closeAll(): void {
+    for (const ref of [...this.abertos]) ref.close();
   }
 }

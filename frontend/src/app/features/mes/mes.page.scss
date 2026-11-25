@@ -30,19 +30,6 @@
   flex-wrap: wrap;
   gap: 8px;
 }
-.chip {
-  min-height: 44px;
-  padding: 0 12px;
-  border: 1px solid var(--border-forte);
-  border-radius: 8px;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  &[aria-pressed='true'],
-  &[aria-checked='true'] {
-    background: var(--accent);
-  }
-}
 .cor {
   display: inline-block;
   width: 10px;
@@ -69,13 +56,6 @@
 }
 .negativo {
   color: var(--destructive);
-}
-.so-leitor {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
 }
 .itens {
   list-style: none;
@@ -115,14 +95,6 @@
   color: var(--muted-foreground);
   font: var(--fonte-corpo-p);
 }
-.selo {
-  margin-left: 8px;
-  padding: 0 6px;
-  border-radius: 4px;
-  background: var(--destructive-suave);
-  color: var(--destructive);
-  font: var(--fonte-rotulo-p);
-}
 .tabela {
   width: 100%;
   border-collapse: collapse;
@@ -145,14 +117,6 @@
   cursor: pointer;
   min-height: 44px;
 }
-.erro {
-  color: var(--destructive);
-}
-.vazio {
-  text-align: center;
-  color: var(--muted-foreground);
-}
-
 .excluir {
   min-width: 44px;
   min-height: 44px;

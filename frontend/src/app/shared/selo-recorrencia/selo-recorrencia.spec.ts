@@ -23,7 +23,7 @@ describe('SeloRecorrencia', () => {
   it('mostra o ícone de recorrência numa ocorrência', () => {
     const el = abrir('r-tim');
     expect(el.querySelector('[data-testid="selo-recorrencia"]')).not.toBeNull();
-    expect(el.querySelector('mat-icon')!.getAttribute('aria-label')).toBe('Recorrência');
+    expect(el.querySelector('app-icone')!.getAttribute('aria-label')).toBe('Recorrência');
     expect(el.querySelector('[data-testid="selo-alterada"]')).toBeNull();
   });
 

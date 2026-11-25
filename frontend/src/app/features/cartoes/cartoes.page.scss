@@ -35,24 +35,7 @@
   gap: 8px;
   min-height: 44px;
   cursor: pointer;
-
-  input {
-    width: 20px;
-    height: 20px;
-  }
 }
-
-.aviso {
-  padding: 12px 16px;
-  color: var(--destructive);
-  background: var(--destructive-suave);
-  border-radius: 8px;
-}
-
-.vazio {
-  color: var(--muted-foreground);
-}
-
 .lista {
   display: flex;
   flex-direction: column;
@@ -99,29 +82,6 @@
   color: var(--primary);
   font: var(--fonte-rotulo-g);
 }
-
-.so-leitor {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.selo {
-  margin-left: 8px;
-  padding: 2px 8px;
-  font: var(--fonte-rotulo-p);
-  border-radius: 8px;
-  vertical-align: middle;
-
-  &.cinza {
-    color: var(--muted-foreground);
-    background: var(--muted);
-  }
-}
-
 .faturas {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -140,12 +100,6 @@
     font: var(--fonte-titulo-p);
   }
 }
-
-.ajuda {
-  font: var(--fonte-corpo-p);
-  color: var(--muted-foreground);
-}
-
 .abertas {
   margin: 12px 0 0;
   padding: 0;

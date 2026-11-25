@@ -13,7 +13,7 @@
       [disabled]="noMinimo()"
       (click)="ir(-1)"
     >
-      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">chevron_left</mat-icon>
+      <app-icone nome="chevron_left" />
     </button>
     <h1 class="titulo" data-testid="mes-titulo">{{ rotuloMes() }}</h1>
     <button
@@ -24,7 +24,7 @@
       [disabled]="noMaximo()"
       (click)="ir(1)"
     >
-      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">chevron_right</mat-icon>
+      <app-icone nome="chevron_right" />
     </button>
   </header>
 
@@ -89,7 +89,9 @@
   @if (erro(); as mensagem) {
     <div class="erro" role="alert" data-testid="erro-mes">
       <span>{{ mensagem }}</span>
-      <button type="button" class="botao" (click)="tentarDeNovo()">Tentar de novo</button>
+      <button z-button zType="outline" type="button" class="botao" (click)="tentarDeNovo()">
+        Tentar de novo
+      </button>
     </div>
   }
   @if (erroAcao(); as mensagem) {
@@ -430,9 +432,7 @@
             (click)="transferenciasAbertas.set(!transferenciasAbertas())"
           >
             Transferências ({{ transferencias().length }})
-            <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{
-              transferenciasAbertas() ? 'expand_less' : 'expand_more'
-            }}</mat-icon>
+            <app-icone [nome]="transferenciasAbertas() ? 'expand_less' : 'expand_more'" />
           </button>
         </h2>
         @if (transferenciasAbertas()) {
@@ -450,6 +450,8 @@
                   </span>
                 </div>
                 <button
+                  z-button
+                  zType="outline"
                   type="button"
                   class="botao excluir"
                   data-testid="excluir-transferencia"

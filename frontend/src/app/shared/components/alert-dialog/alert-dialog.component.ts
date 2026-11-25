@@ -32,7 +32,10 @@ import { ZardStringTemplateOutletDirective } from '@/shared/core';
 import { mergeClasses } from '@/shared/utils/merge-classes';
 
 import { nextAlertDialogId, ZardAlertDialogHost } from './alert-dialog-host';
-import { ALERT_DIALOG_DURATION, ZardAlertDialogPanelComponent } from './alert-dialog-panel.component';
+import {
+  ALERT_DIALOG_DURATION,
+  ZardAlertDialogPanelComponent,
+} from './alert-dialog-panel.component';
 import {
   ALERT_DIALOG_BACKDROP_CLASSES,
   alertDialogDescriptionVariants,
@@ -85,7 +88,9 @@ const ESCAPE_KEYS = ['Escape', 'Esc'];
   // forwardRef: the decorator is evaluated before the class binding exists, so a bare
   // reference to ZardAlertDialogComponent here throws "Cannot access before initialization"
   // whenever the module is evaluated outside the AOT compiler.
-  providers: [{ provide: ZardAlertDialogHost, useExisting: forwardRef(() => ZardAlertDialogComponent) }],
+  providers: [
+    { provide: ZardAlertDialogHost, useExisting: forwardRef(() => ZardAlertDialogComponent) },
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: { style: 'display: contents' },
@@ -187,8 +192,8 @@ export class ZardAlertDialogComponent extends ZardAlertDialogHost {
     });
     overlayRef
       .keydownEvents()
-      .pipe(filter(event => ESCAPE_KEYS.includes(event.key)))
-      .subscribe(event => {
+      .pipe(filter((event) => ESCAPE_KEYS.includes(event.key)))
+      .subscribe((event) => {
         event.preventDefault();
         this.requestClose();
       });
@@ -238,9 +243,7 @@ export class ZardAlertDialogComponent extends ZardAlertDialogHost {
 
 @Component({
   selector: 'z-alert-dialog-header, [z-alert-dialog-header]',
-  template: `
-    <ng-content />
-  `,
+  template: ` <ng-content /> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -252,15 +255,15 @@ export class ZardAlertDialogComponent extends ZardAlertDialogHost {
 export class ZardAlertDialogHeaderComponent {
   readonly class = input<ClassValue>('');
 
-  protected readonly classes = computed(() => mergeClasses(alertDialogHeaderVariants(), this.class()));
+  protected readonly classes = computed(() =>
+    mergeClasses(alertDialogHeaderVariants(), this.class()),
+  );
 }
 
 /** Media slot above the title, usually an icon. The header lays it next to the title on `default` size. */
 @Component({
   selector: 'z-alert-dialog-media, [z-alert-dialog-media]',
-  template: `
-    <ng-content />
-  `,
+  template: ` <ng-content /> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -272,7 +275,9 @@ export class ZardAlertDialogHeaderComponent {
 export class ZardAlertDialogMediaComponent {
   readonly class = input<ClassValue>('');
 
-  protected readonly classes = computed(() => mergeClasses(alertDialogMediaVariants(), this.class()));
+  protected readonly classes = computed(() =>
+    mergeClasses(alertDialogMediaVariants(), this.class()),
+  );
 }
 
 @Component({
@@ -303,7 +308,9 @@ export class ZardAlertDialogTitleComponent {
   readonly zTitle = input<string | TemplateRef<void>>();
 
   protected readonly id = nextAlertDialogId('title');
-  protected readonly classes = computed(() => mergeClasses(alertDialogTitleVariants(), this.class()));
+  protected readonly classes = computed(() =>
+    mergeClasses(alertDialogTitleVariants(), this.class()),
+  );
 
   constructor() {
     // Registered after the first render: the panel reads this id through an input binding,
@@ -344,7 +351,9 @@ export class ZardAlertDialogDescriptionComponent {
   readonly zDescription = input<string | TemplateRef<void>>();
 
   protected readonly id = nextAlertDialogId('description');
-  protected readonly classes = computed(() => mergeClasses(alertDialogDescriptionVariants(), this.class()));
+  protected readonly classes = computed(() =>
+    mergeClasses(alertDialogDescriptionVariants(), this.class()),
+  );
 
   constructor() {
     afterNextRender(() => this.alertDialog?.descriptionId.set(this.id));
@@ -359,9 +368,7 @@ export class ZardAlertDialogDescriptionComponent {
 
 @Component({
   selector: 'z-alert-dialog-footer, [z-alert-dialog-footer]',
-  template: `
-    <ng-content />
-  `,
+  template: ` <ng-content /> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -373,7 +380,9 @@ export class ZardAlertDialogDescriptionComponent {
 export class ZardAlertDialogFooterComponent {
   readonly class = input<ClassValue>('');
 
-  protected readonly classes = computed(() => mergeClasses(alertDialogFooterVariants(), this.class()));
+  protected readonly classes = computed(() =>
+    mergeClasses(alertDialogFooterVariants(), this.class()),
+  );
 }
 
 /** Closes the alert dialog it is projected into — declarative or service-opened alike. */

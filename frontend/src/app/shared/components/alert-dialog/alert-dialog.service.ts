@@ -2,11 +2,21 @@ import { Directionality } from '@angular/cdk/bidi';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { isPlatformBrowser } from '@angular/common';
-import { inject, Injectable, InjectionToken, Injector, PLATFORM_ID, type ViewContainerRef } from '@angular/core';
+import {
+  inject,
+  Injectable,
+  InjectionToken,
+  Injector,
+  PLATFORM_ID,
+  type ViewContainerRef,
+} from '@angular/core';
 
 import { takeUntil } from 'rxjs';
 
-import { ZardAlertDialogContainerComponent, ZardAlertDialogOptions } from './alert-dialog-container.component';
+import {
+  ZardAlertDialogContainerComponent,
+  ZardAlertDialogOptions,
+} from './alert-dialog-container.component';
 import { ZardAlertDialogRef } from './alert-dialog-ref';
 import { ALERT_DIALOG_BACKDROP_CLASSES } from './alert-dialog.variants';
 
@@ -47,7 +57,12 @@ export class ZardAlertDialogService {
 
     const overlayRef = this.createOverlay(config);
     const alertDialogContainer = this.attachAlertDialogContainer<T>(overlayRef, config);
-    const alertDialogRef = new ZardAlertDialogRef<T>(overlayRef, config, alertDialogContainer, this.platformId);
+    const alertDialogRef = new ZardAlertDialogRef<T>(
+      overlayRef,
+      config,
+      alertDialogContainer,
+      this.platformId,
+    );
 
     alertDialogContainer.alertDialogRef = alertDialogRef;
 
@@ -68,7 +83,9 @@ export class ZardAlertDialogService {
     });
   }
 
-  warning<T>(config: Omit<ZardAlertDialogOptions<T>, 'zOkText'> & { zOkText?: string }): ZardAlertDialogRef<T> {
+  warning<T>(
+    config: Omit<ZardAlertDialogOptions<T>, 'zOkText'> & { zOkText?: string },
+  ): ZardAlertDialogRef<T> {
     return this.create({
       ...config,
       zOkText: config.zOkText ?? 'OK',
@@ -76,7 +93,9 @@ export class ZardAlertDialogService {
     });
   }
 
-  info<T>(config: Omit<ZardAlertDialogOptions<T>, 'zOkText'> & { zOkText?: string }): ZardAlertDialogRef<T> {
+  info<T>(
+    config: Omit<ZardAlertDialogOptions<T>, 'zOkText'> & { zOkText?: string },
+  ): ZardAlertDialogRef<T> {
     return this.create({
       ...config,
       zOkText: config.zOkText ?? 'OK',

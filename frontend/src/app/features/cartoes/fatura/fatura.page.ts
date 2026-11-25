@@ -9,8 +9,6 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { problemMessage } from '../../../core/errors/problem-details';
@@ -33,6 +31,9 @@ import { Invoice, InvoicePayment } from './invoice.models';
 import { InvoicesService } from './invoices.service';
 import { EscopoData, EscopoDialog } from './escopo.dialog';
 import { PagamentoDialog, PagamentoDialogData } from './pagamento.dialog';
+import { Dialogo } from '@/shared/ui/dialogo';
+import { Avisos } from '@/shared/ui/avisos';
+import { ZardButtonComponent } from '@/shared/components/button';
 
 const ROTULO_SITUACAO: Record<InvoiceStatus, string> = {
   no_amount_due: 'Sem valor a pagar',
@@ -50,7 +51,7 @@ const ROTULO_SITUACAO: Record<InvoiceStatus, string> = {
 @Component({
   selector: 'app-fatura-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, BrlPipe, TagFilter, SeloViaClaude, SeloRecorrencia],
+  imports: [ZardButtonComponent, RouterLink, BrlPipe, TagFilter, SeloViaClaude, SeloRecorrencia],
   templateUrl: './fatura.page.html',
   styleUrl: './fatura.page.scss',
 })
@@ -63,8 +64,8 @@ export class FaturaPage {
   private readonly exclusao = inject(ExclusaoService);
   private readonly tags = inject(TagsService);
   private readonly launcher = inject(LancamentoLauncher);
-  private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(Dialogo);
+  private readonly avisos = inject(Avisos);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly parametros = toSignal(
@@ -287,12 +288,11 @@ export class FaturaPage {
     this.dialog
       .open<PagamentoDialog, PagamentoDialogData, boolean>(PagamentoDialog, {
         data,
-        autoFocus: false,
       })
       .afterClosed()
       .subscribe((salvou) => {
         if (salvou) {
-          this.snackBar.open('Pagamento salvo.', undefined, {
+          this.avisos.open('Pagamento salvo.', undefined, {
             duration: 4000,
             verticalPosition: 'top',
           });

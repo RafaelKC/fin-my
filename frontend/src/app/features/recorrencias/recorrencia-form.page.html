@@ -56,6 +56,7 @@
       <div class="campo">
         <label for="descricao">Descrição</label>
         <input
+          appCampo
           id="descricao"
           type="text"
           autocomplete="off"
@@ -78,6 +79,7 @@
       <div class="campo">
         <label for="dia">Dia do mês</label>
         <input
+          appCampo
           id="dia"
           type="number"
           inputmode="numeric"
@@ -95,7 +97,7 @@
       @if (kind() === 'card_purchase') {
         <div class="campo">
           <label for="cartao">Cartão</label>
-          <select id="cartao" (change)="escolherCartao($any($event.target).value)">
+          <select z-native-select id="cartao" (change)="escolherCartao($any($event.target).value)">
             <option value="">Escolha um cartão</option>
             @for (c of cartoes(); track c.id) {
               <option [value]="c.id" [selected]="c.id === creditCardId()">{{ c.name }}</option>
@@ -108,7 +110,11 @@
       } @else {
         <div class="campo">
           <label for="carteira">Carteira</label>
-          <select id="carteira" (change)="escolherCarteira($any($event.target).value)">
+          <select
+            z-native-select
+            id="carteira"
+            (change)="escolherCarteira($any($event.target).value)"
+          >
             <option value="">Escolha uma carteira</option>
             @for (w of carteiras(); track w.id) {
               <option [value]="w.id" [selected]="w.id === walletId()">{{ w.name }}</option>
@@ -121,7 +127,7 @@
 
         <div class="campo">
           <label for="regra">Mês de referência</label>
-          <select id="regra" (change)="escolherRegra($any($event.target).value)">
+          <select z-native-select id="regra" (change)="escolherRegra($any($event.target).value)">
             @for (r of regras; track r.value) {
               <option [value]="r.value" [selected]="r.value === referenceMonthRule()">
                 {{ r.label }}
@@ -136,6 +142,7 @@
       <div class="campo">
         <label for="mes-inicial">Mês inicial</label>
         <input
+          appCampo
           id="mes-inicial"
           type="month"
           formControlName="startMonth"
@@ -168,10 +175,11 @@
         </div>
         @if (endType() === 'until_month') {
           <label for="mes-final">Último mês</label>
-          <input id="mes-final" type="month" formControlName="endMonth" />
+          <input appCampo id="mes-final" type="month" formControlName="endMonth" />
         } @else if (endType() === 'after_count') {
           <label for="ocorrencias">Número de ocorrências</label>
           <input
+            appCampo
             id="ocorrencias"
             type="number"
             inputmode="numeric"
@@ -185,7 +193,7 @@
         }
       </fieldset>
 
-      <button type="submit" class="enviar" [disabled]="ocupado()">
+      <button z-button type="submit" class="enviar" [disabled]="ocupado()">
         {{ ocupado() ? 'Salvando…' : 'Salvar' }}
       </button>
       @if (!embutido()) {
@@ -196,11 +204,25 @@
     @if (recorrencia(); as r) {
       <section class="acoes" aria-label="Ações da recorrência">
         @if (r.status === 'active') {
-          <button type="button" class="acao" [disabled]="ocupado()" (click)="encerrar()">
+          <button
+            z-button
+            zType="outline"
+            type="button"
+            class="acao"
+            [disabled]="ocupado()"
+            (click)="encerrar()"
+          >
             Encerrar
           </button>
         }
-        <button type="button" class="acao perigo" [disabled]="ocupado()" (click)="excluir()">
+        <button
+          z-button
+          zType="destructive"
+          type="button"
+          class="acao perigo"
+          [disabled]="ocupado()"
+          (click)="excluir()"
+        >
           Excluir
         </button>
       </section>

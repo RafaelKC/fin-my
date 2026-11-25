@@ -18,7 +18,7 @@ export const ZARD_MENU_ITEM_SELECTOR = [
 
 export function getMenuItems(root: HTMLElement): HTMLElement[] {
   return Array.from(root.querySelectorAll<HTMLElement>(ZARD_MENU_ITEM_SELECTOR)).filter(
-    item => item.dataset['disabled'] === undefined,
+    (item) => item.dataset['disabled'] === undefined,
   );
 }
 
@@ -73,7 +73,9 @@ export function findMenuItemByChar(items: HTMLElement[], char: string, from: num
 
 /** True for a key that should drive typeahead rather than an action. */
 export function isTypeaheadKey(event: KeyboardEvent): boolean {
-  return event.key.length === 1 && event.key !== ' ' && !event.ctrlKey && !event.metaKey && !event.altKey;
+  return (
+    event.key.length === 1 && event.key !== ' ' && !event.ctrlKey && !event.metaKey && !event.altKey
+  );
 }
 
 /**
@@ -85,9 +87,13 @@ export function isTypeaheadKey(event: KeyboardEvent): boolean {
  * `onHighlight` receives the row's index among `getMenuItems(surface)`, or `-1` when the pointer
  * left, so the caller keeps its own focused index in step with what is on screen.
  */
-export function bindMenuPointer(surface: HTMLElement, onHighlight: (index: number) => void): () => void {
+export function bindMenuPointer(
+  surface: HTMLElement,
+  onHighlight: (index: number) => void,
+): () => void {
   const rowOf = (target: EventTarget | null): HTMLElement | null => {
-    const row = target instanceof Element ? target.closest<HTMLElement>(ZARD_MENU_ITEM_SELECTOR) : null;
+    const row =
+      target instanceof Element ? target.closest<HTMLElement>(ZARD_MENU_ITEM_SELECTOR) : null;
     return row && surface.contains(row) ? row : null;
   };
 
@@ -105,7 +111,11 @@ export function bindMenuPointer(surface: HTMLElement, onHighlight: (index: numbe
 
   const onPointerOut = (event: PointerEvent) => {
     const row = rowOf(event.target);
-    if (!row || row.contains(event.relatedTarget as Node | null) || row.getAttribute('aria-expanded') === 'true') {
+    if (
+      !row ||
+      row.contains(event.relatedTarget as Node | null) ||
+      row.getAttribute('aria-expanded') === 'true'
+    ) {
       return;
     }
 

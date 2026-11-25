@@ -20,7 +20,10 @@ import { ZardButtonComponent } from '@/shared/components/button/button.component
 import { noopFn } from '@/shared/utils/noop';
 
 import { ZardAlertDialogHost } from './alert-dialog-host';
-import { ALERT_DIALOG_DURATION, ZardAlertDialogPanelComponent } from './alert-dialog-panel.component';
+import {
+  ALERT_DIALOG_DURATION,
+  ZardAlertDialogPanelComponent,
+} from './alert-dialog-panel.component';
 import type { ZardAlertDialogRef } from './alert-dialog-ref';
 import {
   ZardAlertDialogDescriptionComponent,
@@ -143,7 +146,12 @@ export class ZardAlertDialogOptions<T> {
   // forwardRef: the decorator is evaluated before the class binding exists, so a bare
   // reference to ZardAlertDialogContainerComponent here throws "Cannot access before initialization"
   // whenever the module is evaluated outside the AOT compiler.
-  providers: [{ provide: ZardAlertDialogHost, useExisting: forwardRef(() => ZardAlertDialogContainerComponent) }],
+  providers: [
+    {
+      provide: ZardAlertDialogHost,
+      useExisting: forwardRef(() => ZardAlertDialogContainerComponent),
+    },
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: { style: 'display: contents' },

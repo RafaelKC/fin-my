@@ -84,18 +84,6 @@
   display: flex;
   gap: 8px;
 }
-.chip {
-  min-height: 44px;
-  padding: 0 16px;
-  border: 1px solid var(--border-forte);
-  border-radius: 8px;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  &[aria-pressed='true'] {
-    background: var(--accent);
-  }
-}
 .visao {
   display: flex;
   flex-direction: column;
@@ -145,16 +133,6 @@
 }
 .negativo {
   color: var(--destructive);
-}
-.erro {
-  color: var(--destructive);
-}
-.so-leitor {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
 }
 @media (min-width: 1024px) {
   .visao {

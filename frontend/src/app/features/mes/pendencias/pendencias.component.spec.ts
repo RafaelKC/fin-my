@@ -1,11 +1,11 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subject } from 'rxjs';
 import { Entry } from '../../lancamento/entry.models';
 import { carteira } from '../../carteiras/testing';
 import { DESFAZER_MS, PendenciasComponent } from './pendencias.component';
+import { Avisos } from '@/shared/ui/avisos';
 
 const pend = (p: Partial<Entry>): Entry => ({
   id: 'p1',
@@ -47,7 +47,7 @@ describe('PendenciasComponent', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: MatSnackBar, useValue: snack },
+        { provide: Avisos, useValue: snack },
       ],
     });
     http = TestBed.inject(HttpTestingController);

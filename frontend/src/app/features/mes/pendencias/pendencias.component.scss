@@ -1,32 +1,6 @@
-.aviso {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 16px;
-  padding: 12px;
-  border-radius: 8px;
-  background: var(--previsto-suave);
-  color: var(--previsto);
-}
 .texto {
   flex: 1;
   margin: 0;
-}
-.botao {
-  min-height: 44px;
-  padding: 0 16px;
-  border: 1px solid var(--border-forte);
-  border-radius: 8px;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-  &.perigo {
-    color: var(--destructive);
-  }
 }
 .lista {
   flex-basis: 100%;
@@ -64,8 +38,4 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-.erro {
-  margin: 0;
-  color: var(--destructive);
 }

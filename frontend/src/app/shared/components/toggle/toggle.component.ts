@@ -16,7 +16,11 @@ import type { ClassValue } from 'clsx';
 
 import { mergeClasses } from '@/shared/utils/merge-classes';
 
-import { toggleVariants, type ZardToggleSizeVariants, type ZardToggleTypeVariants } from './toggle.variants';
+import {
+  toggleVariants,
+  type ZardToggleSizeVariants,
+  type ZardToggleTypeVariants,
+} from './toggle.variants';
 
 type OnTouchedType = () => void;
 type OnChangeType = (value: boolean) => void;
@@ -85,7 +89,7 @@ export class ZardToggleComponent implements ControlValueAccessor {
       return;
     }
 
-    this.zValue.update(v => !v);
+    this.zValue.update((v) => !v);
 
     this.zToggleClick.emit();
     this.zToggleChange.emit(this.zValue());

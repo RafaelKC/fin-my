@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatIconModule } from '@angular/material/icon';
+import { Icone } from '@/shared/ui/icone';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EMPTY, Subject, catchError, combineLatest, merge, of, switchMap, tap } from 'rxjs';
 import { problemMessage } from '../../core/errors/problem-details';
@@ -57,6 +57,7 @@ import { MonthInvoiceLine, MonthView, SummaryColumn, Transfer } from './month.mo
 import { MonthsService } from './months.service';
 import { PendenciasComponent } from './pendencias/pendencias.component';
 import { PendenciasService } from './pendencias/pendencias.service';
+import { ZardButtonComponent } from '@/shared/components/button';
 
 const DESKTOP = '(min-width: 1024px)';
 
@@ -88,7 +89,15 @@ interface LinhaResumo {
 @Component({
   selector: 'app-mes-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BrlPipe, MatIconModule, PendenciasComponent, TagFilter, SeloViaClaude, SeloRecorrencia],
+  imports: [
+    ZardButtonComponent,
+    BrlPipe,
+    Icone,
+    PendenciasComponent,
+    TagFilter,
+    SeloViaClaude,
+    SeloRecorrencia,
+  ],
   templateUrl: './mes.page.html',
   styleUrl: './mes.page.scss',
 })

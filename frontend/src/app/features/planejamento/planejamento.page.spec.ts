@@ -2,13 +2,15 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { carteira } from '../carteiras/testing';
 import { PlanejamentoPage } from './planejamento.page';
 import { PlanningGrid } from './planning.models';
 import { faturaAzul, grade2027, linha, totais } from './testing';
+import { Dialogo } from '@/shared/ui/dialogo';
+import { Avisos } from '@/shared/ui/avisos';
+import { provideZard } from '@/shared/core/provider/providezard';
 
 const MESES_CELULA = (el: Element, mes: string) =>
   el.querySelector(`[data-testid="celula"][data-mes="${mes}"]`)!;
@@ -60,7 +62,7 @@ describe('PlanejamentoPage', () => {
       fixture.detectChanges();
       TestBed.inject(ApplicationRef).tick();
     };
-    /** O MatDialog só entrega `afterClosed` depois da animação de saída. */
+    /** O Dialogo só entrega `afterClosed` depois da animação de saída. */
     const aguardarFechar = async () => {
       await new Promise((r) => setTimeout(r, 300));
       await atualizar();
@@ -87,13 +89,14 @@ describe('PlanejamentoPage', () => {
         provideHttpClientTesting(),
         provideRouter([{ path: '**', children: [] }]),
         { provide: ActivatedRoute, useValue: { paramMap: params } },
+        provideZard(),
       ],
     });
     http = TestBed.inject(HttpTestingController);
   });
   afterEach(() => {
     window.matchMedia = original;
-    TestBed.inject(MatDialog).closeAll();
+    TestBed.inject(Dialogo).closeAll();
     http.verify();
   });
 
@@ -189,6 +192,9 @@ describe('PlanejamentoPage', () => {
 
   it('US1.4: apagar a célula exclui e oferece "Desfazer"', async () => {
     const { abrirCelula, digitar, el, atualizar } = await abrir();
+    const aviso = vi
+      .spyOn(TestBed.inject(Avisos), 'open')
+      .mockReturnValue({ onAction: () => new Subject<void>(), dismiss: () => undefined });
     const campo = await abrirCelula('expense:tim', '2027-01');
     digitar(campo, '');
     const req = http.expectOne('/api/v1/years/2027/planning/cells');
@@ -199,7 +205,7 @@ describe('PlanejamentoPage', () => {
       deletionBatchId: 'lote-1',
     });
     await atualizar();
-    expect(document.body.textContent).toContain('Excluído');
+    expect(aviso).toHaveBeenCalledWith('Excluído', 'Desfazer', expect.anything());
     expect(el.querySelector('[data-testid="erro-planejamento"]')).toBeNull();
   });
 

@@ -1,5 +1,10 @@
 import { Directionality } from '@angular/cdk/bidi';
-import { Overlay, OverlayModule, OverlayPositionBuilder, type OverlayRef } from '@angular/cdk/overlay';
+import {
+  Overlay,
+  OverlayModule,
+  OverlayPositionBuilder,
+  type OverlayRef,
+} from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { isPlatformBrowser } from '@angular/common';
 import {
@@ -58,7 +63,9 @@ import { dropdownContentVariants } from './dropdown.variants';
         data-slot="dropdown-menu-content"
         [attr.data-state]="'open'"
         (click)="onDropdownClick($event)"
-        (keydown.{arrowdown,arrowup,enter,space,escape,home,end}.prevent)="onDropdownKeydown($event)"
+        (keydown.{arrowdown,arrowup,enter,space,escape,home,end}.prevent)="
+          onDropdownKeydown($event)
+        "
         tabindex="-1"
       >
         <ng-content />
@@ -94,7 +101,7 @@ export class ZardDropdownMenuComponent implements OnDestroy {
   readonly class = input<ClassValue>('');
   readonly disabled = input(false, { transform: booleanAttribute });
   readonly zDisabled = input<boolean | undefined, unknown>(undefined, {
-    transform: value => (value === undefined ? undefined : booleanAttribute(value)),
+    transform: (value) => (value === undefined ? undefined : booleanAttribute(value)),
   });
 
   readonly openChange = output<boolean>();
@@ -103,7 +110,9 @@ export class ZardDropdownMenuComponent implements OnDestroy {
   readonly focusedIndex = signal<number>(-1);
 
   protected readonly isDisabled = computed(() => this.zDisabled() ?? this.disabled());
-  protected readonly contentClasses = computed(() => mergeClasses(dropdownContentVariants(), this.class()));
+  protected readonly contentClasses = computed(() =>
+    mergeClasses(dropdownContentVariants(), this.class()),
+  );
 
   constructor() {
     // A `[dir]` switch while the menu is open closes it: it reopens with the new direction.
@@ -269,7 +278,7 @@ export class ZardDropdownMenuComponent implements OnDestroy {
       dropdownElement.querySelectorAll<HTMLElement>(
         'z-dropdown-menu-item, [z-dropdown-menu-item], z-dropdown-menu-checkbox-item, [z-dropdown-menu-checkbox-item], z-dropdown-menu-radio-item, [z-dropdown-menu-radio-item]',
       ),
-    ).filter(item => item.dataset['disabled'] === undefined);
+    ).filter((item) => item.dataset['disabled'] === undefined);
   }
 
   private navigateItems(direction: number, items: HTMLElement[]) {
@@ -331,7 +340,9 @@ export class ZardDropdownMenuComponent implements OnDestroy {
 
   private focusDropdown() {
     if (this.overlayRef?.hasAttached()) {
-      const dropdownElement = this.overlayRef.overlayElement.querySelector('[role="menu"]') as HTMLElement;
+      const dropdownElement = this.overlayRef.overlayElement.querySelector(
+        '[role="menu"]',
+      ) as HTMLElement;
       if (dropdownElement) {
         dropdownElement.focus();
       }

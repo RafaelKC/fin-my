@@ -19,9 +19,7 @@
           >
             <span class="cor" [style.background]="t.color" aria-hidden="true"></span>
             @if (t.isSettlement) {
-              <mat-icon class="acerto" fontSet="material-symbols-outlined" aria-hidden="true"
-                >person</mat-icon
-              >
+              <app-icone nome="person" class="acerto" />
               <span class="so-leitor">Tag de acerto: </span>
             }
             {{ t.name }}
@@ -34,6 +32,7 @@
     }
 
     <input
+      appCampo
       type="text"
       class="busca"
       autocomplete="off"
@@ -58,9 +57,7 @@
             >
               <span class="cor" [style.background]="t.color" aria-hidden="true"></span>
               @if (t.isSettlement) {
-                <mat-icon class="acerto" fontSet="material-symbols-outlined" aria-hidden="true"
-                  >person</mat-icon
-                >
+                <app-icone nome="person" class="acerto" />
               }
               {{ t.name }}
             </button>

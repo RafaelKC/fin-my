@@ -8,7 +8,7 @@
       [disabled]="noMinimo()"
       (click)="ir(-1)"
     >
-      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">chevron_left</mat-icon>
+      <app-icone nome="chevron_left" />
     </button>
     <h1 class="titulo" data-testid="planejamento-titulo">Planejamento {{ ano() }}</h1>
     <button
@@ -19,30 +19,34 @@
       [disabled]="noMaximo()"
       (click)="ir(1)"
     >
-      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">chevron_right</mat-icon>
+      <app-icone nome="chevron_right" />
     </button>
   </header>
 
   <div class="acoes">
     <button
+      z-button
+      zType="outline"
       type="button"
       class="botao"
       data-testid="nova-linha"
       [disabled]="grade() === null"
       (click)="novaLinha()"
     >
-      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">add</mat-icon>
+      <app-icone nome="add" />
       Nova linha
     </button>
     @if (desktop()) {
       <button
+        z-button
+        zType="outline"
         type="button"
         class="botao"
         data-testid="copiar-ano-anterior"
         [disabled]="grade() === null"
         (click)="copiarDoAnoAnterior()"
       >
-        <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">content_copy</mat-icon>
+        <app-icone nome="content_copy" />
         Copiar do ano anterior
       </button>
     }
@@ -108,16 +112,19 @@
                       class="menu-linha"
                       data-testid="linha-menu"
                       [attr.aria-label]="'Ações de ' + l.rotulo"
-                      [matMenuTriggerFor]="menuLinha"
+                      z-dropdown
+                      [zDropdownMenu]="menuLinha"
                     >
-                      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true"
-                        >more_vert</mat-icon
-                      >
+                      <app-icone nome="more_vert" />
                     </button>
-                    <mat-menu #menuLinha="matMenu">
+                    <z-dropdown-menu-content
+                      #menuLinha="zDropdownMenuContent"
+                      zAlign="end"
+                      class="w-60"
+                    >
                       @if (desktop()) {
                         <button
-                          mat-menu-item
+                          z-dropdown-menu-item
                           type="button"
                           data-testid="menu-preencher"
                           (click)="preencher(l)"
@@ -127,7 +134,7 @@
                       }
                       @if (l.entrada) {
                         <button
-                          mat-menu-item
+                          z-dropdown-menu-item
                           type="button"
                           data-testid="menu-recorrencia"
                           (click)="transformarEmRecorrencia(l)"
@@ -135,7 +142,7 @@
                           Transformar em recorrência
                         </button>
                       }
-                    </mat-menu>
+                    </z-dropdown-menu-content>
                   }
                 </th>
                 @for (c of l.cells; track c.month) {
@@ -176,12 +183,7 @@
                           <span>{{ v | brl }}</span>
                         }
                         @if (todosEfetivados(c)) {
-                          <mat-icon
-                            class="selo-efetivado"
-                            fontSet="material-symbols-outlined"
-                            aria-hidden="true"
-                            >check_circle</mat-icon
-                          >
+                          <app-icone nome="check_circle" class="selo-efetivado" />
                           <span class="so-leitor"> (efetivado)</span>
                         }
                         @if (naoEditavel(c)) {

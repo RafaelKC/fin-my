@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatIconModule } from '@angular/material/icon';
+import { Icone } from '@/shared/ui/icone';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiClient } from '../../../core/api/api-client';
 import { AuthService } from '../../../core/auth/auth.service';
 import { SessionResponse } from '../../../core/auth/session';
 import { asProblem, problemMessage } from '../../../core/errors/problem-details';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { CampoDirective } from '@/shared/ui/campo.directive';
 
 export const EMAIL_MAX = 254;
 export const SENHA_MAX = 128;
@@ -27,7 +29,7 @@ export function formatarTempoRestante(segundos: number): string {
 @Component({
   selector: 'app-entrar-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, MatIconModule],
+  imports: [ZardButtonComponent, CampoDirective, ReactiveFormsModule, RouterLink, Icone],
   templateUrl: './entrar.page.html',
   styleUrl: './entrar.page.scss',
 })

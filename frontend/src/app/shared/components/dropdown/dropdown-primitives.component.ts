@@ -18,22 +18,27 @@ import type { ClassValue } from 'clsx';
 import { mergeClasses } from '@/shared/utils/merge-classes';
 
 import { ZardDropdownService } from './dropdown.service';
-import { dropdownItemVariants, dropdownLabelVariants, type ZardDropdownItemTypeVariants } from './dropdown.variants';
+import {
+  dropdownItemVariants,
+  dropdownLabelVariants,
+  type ZardDropdownItemTypeVariants,
+} from './dropdown.variants';
 
 interface ZardDropdownRadioGroup {
   zValue(): string | undefined;
   select(value: string): void;
 }
 
-const ZARD_DROPDOWN_RADIO_GROUP = new InjectionToken<ZardDropdownRadioGroup>('ZARD_DROPDOWN_RADIO_GROUP');
+const ZARD_DROPDOWN_RADIO_GROUP = new InjectionToken<ZardDropdownRadioGroup>(
+  'ZARD_DROPDOWN_RADIO_GROUP',
+);
 
-const optionalBooleanAttribute = (value: unknown) => (value === undefined ? undefined : booleanAttribute(value));
+const optionalBooleanAttribute = (value: unknown) =>
+  value === undefined ? undefined : booleanAttribute(value);
 
 @Component({
   selector: 'z-dropdown-menu-group, [z-dropdown-menu-group]',
-  template: `
-    <ng-content />
-  `,
+  template: ` <ng-content /> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -68,14 +73,14 @@ export class ZardDropdownMenuSeparatorComponent {
   // `block` is not decoration: on the `z-dropdown-menu-separator` element form the default
   // `display: inline` swallows `h-px` and the negative margins, and the divider renders as a gap
   // with no line in it.
-  protected readonly classes = computed(() => mergeClasses('bg-border -mx-1 my-1 block h-px', this.class()));
+  protected readonly classes = computed(() =>
+    mergeClasses('bg-border -mx-1 my-1 block h-px', this.class()),
+  );
 }
 
 @Component({
   selector: 'z-dropdown-menu-label, [z-dropdown-menu-label]',
-  template: `
-    <ng-content />
-  `,
+  template: ` <ng-content /> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -96,9 +101,7 @@ export class ZardDropdownMenuLabelComponent {
 
 @Component({
   selector: 'z-dropdown-menu-shortcut, [z-dropdown-menu-shortcut]',
-  template: `
-    <ng-content />
-  `,
+  template: ` <ng-content /> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -111,13 +114,17 @@ export class ZardDropdownMenuLabelComponent {
 export class ZardDropdownMenuShortcutComponent {
   readonly class = input<ClassValue>('');
 
-  protected readonly classes = computed(() => mergeClasses('text-muted-foreground ms-auto text-xs tracking-widest', this.class()));
+  protected readonly classes = computed(() =>
+    mergeClasses('text-muted-foreground ms-auto text-xs tracking-widest', this.class()),
+  );
 }
 
 @Component({
   selector: 'z-dropdown-menu-checkbox-item, [z-dropdown-menu-checkbox-item]',
   template: `
-    <span class="absolute end-2 flex items-center justify-center in-data-[menu=menubar]:start-1.5 in-data-[menu=menubar]:end-auto in-data-[menu=menubar]:size-4 pointer-events-none">
+    <span
+      class="absolute end-2 flex items-center justify-center in-data-[menu=menubar]:start-1.5 in-data-[menu=menubar]:end-auto in-data-[menu=menubar]:size-4 pointer-events-none"
+    >
       @if (zChecked()) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="size-4">
           <path d="M20 6 9 17l-5-5" />
@@ -158,9 +165,14 @@ export class ZardDropdownMenuCheckboxItemComponent {
   readonly class = input<ClassValue>('');
 
   protected readonly isDisabled = computed(() => this.zDisabled() ?? this.disabled());
-  protected readonly itemVariant = computed(() => this.zType() ?? this.zVariant() ?? this.variant());
+  protected readonly itemVariant = computed(
+    () => this.zType() ?? this.zVariant() ?? this.variant(),
+  );
   protected readonly classes = computed(() =>
-    mergeClasses(dropdownItemVariants({ variant: this.itemVariant(), checkable: 'checkbox' }), this.class()),
+    mergeClasses(
+      dropdownItemVariants({ variant: this.itemVariant(), checkable: 'checkbox' }),
+      this.class(),
+    ),
   );
 
   protected onClick() {
@@ -175,11 +187,12 @@ export class ZardDropdownMenuCheckboxItemComponent {
 
 @Component({
   selector: 'z-dropdown-menu-radio-group, [z-dropdown-menu-radio-group]',
-  template: `
-    <ng-content />
-  `,
+  template: ` <ng-content /> `,
   providers: [
-    { provide: ZARD_DROPDOWN_RADIO_GROUP, useExisting: forwardRef(() => ZardDropdownMenuRadioGroupComponent) },
+    {
+      provide: ZARD_DROPDOWN_RADIO_GROUP,
+      useExisting: forwardRef(() => ZardDropdownMenuRadioGroupComponent),
+    },
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -204,7 +217,9 @@ export class ZardDropdownMenuRadioGroupComponent implements ZardDropdownRadioGro
 @Component({
   selector: 'z-dropdown-menu-radio-item, [z-dropdown-menu-radio-item]',
   template: `
-    <span class="absolute end-2 flex items-center justify-center in-data-[menu=menubar]:start-1.5 in-data-[menu=menubar]:end-auto in-data-[menu=menubar]:size-4 pointer-events-none">
+    <span
+      class="absolute end-2 flex items-center justify-center in-data-[menu=menubar]:start-1.5 in-data-[menu=menubar]:end-auto in-data-[menu=menubar]:size-4 pointer-events-none"
+    >
       @if (isChecked()) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="size-4">
           <path d="M20 6 9 17l-5-5" />
@@ -246,10 +261,15 @@ export class ZardDropdownMenuRadioItemComponent {
   readonly class = input<ClassValue>('');
 
   protected readonly isDisabled = computed(() => this.zDisabled() ?? this.disabled());
-  protected readonly itemVariant = computed(() => this.zType() ?? this.zVariant() ?? this.variant());
+  protected readonly itemVariant = computed(
+    () => this.zType() ?? this.zVariant() ?? this.variant(),
+  );
   protected readonly isChecked = computed(() => this.radioGroup?.zValue() === this.zValue());
   protected readonly classes = computed(() =>
-    mergeClasses(dropdownItemVariants({ variant: this.itemVariant(), checkable: 'radio' }), this.class()),
+    mergeClasses(
+      dropdownItemVariants({ variant: this.itemVariant(), checkable: 'radio' }),
+      this.class(),
+    ),
   );
 
   protected onClick() {

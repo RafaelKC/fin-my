@@ -11,14 +11,14 @@
     }
     <div class="campo">
       <label for="exportar-de">Mês inicial</label>
-      <input id="exportar-de" type="month" formControlName="de" />
+      <input appCampo id="exportar-de" type="month" formControlName="de" />
     </div>
     <div class="campo">
       <label for="exportar-ate">Mês final</label>
-      <input id="exportar-ate" type="month" formControlName="ate" />
+      <input appCampo id="exportar-ate" type="month" formControlName="ate" />
     </div>
     <span class="ajuda">Planilha .csv com um lançamento por linha, até 120 meses.</span>
-    <button type="submit" class="enviar" [disabled]="exportando()">
+    <button z-button type="submit" class="enviar" [disabled]="exportando()">
       {{ exportando() ? 'Gerando…' : 'Exportar' }}
     </button>
   </form>

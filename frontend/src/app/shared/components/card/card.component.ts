@@ -65,14 +65,14 @@ export class ZardCardDescriptionComponent {
   readonly class = input<ClassValue>('');
   readonly zDescription = input<string | TemplateRef<void>>();
 
-  protected readonly classes = computed(() => mergeClasses(cardDescriptionVariants(), this.class()));
+  protected readonly classes = computed(() =>
+    mergeClasses(cardDescriptionVariants(), this.class()),
+  );
 }
 
 @Component({
   selector: 'z-card-action, [z-card-action]',
-  template: `
-    <ng-content />
-  `,
+  template: ` <ng-content /> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -89,9 +89,7 @@ export class ZardCardActionComponent {
 
 @Component({
   selector: 'z-card-header, [z-card-header]',
-  template: `
-    <ng-content />
-  `,
+  template: ` <ng-content /> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -111,9 +109,7 @@ export class ZardCardHeaderComponent {
 
 @Component({
   selector: 'z-card-content, [z-card-content]',
-  template: `
-    <ng-content />
-  `,
+  template: ` <ng-content /> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -130,9 +126,7 @@ export class ZardCardContentComponent {
 
 @Component({
   selector: 'z-card-footer, [z-card-footer]',
-  template: `
-    <ng-content />
-  `,
+  template: ` <ng-content /> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -152,9 +146,7 @@ export class ZardCardFooterComponent {
 
 @Component({
   selector: 'z-card, [z-card]',
-  template: `
-    <ng-content />
-  `,
+  template: ` <ng-content /> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

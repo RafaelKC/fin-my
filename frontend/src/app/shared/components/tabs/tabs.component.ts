@@ -123,7 +123,9 @@ export class ZardTabGroupComponent {
   private readonly tabComponents = contentChildren(ZardTabComponent, { descendants: true });
 
   // Descendants, so tabs inside wrappers count; but a nested group's tabs are its own, not this group's.
-  protected readonly tabs = computed(() => this.tabComponents().filter(tab => tab.group === this));
+  protected readonly tabs = computed(() =>
+    this.tabComponents().filter((tab) => tab.group === this),
+  );
   protected readonly activeTabIndex = signal<number>(0);
 
   protected tabId(index: number): string {
@@ -193,7 +195,9 @@ export class ZardTabGroupComponent {
     event.preventDefault();
     this.setActiveTab(target);
     const buttons =
-      (event.currentTarget as HTMLElement).parentElement?.querySelectorAll<HTMLButtonElement>(':scope > button') ?? [];
+      (event.currentTarget as HTMLElement).parentElement?.querySelectorAll<HTMLButtonElement>(
+        ':scope > button',
+      ) ?? [];
     buttons[target]?.focus();
   }
 
@@ -202,7 +206,7 @@ export class ZardTabGroupComponent {
     if (this.zDisabled()) {
       return undefined;
     }
-    const enabled = tabs.map((_, index) => index).filter(index => !tabs[index].zDisabled());
+    const enabled = tabs.map((_, index) => index).filter((index) => !tabs[index].zDisabled());
     if (enabled.length === 0) {
       return undefined;
     }

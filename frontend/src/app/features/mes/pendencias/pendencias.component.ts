@@ -8,7 +8,6 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { problemMessage } from '../../../core/errors/problem-details';
 import { BrlPipe } from '../../../core/money';
 import { Wallet } from '../../carteiras/wallet.models';
@@ -18,6 +17,8 @@ import { MonthView } from '../month.models';
 import { AcaoPendencia, LOTE_MAXIMO } from './pendencias.models';
 import { mensagemExclusao, rotuloRealizar, tituloAviso } from './pendencias.logic';
 import { PendenciasService } from './pendencias.service';
+import { Avisos } from '@/shared/ui/avisos';
+import { ZardButtonComponent } from '@/shared/components/button';
 
 /** Tempo do "Desfazer" depois de excluir (RT-09). */
 export const DESFAZER_MS = 8000;
@@ -30,13 +31,13 @@ export const DESFAZER_MS = 8000;
 @Component({
   selector: 'app-pendencias',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BrlPipe],
+  imports: [ZardButtonComponent, BrlPipe],
   templateUrl: './pendencias.component.html',
   styleUrl: './pendencias.component.scss',
 })
 export class PendenciasComponent {
   private readonly service = inject(PendenciasService);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly avisos = inject(Avisos);
 
   readonly resumo = input.required<MonthView['pending']>();
   readonly carteiras = input<Wallet[]>([]);
@@ -138,19 +139,19 @@ export class PendenciasComponent {
   }
 
   private oferecerDesfazer(batchId: string, afetadas: number): void {
-    const ref = this.snackBar.open(mensagemExclusao(afetadas), 'Desfazer', {
+    const ref = this.avisos.open(mensagemExclusao(afetadas), 'Desfazer', {
       duration: DESFAZER_MS,
       verticalPosition: 'top',
     });
     ref.onAction().subscribe(() => {
       this.service.restaurar(batchId).subscribe({
         next: () =>
-          this.snackBar.open('Exclusão desfeita.', undefined, {
+          this.avisos.open('Exclusão desfeita.', undefined, {
             duration: 4000,
             verticalPosition: 'top',
           }),
         error: (error: unknown) =>
-          this.snackBar.open(problemMessage(error), 'Fechar', { verticalPosition: 'top' }),
+          this.avisos.open(problemMessage(error), 'Fechar', { verticalPosition: 'top' }),
       });
     });
   }

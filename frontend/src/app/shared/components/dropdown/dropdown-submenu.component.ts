@@ -86,7 +86,9 @@ export class ZardDropdownMenuSubContentComponent {
 
   readonly class = input<ClassValue>('');
 
-  protected readonly contentClasses = computed(() => mergeClasses(dropdownSubContentVariants(), this.class()));
+  protected readonly contentClasses = computed(() =>
+    mergeClasses(dropdownSubContentVariants(), this.class()),
+  );
 }
 
 /**
@@ -99,7 +101,11 @@ export class ZardDropdownMenuSubContentComponent {
   imports: [NgIcon],
   template: `
     <ng-content />
-    <ng-icon name="lucideChevronRight" class="ms-auto size-4 shrink-0 rtl:rotate-180" aria-hidden="true" />
+    <ng-icon
+      name="lucideChevronRight"
+      class="ms-auto size-4 shrink-0 rtl:rotate-180"
+      aria-hidden="true"
+    />
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -170,7 +176,9 @@ export class ZardDropdownMenuSubTriggerComponent implements OnDestroy {
     });
 
     // A `[dir]` switch while the submenu is open closes it: it reopens with the new direction.
-    this.directionality?.change.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.close());
+    this.directionality?.change
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.close());
   }
 
   ngOnDestroy(): void {
@@ -287,7 +295,8 @@ export class ZardDropdownMenuSubTriggerComponent implements OnDestroy {
     }
 
     return (
-      this.elementRef.nativeElement.contains(target) || (this.overlayRef?.overlayElement.contains(target) ?? false)
+      this.elementRef.nativeElement.contains(target) ||
+      (this.overlayRef?.overlayElement.contains(target) ?? false)
     );
   }
 
@@ -305,7 +314,9 @@ export class ZardDropdownMenuSubTriggerComponent implements OnDestroy {
 
   private resolveViewContainerRef(): ViewContainerRef {
     const menu = this.zSubMenu();
-    return menu instanceof ZardDropdownMenuSubContentComponent ? menu.viewContainerRef : this.viewContainerRef;
+    return menu instanceof ZardDropdownMenuSubContentComponent
+      ? menu.viewContainerRef
+      : this.viewContainerRef;
   }
 
   private createOverlay(): void {
@@ -332,7 +343,9 @@ export class ZardDropdownMenuSubTriggerComponent implements OnDestroy {
     });
 
     // A submenu is a menu of the same kind as the one it opens from (see `ZardDropdownOpenOptions.menu`).
-    const menu = (this.elementRef.nativeElement as HTMLElement).closest('[data-menu]')?.getAttribute('data-menu');
+    const menu = (this.elementRef.nativeElement as HTMLElement)
+      .closest('[data-menu]')
+      ?.getAttribute('data-menu');
     if (menu) {
       this.renderer.setAttribute(this.overlayRef.hostElement, 'data-menu', menu);
     }
@@ -357,7 +370,7 @@ export class ZardDropdownMenuSubTriggerComponent implements OnDestroy {
     pane.addEventListener('keydown', onKeydown);
 
     const surface = pane.querySelector<HTMLElement>('[role="menu"]') ?? pane;
-    const unbindPointer = bindMenuPointer(surface, index => {
+    const unbindPointer = bindMenuPointer(surface, (index) => {
       if (index === -1) {
         this.focusedIndex = -1;
       } else {
@@ -443,7 +456,7 @@ export class ZardDropdownMenuSubTriggerComponent implements OnDestroy {
   }
 
   private runCleanups(): void {
-    this.cleanups.forEach(cleanup => cleanup());
+    this.cleanups.forEach((cleanup) => cleanup());
     this.cleanups.length = 0;
   }
 }

@@ -1,7 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideRouter, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -15,6 +14,7 @@ import { LancamentoLauncher } from '../lancamento/lancamento.launcher';
 import { TransfersService } from '../lancamento/transfers.service';
 import { MonthInvoiceLine, MonthView, SummaryColumn, Transfer } from './month.models';
 import { MesPage } from './mes.page';
+import { Avisos } from '@/shared/ui/avisos';
 
 const col = (p: Partial<SummaryColumn>): SummaryColumn => ({
   openingBalanceCents: 50000,
@@ -349,7 +349,7 @@ describe('MesPage', () => {
       }),
     );
     const snack = vi
-      .spyOn(TestBed.inject(MatSnackBar), 'open')
+      .spyOn(TestBed.inject(Avisos), 'open')
       .mockReturnValue({ onAction: () => new Subject<void>() } as never);
     el.querySelector<HTMLButtonElement>('[data-testid="transferencias-alternar"]')!.click();
     harness.detectChanges();
@@ -473,7 +473,7 @@ describe('MesPage', () => {
         }),
       );
       const snack = vi
-        .spyOn(TestBed.inject(MatSnackBar), 'open')
+        .spyOn(TestBed.inject(Avisos), 'open')
         .mockReturnValue({ onAction: () => new Subject<void>() } as never);
       expect(caixa().checked).toBe(true);
       caixa().click();

@@ -207,7 +207,7 @@ export class ZardDropdownService {
      * left the focus on the body. The dispatcher only ever feeds the top overlay, so an open
      * submenu keeps its own `Escape` to itself.
      */
-    this.keydownSubscription = this.overlayRef.keydownEvents().subscribe(event => {
+    this.keydownSubscription = this.overlayRef.keydownEvents().subscribe((event) => {
       if (event.key !== 'Escape' || !this.isOpen()) {
         return;
       }
@@ -220,11 +220,11 @@ export class ZardDropdownService {
     const exempt = this.outsideClickExempt;
     this.outsideClickSubscription = this.overlayRef
       .outsidePointerEvents()
-      .pipe(filter(event => this.closesOnOutsideEvent(event, exempt)))
+      .pipe(filter((event) => this.closesOnOutsideEvent(event, exempt)))
       .subscribe(() => {
         this.close();
       });
-    this.openings.update(count => count + 1);
+    this.openings.update((count) => count + 1);
     this.isOpen.set(true);
   }
 
@@ -253,7 +253,7 @@ export class ZardDropdownService {
       this.overlayRef.detach();
     }
     this.focusedIndex.set(-1);
-    this.unlisten.forEach(unlisten => unlisten());
+    this.unlisten.forEach((unlisten) => unlisten());
     this.unlisten = [];
     this.destroyOverlay();
     this.isOpen.set(false);
@@ -363,7 +363,9 @@ export class ZardDropdownService {
       return;
     }
 
-    const dropdownElement = this.overlayRef.overlayElement.querySelector('[role="menu"]') as HTMLElement;
+    const dropdownElement = this.overlayRef.overlayElement.querySelector(
+      '[role="menu"]',
+    ) as HTMLElement;
     if (!dropdownElement) {
       return;
     }
@@ -413,7 +415,7 @@ export class ZardDropdownService {
 
     // The highlight follows the pointer and goes away with it; the keyboard continues from there.
     this.unlisten.push(
-      bindMenuPointer(dropdownElement, index => {
+      bindMenuPointer(dropdownElement, (index) => {
         if (index === -1) {
           this.focusedIndex.set(-1);
         } else {

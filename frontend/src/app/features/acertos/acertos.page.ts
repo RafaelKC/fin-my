@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatIconModule } from '@angular/material/icon';
+import { Icone } from '@/shared/ui/icone';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, catchError, merge, of, switchMap, tap } from 'rxjs';
 import { problemMessage } from '../../core/errors/problem-details';
@@ -25,6 +25,7 @@ import {
 } from './acertos-logic';
 import { SettlementItem, SettlementRow } from './settlement.models';
 import { SettlementsService } from './settlements.service';
+import { ZardButtonComponent } from '@/shared/components/button';
 
 const ROTULO_NUMERO: Record<NumeroDetalhavel, string> = {
   spent: 'Gasto',
@@ -47,7 +48,7 @@ interface Aberto {
 @Component({
   selector: 'app-acertos-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BrlPipe, MatIconModule, RouterLink],
+  imports: [ZardButtonComponent, BrlPipe, Icone, RouterLink],
   templateUrl: './acertos.page.html',
   styleUrl: './acertos.page.scss',
 })

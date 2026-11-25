@@ -60,12 +60,6 @@ h2 {
   margin: 0;
   padding-left: 20px;
 }
-.aviso {
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: var(--destructive-suave);
-  color: var(--destructive);
-}
 .acoes {
   display: flex;
   flex-wrap: wrap;
@@ -82,16 +76,6 @@ h2 {
   border-radius: 22px;
   font: inherit;
   cursor: pointer;
-}
-.principal {
-  border: 0;
-  background: var(--primary);
-  color: var(--primary-foreground);
-}
-.secundario {
-  border: 1px solid var(--border-forte);
-  background: transparent;
-  color: var(--primary);
 }
 .link {
   margin-left: auto;

@@ -29,9 +29,7 @@ export const ALERT_DIALOG_DURATION = 100;
  */
 @Component({
   selector: 'z-alert-dialog-panel',
-  template: `
-    <ng-content />
-  `,
+  template: ` <ng-content /> `,
   styles: `
     z-alert-dialog-panel {
       --z-alert-dialog-duration: 100ms;
@@ -91,7 +89,9 @@ export class ZardAlertDialogPanelComponent {
   readonly zDescribedBy = input<string | null>(null);
   readonly class = input<ClassValue>('');
 
-  protected readonly classes = computed(() => mergeClasses(alertDialogVariants({ zSize: this.zSize() }), this.class()));
+  protected readonly classes = computed(() =>
+    mergeClasses(alertDialogVariants({ zSize: this.zSize() }), this.class()),
+  );
 
   constructor() {
     afterNextRender(() => {

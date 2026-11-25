@@ -1,8 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { carteira } from '../../carteiras/testing';
@@ -11,6 +9,8 @@ import { LancamentoLauncher } from '../../lancamento/lancamento.launcher';
 import { cartao } from '../testing';
 import { FaturaPage } from './fatura.page';
 import { compra, faturaDetalhada, pagamento } from './testing';
+import { Dialogo } from '@/shared/ui/dialogo';
+import { Avisos } from '@/shared/ui/avisos';
 
 const BASE = '/api/v1/credit-cards/c-azul/invoices/2026-03';
 
@@ -44,8 +44,8 @@ describe('FaturaPage (US5.2–US5.5, US6.2, US7)', () => {
       ],
     });
     http = TestBed.inject(HttpTestingController);
-    dialog = vi.spyOn(TestBed.inject(MatDialog), 'open');
-    aviso = vi.spyOn(TestBed.inject(MatSnackBar), 'open').mockReturnValue({
+    dialog = vi.spyOn(TestBed.inject(Dialogo), 'open');
+    aviso = vi.spyOn(TestBed.inject(Avisos), 'open').mockReturnValue({
       onAction: () => of(),
     } as never);
     fixture = TestBed.createComponent(FaturaPage);

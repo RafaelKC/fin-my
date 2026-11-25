@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { Wallet } from './wallet.models';
+import { DADOS_DIALOGO, DialogoRef } from '@/shared/ui/dialogo';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { ZardDialogFooterComponent, ZardDialogTitleComponent } from '@/shared/components/dialog';
+import { ZardNativeSelectDirective } from '@/shared/components/native-select';
 
 export interface ConfirmarData {
   titulo: string;
@@ -16,14 +19,20 @@ export type ConfirmarResultado = string | null;
 @Component({
   selector: 'app-confirmar-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule],
+  imports: [
+    ZardButtonComponent,
+    ZardDialogFooterComponent,
+    ZardDialogTitleComponent,
+    ZardNativeSelectDirective,
+  ],
   template: `
-    <h2 mat-dialog-title>{{ data.titulo }}</h2>
-    <mat-dialog-content>
+    <h2 z-dialog-title>{{ data.titulo }}</h2>
+    <div class="dialogo-corpo">
       <p>{{ data.mensagem }}</p>
       @if (data.escolherPrincipal; as opcoes) {
         <label for="nova-principal">Nova carteira principal</label>
         <select
+          z-native-select
           id="nova-principal"
           class="escolha"
           [value]="escolhida()"
@@ -35,10 +44,13 @@ export type ConfirmarResultado = string | null;
           }
         </select>
       }
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button type="button" class="botao" (click)="ref.close(null)">Cancelar</button>
+    </div>
+    <footer z-dialog-footer>
+      <button z-button zType="outline" type="button" class="botao" (click)="ref.close(null)">
+        Cancelar
+      </button>
       <button
+        z-button
         type="button"
         class="botao principal"
         data-testid="confirmar"
@@ -47,7 +59,7 @@ export type ConfirmarResultado = string | null;
       >
         {{ data.confirmar }}
       </button>
-    </mat-dialog-actions>
+    </footer>
   `,
   styles: `
     .escolha {
@@ -62,29 +74,10 @@ export type ConfirmarResultado = string | null;
       border: 1px solid var(--border-forte);
       border-radius: 8px;
     }
-    .botao {
-      min-width: 44px;
-      min-height: 44px;
-      padding: 0 16px;
-      font: var(--fonte-rotulo-g);
-      color: var(--primary);
-      background: transparent;
-      border: 0;
-      border-radius: 24px;
-      cursor: pointer;
-    }
-    .botao.principal {
-      color: var(--primary-foreground);
-      background: var(--primary);
-    }
-    .botao:disabled {
-      opacity: 0.6;
-      cursor: default;
-    }
   `,
 })
 export class ConfirmarDialog {
-  protected readonly data = inject<ConfirmarData>(MAT_DIALOG_DATA);
-  protected readonly ref = inject<MatDialogRef<ConfirmarDialog, ConfirmarResultado>>(MatDialogRef);
+  protected readonly data = inject<ConfirmarData>(DADOS_DIALOGO);
+  protected readonly ref = inject<DialogoRef<ConfirmarDialog, ConfirmarResultado>>(DialogoRef);
   protected readonly escolhida = signal('');
 }

@@ -1,10 +1,10 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { carteira } from '../../carteiras/testing';
 import { PagamentoDialog, PagamentoDialogData } from './pagamento.dialog';
 import { pagamento } from './testing';
+import { DADOS_DIALOGO, DialogoRef } from '@/shared/ui/dialogo';
 
 describe('PagamentoDialog (FR-017, FR-018)', () => {
   let fixture: ComponentFixture<PagamentoDialog>;
@@ -19,9 +19,9 @@ describe('PagamentoDialog (FR-017, FR-018)', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: MatDialogRef, useValue: { close: fechar } },
+        { provide: DialogoRef, useValue: { close: fechar } },
         {
-          provide: MAT_DIALOG_DATA,
+          provide: DADOS_DIALOGO,
           useValue: {
             cardId: 'c1',
             month: '2026-03',

@@ -1,13 +1,13 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subject } from 'rxjs';
 import { bruna } from '../../shared/tag-picker/testing';
 import { carteira } from '../carteiras/testing';
 import { Entry, LedgerItem, SearchResult } from '../lancamento/entry.models';
 import { LancamentoLauncher } from '../lancamento/lancamento.launcher';
 import { BuscaPage } from './busca.page';
+import { Avisos } from '@/shared/ui/avisos';
 
 const entry = (id: string, p: Partial<Entry> = {}): Entry => ({
   id,
@@ -177,7 +177,7 @@ describe('BuscaPage', () => {
       }),
     );
     const snack = vi
-      .spyOn(TestBed.inject(MatSnackBar), 'open')
+      .spyOn(TestBed.inject(Avisos), 'open')
       .mockReturnValue({ onAction: () => new Subject<void>() } as never);
     expect(el.querySelector('[data-testid="resultado-transferencia"]')?.textContent).toContain(
       'Azul → Verde',

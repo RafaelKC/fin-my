@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, input, TemplateRef, ViewEncapsulation } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  TemplateRef,
+  ViewEncapsulation,
+} from '@angular/core';
 
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideCircleAlert } from '@ng-icons/lucide';
@@ -68,7 +75,9 @@ export class ZardAlertComponent {
   readonly zType = input<ZardAlertTypeVariants>('default');
 
   protected readonly actionClasses = computed(() => alertActionVariants());
-  protected readonly classes = computed(() => mergeClasses(alertVariants({ zType: this.zType() }), this.class()));
+  protected readonly classes = computed(() =>
+    mergeClasses(alertVariants({ zType: this.zType() }), this.class()),
+  );
   /**
    * The icon spans two grid rows (shadcn gives the title and the description one each). The wrapper takes both rows
    * only when it holds both, so an alert with a single line keeps the gap of the empty second row, like shadcn.
@@ -80,7 +89,9 @@ export class ZardAlertComponent {
     ),
   );
 
-  protected readonly descriptionClasses = computed(() => alertDescriptionVariants({ zType: this.zType() }));
+  protected readonly descriptionClasses = computed(() =>
+    alertDescriptionVariants({ zType: this.zType() }),
+  );
   protected readonly iconClasses = computed(() => alertIconVariants());
   protected readonly role = computed(() => this.zRole() ?? (this.zAction() ? 'status' : 'alert'));
   protected readonly titleClasses = computed(() => alertTitleVariants());

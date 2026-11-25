@@ -2,7 +2,10 @@ import type { OverlayRef } from '@angular/cdk/overlay';
 
 import { ZardOverlayRefBase } from '@/shared/core';
 
-import type { ZardAlertDialogContainerComponent, ZardAlertDialogOptions } from './alert-dialog-container.component';
+import type {
+  ZardAlertDialogContainerComponent,
+  ZardAlertDialogOptions,
+} from './alert-dialog-container.component';
 import { ALERT_DIALOG_DURATION } from './alert-dialog-panel.component';
 
 /**
@@ -21,7 +24,9 @@ export class ZardAlertDialogRef<T = unknown> extends ZardOverlayRefBase<T, void>
     platformId: object,
   ) {
     super(overlayRef, config, platformId);
-    this.attach(this.containerInstance ? ZardAlertDialogRef.outputsOf(this.containerInstance) : null);
+    this.attach(
+      this.containerInstance ? ZardAlertDialogRef.outputsOf(this.containerInstance) : null,
+    );
   }
 
   protected override get defaultDuration(): number {

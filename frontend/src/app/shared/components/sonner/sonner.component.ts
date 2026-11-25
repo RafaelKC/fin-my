@@ -14,7 +14,13 @@ import {
 } from '@angular/core';
 
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideCircleCheck, lucideInfo, lucideLoader2, lucideOctagonX, lucideTriangleAlert } from '@ng-icons/lucide';
+import {
+  lucideCircleCheck,
+  lucideInfo,
+  lucideLoader2,
+  lucideOctagonX,
+  lucideTriangleAlert,
+} from '@ng-icons/lucide';
 import type { ClassValue } from 'clsx';
 import { NgxSonnerToaster, toastState, type ToasterProps } from 'ngx-sonner';
 
@@ -90,7 +96,15 @@ const DEFAULT_TOAST_OPTIONS: ToasterProps['toastOptions'] = {
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  viewProviders: [provideIcons({ lucideCircleCheck, lucideInfo, lucideLoader2, lucideOctagonX, lucideTriangleAlert })],
+  viewProviders: [
+    provideIcons({
+      lucideCircleCheck,
+      lucideInfo,
+      lucideLoader2,
+      lucideOctagonX,
+      lucideTriangleAlert,
+    }),
+  ],
   host: {
     'data-slot': 'sonner',
   },
@@ -124,7 +138,10 @@ export class ZardSonnerComponent {
   });
 
   protected readonly classes = computed(() => mergeClasses(sonnerVariants(), this.class()));
-  protected readonly resolvedStyle = computed(() => ({ ...DEFAULT_STYLE, ...(this.style() ?? {}) }));
+  protected readonly resolvedStyle = computed(() => ({
+    ...DEFAULT_STYLE,
+    ...(this.style() ?? {}),
+  }));
   protected readonly resolvedToastOptions = computed<ToasterProps['toastOptions']>(() => {
     const provided = this.toastOptions();
     if (!provided) {
@@ -171,7 +188,12 @@ export class ZardSonnerComponent {
   private readonly onDocumentToggle = (event: Event) => {
     const isOpening = (event as Event & { newState?: string }).newState === 'open';
 
-    if (isOpening && event.target !== this.host && this.topLayer() && toastState.toasts().length > 0) {
+    if (
+      isOpening &&
+      event.target !== this.host &&
+      this.topLayer() &&
+      toastState.toasts().length > 0
+    ) {
       this.promote();
     }
   };

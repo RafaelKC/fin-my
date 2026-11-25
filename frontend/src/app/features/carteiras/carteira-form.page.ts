@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { startWith } from 'rxjs/operators';
@@ -22,6 +21,10 @@ import {
   WalletInput,
 } from './wallet.models';
 import { WalletsService } from './wallets.service';
+import { Dialogo } from '@/shared/ui/dialogo';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { CampoDirective } from '@/shared/ui/campo.directive';
+import { ZardNativeSelectDirective } from '@/shared/components/native-select';
 
 const SO_ATIVA = 'Cadastre outra carteira antes de arquivar esta: ela é a única ativa.';
 const TEM_LANCAMENTOS = 'Esta carteira tem lançamentos. Você pode arquivá-la.';
@@ -35,14 +38,21 @@ export function centavosParaCampo(cents: number): string {
 @Component({
   selector: 'app-carteira-form-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, BrlPipe],
+  imports: [
+    ZardButtonComponent,
+    CampoDirective,
+    ZardNativeSelectDirective,
+    ReactiveFormsModule,
+    RouterLink,
+    BrlPipe,
+  ],
   templateUrl: './carteira-form.page.html',
   styleUrl: './carteira-form.page.scss',
 })
 export class CarteiraFormPage {
   private readonly wallets = inject(WalletsService);
   private readonly router = inject(Router);
-  private readonly dialog = inject(MatDialog);
+  private readonly dialog = inject(Dialogo);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id');
 

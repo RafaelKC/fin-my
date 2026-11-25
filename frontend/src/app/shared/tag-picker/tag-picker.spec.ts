@@ -91,8 +91,8 @@ describe('TagPicker (004 US1)', () => {
 
   it('tags de acerto levam o ícone de pessoa', async () => {
     await abrir([ifood, bruna]);
-    expect(chip('Bruna').querySelector('mat-icon')?.textContent).toContain('person');
-    expect(chip('Ifood').querySelector('mat-icon')).toBeNull();
+    expect(chip('Bruna').querySelector('app-icone')?.getAttribute('data-icone')).toBe('person');
+    expect(chip('Ifood').querySelector('app-icone')).toBeNull();
   });
 
   it('a busca filtra as demais tags e escolhe uma delas', async () => {

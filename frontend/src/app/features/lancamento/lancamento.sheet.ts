@@ -13,9 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { Icone } from '@/shared/ui/icone';
 import { Router } from '@angular/router';
 import { Subject, catchError, forkJoin, map, of, switchMap, timer } from 'rxjs';
 import { asProblem, problemMessage } from '../../core/errors/problem-details';
@@ -80,6 +78,11 @@ import {
   totalDividido,
 } from './dividir-logic';
 import { centavosParaExpressao, novaChaveIdempotencia, situacaoPadrao } from './lancamento-logic';
+import { DADOS_DIALOGO, Dialogo, DialogoRef } from '@/shared/ui/dialogo';
+import { Avisos } from '@/shared/ui/avisos';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { CampoDirective } from '@/shared/ui/campo.directive';
+import { ZardNativeSelectDirective } from '@/shared/components/native-select';
 
 export const MENSAGEM_SEM_CONEXAO_LANCAMENTO =
   'Sem conexão. O lançamento não foi salvo; tente de novo.';
@@ -144,26 +147,36 @@ interface Rascunho {
 @Component({
   selector: 'app-lancamento-sheet',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, MatIconModule, AmountInput, TagPicker, BrlPipe, SeloViaClaude],
+  imports: [
+    ZardButtonComponent,
+    CampoDirective,
+    ZardNativeSelectDirective,
+    FormsModule,
+    Icone,
+    AmountInput,
+    TagPicker,
+    BrlPipe,
+    SeloViaClaude,
+  ],
   templateUrl: './lancamento.sheet.html',
   styleUrl: './lancamento.sheet.scss',
 })
 export class LancamentoSheet {
-  private readonly ref = inject<MatDialogRef<LancamentoSheet, Entry | undefined>>(MatDialogRef);
+  private readonly ref = inject<DialogoRef<LancamentoSheet, Entry | undefined>>(DialogoRef);
   private readonly entries = inject(EntriesService);
   private readonly transfers = inject(TransfersService);
   private readonly wallets = inject(WalletsService);
   private readonly cards = inject(CardsService);
   private readonly compras = inject(CardPurchasesService);
-  private readonly dialog = inject(MatDialog);
+  private readonly dialog = inject(Dialogo);
   private readonly router = inject(Router);
   private readonly prefs = inject(DevicePrefsService);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly avisos = inject(Avisos);
   private readonly destroyRef = inject(DestroyRef);
   private readonly exclusao = inject(ExclusaoService);
   private readonly recorrencias = inject(RecurrencesService);
   private readonly tagsApi = inject(TagsService);
-  private readonly dados = inject<LancamentoSheetData | null>(MAT_DIALOG_DATA, { optional: true });
+  private readonly dados = inject<LancamentoSheetData | null>(DADOS_DIALOGO, { optional: true });
   private readonly edicao = this.dados?.entry ?? null;
   private readonly preenchida = this.dados?.preencher ?? null;
   /** Compra no cartão aberta na edição, com a `version` mais recente conhecida. */
@@ -920,7 +933,7 @@ export class LancamentoSheet {
     this.entries.update(original.id, corpo).subscribe({
       next: (entry) => {
         this.ocupado.set(false);
-        this.snackBar.open('Lançamento atualizado.', undefined, {
+        this.avisos.open('Lançamento atualizado.', undefined, {
           duration: 4000,
           verticalPosition: 'top',
         });
@@ -1043,7 +1056,7 @@ export class LancamentoSheet {
     this.compras.update(original.id, corpo).subscribe({
       next: () => {
         this.ocupado.set(false);
-        this.snackBar.open('Compra atualizada.', undefined, {
+        this.avisos.open('Compra atualizada.', undefined, {
           duration: 4000,
           verticalPosition: 'top',
         });
@@ -1081,7 +1094,7 @@ export class LancamentoSheet {
       },
       error: (error: unknown) => {
         if (asProblem(error)?.code === 'not_found') {
-          this.snackBar.open('Esta compra não existe mais.', undefined, {
+          this.avisos.open('Esta compra não existe mais.', undefined, {
             duration: 4000,
             verticalPosition: 'top',
           });
@@ -1105,7 +1118,7 @@ export class LancamentoSheet {
       error: (error: unknown) => {
         // Excluído em outro aparelho: não há mais o que editar.
         if (asProblem(error)?.code === 'not_found') {
-          this.snackBar.open('Este lançamento não existe mais.', undefined, {
+          this.avisos.open('Este lançamento não existe mais.', undefined, {
             duration: 4000,
             verticalPosition: 'top',
           });
@@ -1188,7 +1201,7 @@ export class LancamentoSheet {
     this.recorrencias.fromItem(corpo, this.chaveRepetir).subscribe({
       next: () => {
         this.ocupado.set(false);
-        this.snackBar.open('Agora este lançamento se repete todo mês.', undefined, {
+        this.avisos.open('Agora este lançamento se repete todo mês.', undefined, {
           duration: 4000,
           verticalPosition: 'top',
         });
@@ -1229,7 +1242,7 @@ export class LancamentoSheet {
     this.entries.duplicate(origem.id, data, this.chaveDuplicar).subscribe({
       next: (entry) => {
         this.ocupado.set(false);
-        this.snackBar.open('Lançamento duplicado.', undefined, {
+        this.avisos.open('Lançamento duplicado.', undefined, {
           duration: 4000,
           verticalPosition: 'top',
         });
@@ -1437,7 +1450,7 @@ export class LancamentoSheet {
   ): void {
     this.prefs.rememberSaved(kind, walletId);
     this.prefs.clearDraft();
-    this.snackBar.open(mensagem, undefined, { duration: 4000, verticalPosition: 'top' });
+    this.avisos.open(mensagem, undefined, { duration: 4000, verticalPosition: 'top' });
 
     if (!lancarOutro) {
       this.finalizado = true;
@@ -1472,7 +1485,7 @@ export class LancamentoSheet {
 
   private avisarSemConexao(): void {
     // No topo: embaixo o aviso cobriria os botões Salvar e impediria tentar de novo.
-    this.snackBar.open(MENSAGEM_SEM_CONEXAO_LANCAMENTO, 'Fechar', {
+    this.avisos.open(MENSAGEM_SEM_CONEXAO_LANCAMENTO, 'Fechar', {
       duration: 8000,
       verticalPosition: 'top',
     });

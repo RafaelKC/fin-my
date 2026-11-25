@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { isYearMonth } from '../../core/money';
+import { DADOS_DIALOGO, DialogoRef } from '@/shared/ui/dialogo';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { CampoDirective } from '@/shared/ui/campo.directive';
+import { ZardDialogFooterComponent, ZardDialogTitleComponent } from '@/shared/components/dialog';
 
 export interface APartirDeData {
   titulo: string;
@@ -18,15 +21,21 @@ export type APartirDeResultado = string | null;
 @Component({
   selector: 'app-a-partir-de-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule],
+  imports: [
+    ZardButtonComponent,
+    CampoDirective,
+    ZardDialogFooterComponent,
+    ZardDialogTitleComponent,
+  ],
   template: `
-    <h2 mat-dialog-title>{{ data.titulo }}</h2>
-    <mat-dialog-content>
+    <h2 z-dialog-title>{{ data.titulo }}</h2>
+    <div class="dialogo-corpo">
       @if (data.mensagem) {
         <p>{{ data.mensagem }}</p>
       }
       <label for="a-partir-de-mes">A partir de qual mês?</label>
       <input
+        appCampo
         id="a-partir-de-mes"
         type="month"
         class="mes"
@@ -34,12 +43,20 @@ export type APartirDeResultado = string | null;
         [value]="mes()"
         (input)="mes.set($any($event.target).value)"
       />
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button type="button" class="botao" data-testid="cancelar" (click)="ref.close(null)">
+    </div>
+    <footer z-dialog-footer>
+      <button
+        z-button
+        zType="outline"
+        type="button"
+        class="botao"
+        data-testid="cancelar"
+        (click)="ref.close(null)"
+      >
         Cancelar
       </button>
       <button
+        z-button
         type="button"
         class="botao principal"
         data-testid="confirmar"
@@ -48,7 +65,7 @@ export type APartirDeResultado = string | null;
       >
         {{ data.confirmar }}
       </button>
-    </mat-dialog-actions>
+    </footer>
   `,
   styles: `
     .mes {
@@ -63,30 +80,11 @@ export type APartirDeResultado = string | null;
       border: 1px solid var(--border-forte);
       border-radius: 8px;
     }
-    .botao {
-      min-width: 44px;
-      min-height: 44px;
-      padding: 0 16px;
-      font: var(--fonte-rotulo-g);
-      color: var(--primary);
-      background: transparent;
-      border: 0;
-      border-radius: 24px;
-      cursor: pointer;
-    }
-    .botao.principal {
-      color: var(--primary-foreground);
-      background: var(--primary);
-    }
-    .botao:disabled {
-      opacity: 0.6;
-      cursor: default;
-    }
   `,
 })
 export class APartirDeDialog {
-  protected readonly data = inject<APartirDeData>(MAT_DIALOG_DATA);
-  protected readonly ref = inject<MatDialogRef<APartirDeDialog, APartirDeResultado>>(MatDialogRef);
+  protected readonly data = inject<APartirDeData>(DADOS_DIALOGO);
+  protected readonly ref = inject<DialogoRef<APartirDeDialog, APartirDeResultado>>(DialogoRef);
   protected readonly mes = signal(this.data.mesPadrao);
   protected readonly valido = computed(() => isYearMonth(this.mes()));
 }

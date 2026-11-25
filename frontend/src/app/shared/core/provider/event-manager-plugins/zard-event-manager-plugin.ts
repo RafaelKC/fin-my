@@ -27,7 +27,7 @@ export class ZardEventManagerPlugin extends EventManagerPlugin {
   #keywords = ['prevent', 'stop', 'stop-immediate', 'prevent-with-stop'];
 
   override supports(eventName: string): boolean {
-    return this.#keywords.some(keyword => eventName.endsWith(`.${keyword}`));
+    return this.#keywords.some((keyword) => eventName.endsWith(`.${keyword}`));
   }
 
   override addEventListener(
@@ -43,7 +43,10 @@ export class ZardEventManagerPlugin extends EventManagerPlugin {
       event,
       (event: Event) => {
         // A key list filters the event like `keydown.enter` does: other keys never reach the handler.
-        if (keys.length && !(event instanceof KeyboardEvent && keys.includes(event.key.toLowerCase()))) {
+        if (
+          keys.length &&
+          !(event instanceof KeyboardEvent && keys.includes(event.key.toLowerCase()))
+        ) {
           return;
         }
 
@@ -71,7 +74,10 @@ export class ZardEventManagerPlugin extends EventManagerPlugin {
     );
   }
 
-  #provideEventFrom(eventName: string, keywords: string[]): { event: string; keyword: string; keys: string[] } {
+  #provideEventFrom(
+    eventName: string,
+    keywords: string[],
+  ): { event: string; keyword: string; keys: string[] } {
     const eventNameSubstrings = eventName.split('.');
     let event = '';
     let keys: string[] = [];
@@ -98,7 +104,7 @@ export class ZardEventManagerPlugin extends EventManagerPlugin {
     const stringList = substring.substring(1, substring.length - 1);
     return stringList
       .split(',')
-      .map(raw => {
+      .map((raw) => {
         const s = raw.toLowerCase().trim();
         return s === 'space' ? ' ' : s;
       })

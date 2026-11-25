@@ -1,7 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { DESCRICAO_MAX } from '../lancamento/entry.models';
 import { PlanningKind } from './planning.models';
+import { DADOS_DIALOGO, DialogoRef } from '@/shared/ui/dialogo';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { CampoDirective } from '@/shared/ui/campo.directive';
+import { ZardDialogFooterComponent, ZardDialogTitleComponent } from '@/shared/components/dialog';
+import { ZardNativeSelectDirective } from '@/shared/components/native-select';
 
 export interface OpcaoCarteira {
   id: string;
@@ -25,11 +29,17 @@ export interface NovaLinhaResultado {
 @Component({
   selector: 'app-nova-linha-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule],
+  imports: [
+    ZardButtonComponent,
+    CampoDirective,
+    ZardDialogFooterComponent,
+    ZardDialogTitleComponent,
+    ZardNativeSelectDirective,
+  ],
   styleUrl: './dialogos.scss',
   template: `
-    <h2 mat-dialog-title>Nova linha</h2>
-    <mat-dialog-content>
+    <h2 z-dialog-title>Nova linha</h2>
+    <div class="dialogo-corpo">
       <div class="campo">
         <span id="nl-tipo">Tipo</span>
         <div class="opcoes" role="group" aria-labelledby="nl-tipo">
@@ -56,6 +66,7 @@ export interface NovaLinhaResultado {
       <div class="campo">
         <label for="nl-descricao">Descrição</label>
         <input
+          appCampo
           id="nl-descricao"
           type="text"
           data-testid="nova-linha-descricao"
@@ -68,6 +79,7 @@ export interface NovaLinhaResultado {
       <div class="campo">
         <label for="nl-carteira">Carteira</label>
         <select
+          z-native-select
           id="nl-carteira"
           data-testid="nova-linha-carteira"
           (change)="carteira.set($any($event.target).value)"
@@ -80,6 +92,7 @@ export interface NovaLinhaResultado {
       <div class="campo">
         <label for="nl-dia">Dia do mês</label>
         <input
+          appCampo
           id="nl-dia"
           type="number"
           min="1"
@@ -93,12 +106,20 @@ export interface NovaLinhaResultado {
           <span class="erro">Informe um dia de 1 a 31.</span>
         }
       </div>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button type="button" class="botao" data-testid="cancelar" (click)="ref.close(null)">
+    </div>
+    <footer z-dialog-footer>
+      <button
+        z-button
+        zType="outline"
+        type="button"
+        class="botao"
+        data-testid="cancelar"
+        (click)="ref.close(null)"
+      >
         Cancelar
       </button>
       <button
+        z-button
         type="button"
         class="botao principal"
         data-testid="nova-linha-criar"
@@ -107,13 +128,13 @@ export interface NovaLinhaResultado {
       >
         Criar linha
       </button>
-    </mat-dialog-actions>
+    </footer>
   `,
 })
 export class NovaLinhaDialog {
-  protected readonly data = inject<NovaLinhaData>(MAT_DIALOG_DATA);
+  protected readonly data = inject<NovaLinhaData>(DADOS_DIALOGO);
   protected readonly ref =
-    inject<MatDialogRef<NovaLinhaDialog, NovaLinhaResultado | null>>(MatDialogRef);
+    inject<DialogoRef<NovaLinhaDialog, NovaLinhaResultado | null>>(DialogoRef);
   protected readonly descricaoMax = DESCRICAO_MAX;
 
   protected readonly kind = signal<PlanningKind>('expense');

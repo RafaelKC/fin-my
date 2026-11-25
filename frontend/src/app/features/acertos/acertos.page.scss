@@ -43,10 +43,6 @@
   height: 16px;
   border-radius: 50%;
 }
-.selo {
-  font: var(--fonte-rotulo);
-  color: var(--muted-foreground);
-}
 .numeros {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
@@ -75,17 +71,6 @@
   font: inherit;
   cursor: pointer;
 }
-.botao {
-  align-self: flex-start;
-  min-height: 44px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: 22px;
-  background: var(--primary);
-  color: var(--primary-foreground);
-  font: var(--fonte-rotulo-g);
-  cursor: pointer;
-}
 .itens {
   display: flex;
   flex-direction: column;
@@ -109,7 +94,4 @@
     grid-column: 2;
     align-self: center;
   }
-}
-.erro {
-  color: var(--destructive);
 }

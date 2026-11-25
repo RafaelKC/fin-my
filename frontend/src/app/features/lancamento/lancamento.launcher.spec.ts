@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { OverlayContainer } from '@angular/cdk/overlay';
+import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { LancamentoLauncher } from './lancamento.launcher';
 
@@ -23,19 +24,21 @@ describe('LancamentoLauncher', () => {
 
   it('no celular abre em tela cheia', () => {
     const ref = configurar(false).abrir();
-    expect(ref.componentRef).toBeDefined();
+    expect(ref.componentInstance()).not.toBeNull();
+    TestBed.inject(ApplicationRef).tick();
     const painel = TestBed.inject(OverlayContainer)
       .getContainerElement()
-      .querySelector('.lancamento-tela-cheia');
+      .querySelector('.dialogo-tela-cheia');
     expect(painel).not.toBeNull();
     ref.close();
   });
 
   it('no computador abre como diálogo, sem a classe de tela cheia', () => {
     const ref = configurar(true).abrir();
+    TestBed.inject(ApplicationRef).tick();
     const overlay = TestBed.inject(OverlayContainer).getContainerElement();
     expect(overlay.querySelector('app-lancamento-sheet')).not.toBeNull();
-    expect(overlay.querySelector('.lancamento-tela-cheia')).toBeNull();
+    expect(overlay.querySelector('.dialogo-tela-cheia')).toBeNull();
     ref.close();
   });
 

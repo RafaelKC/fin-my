@@ -29,32 +29,6 @@
   flex-wrap: wrap;
   gap: 8px;
 }
-.botao {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 16px;
-  font: var(--fonte-rotulo-g);
-  color: var(--primary-foreground);
-  background: var(--primary);
-  border: 0;
-  border-radius: 24px;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: default;
-  }
-}
-.erro {
-  margin: 0;
-  color: var(--destructive);
-}
-.aviso {
-  margin: 0;
-  color: var(--muted-foreground);
-}
 .tabela-rolavel {
   overflow-x: auto;
 }
@@ -186,13 +160,6 @@
 }
 .negativo {
   color: var(--destructive);
-}
-.so-leitor {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
 }
 @media (max-width: 1023.98px) {
   .tabela .rotulo {

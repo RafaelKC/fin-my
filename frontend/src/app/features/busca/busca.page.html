@@ -5,6 +5,7 @@
     <div class="campo">
       <label for="busca-q">Descrição</label>
       <input
+        appCampo
         id="busca-q"
         type="search"
         autocomplete="off"
@@ -58,6 +59,7 @@
       <div class="campo">
         <label for="busca-situacao">Situação</label>
         <select
+          z-native-select
           id="busca-situacao"
           [value]="status()"
           (change)="escolherSituacao($any($event.target).value)"
@@ -70,6 +72,7 @@
       <div class="campo">
         <label for="busca-de">De</label>
         <input
+          appCampo
           id="busca-de"
           type="date"
           [value]="from()"
@@ -79,6 +82,7 @@
       <div class="campo">
         <label for="busca-ate">Até</label>
         <input
+          appCampo
           id="busca-ate"
           type="date"
           [value]="to()"
@@ -88,7 +92,14 @@
     </div>
 
     @if (comFiltro) {
-      <button type="button" class="botao" data-testid="limpar" (click)="limparFiltros()">
+      <button
+        z-button
+        zType="outline"
+        type="button"
+        class="botao"
+        data-testid="limpar"
+        (click)="limparFiltros()"
+      >
         Limpar filtros
       </button>
     }
@@ -193,7 +204,14 @@
   @if (carregandoMais()) {
     <p role="status" data-testid="carregando-mais">Carregando mais…</p>
   } @else if (proximo() !== null) {
-    <button type="button" class="botao" data-testid="carregar-mais" (click)="carregarMais()">
+    <button
+      z-button
+      zType="outline"
+      type="button"
+      class="botao"
+      data-testid="carregar-mais"
+      (click)="carregarMais()"
+    >
       Carregar mais
     </button>
   }

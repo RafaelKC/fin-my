@@ -1,11 +1,11 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { carteira } from '../carteiras/testing';
 import { Entry } from './entry.models';
 import { LancamentoSheet } from './lancamento.sheet';
+import { DADOS_DIALOGO, DialogoRef } from '@/shared/ui/dialogo';
+import { Avisos } from '@/shared/ui/avisos';
 
 const original: Entry = {
   id: 'e1',
@@ -28,12 +28,12 @@ describe('LancamentoSheet em edição', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: MatDialogRef, useValue: { close: fechar } },
-        { provide: MAT_DIALOG_DATA, useValue: { entry: original } },
+        { provide: DialogoRef, useValue: { close: fechar } },
+        { provide: DADOS_DIALOGO, useValue: { entry: original } },
       ],
     });
     const http = TestBed.inject(HttpTestingController);
-    vi.spyOn(TestBed.inject(MatSnackBar), 'open').mockReturnValue(undefined as never);
+    vi.spyOn(TestBed.inject(Avisos), 'open').mockReturnValue(undefined as never);
     const fixture = TestBed.createComponent(LancamentoSheet);
     const el: HTMLElement = fixture.nativeElement;
     fixture.detectChanges();

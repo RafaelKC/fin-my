@@ -87,13 +87,17 @@ export function buildDropdownPositions(
   rtl = false,
   alignOffset = 0,
 ): ConnectedPosition[] {
-  const fallbackAligns: ZardDropdownAlign[] = (['start', 'center', 'end'] as const).filter(value => value !== align);
+  const fallbackAligns: ZardDropdownAlign[] = (['start', 'center', 'end'] as const).filter(
+    (value) => value !== align,
+  );
 
   return [
     toConnectedPosition(side, align, offset, rtl, alignOffset),
     toConnectedPosition(OPPOSITE_SIDE[side], align, offset, rtl, alignOffset),
-    ...fallbackAligns.map(fallbackAlign => toConnectedPosition(side, fallbackAlign, offset, rtl, alignOffset)),
-    ...fallbackAligns.map(fallbackAlign =>
+    ...fallbackAligns.map((fallbackAlign) =>
+      toConnectedPosition(side, fallbackAlign, offset, rtl, alignOffset),
+    ),
+    ...fallbackAligns.map((fallbackAlign) =>
       toConnectedPosition(OPPOSITE_SIDE[side], fallbackAlign, offset, rtl, alignOffset),
     ),
   ];

@@ -1,10 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { MatIconModule } from '@angular/material/icon';
+import { Icone } from '@/shared/ui/icone';
 import { asProblem, problemMessage } from '../../core/errors/problem-details';
 import { TAG_NOME_MAX, Tag, TagConflito } from '../../shared/tag-picker/tag.models';
 import { FiltroTagsArquivadas, TagsService } from '../../shared/tag-picker/tags.service';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { CampoDirective } from '@/shared/ui/campo.directive';
+import { ZardNativeSelectDirective } from '@/shared/components/native-select';
 
 /** Ação em andamento sobre uma tag: edição, junção ou confirmação de exclusão. */
 export type PainelTag =
@@ -16,7 +19,7 @@ export type PainelTag =
 @Component({
   selector: 'app-tags-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, MatIconModule],
+  imports: [ZardButtonComponent, CampoDirective, ZardNativeSelectDirective, FormsModule, Icone],
   templateUrl: './tags.page.html',
   styleUrl: './tags.page.scss',
 })

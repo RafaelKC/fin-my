@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatIconModule } from '@angular/material/icon';
+import { Icone } from '@/shared/ui/icone';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiClient } from '../../../core/api/api-client';
 import { asProblem, problemMessage } from '../../../core/errors/problem-details';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { CampoDirective } from '@/shared/ui/campo.directive';
 
 export const SENHA_MIN = 8;
 export const SENHA_MAX = 128;
@@ -12,7 +14,7 @@ export const SENHA_MAX = 128;
 @Component({
   selector: 'app-redefinir-senha-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, MatIconModule],
+  imports: [ZardButtonComponent, CampoDirective, ReactiveFormsModule, RouterLink, Icone],
   templateUrl: './redefinir-senha.page.html',
   styleUrl: './redefinir-senha.page.scss',
 })

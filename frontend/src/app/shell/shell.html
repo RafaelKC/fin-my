@@ -1,6 +1,22 @@
 <header class="topo">
-  <span class="marca">Fin-My</span>
+  <a class="marca" routerLink="/mes" aria-label="Fin-My, ir para o mês">
+    <span class="logo" aria-hidden="true">F</span>
+    <span class="marca-nome">Fin-My</span>
+  </a>
   <span class="espaco" data-testid="nome-do-espaco">{{ espaco()?.name }}</span>
+  <button
+    type="button"
+    z-button
+    zType="ghost"
+    zSize="icon"
+    class="tema"
+    data-testid="alternar-tema"
+    [attr.aria-label]="rotuloTema()"
+    [title]="rotuloTema()"
+    (click)="alternarTema()"
+  >
+    <app-icone [nome]="iconeTema()" />
+  </button>
 </header>
 
 <nav class="menu" aria-label="Principal">
@@ -9,23 +25,25 @@
       class="item"
       [routerLink]="item.rota"
       routerLinkActive="ativo"
+      ariaCurrentWhenActive="page"
       [routerLinkActiveOptions]="{ exact: false }"
     >
-      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{ item.icone }}</mat-icon>
+      <app-icone [nome]="item.icone" />
       <span>{{ item.rotulo }}</span>
     </a>
   }
   <button type="button" class="item lancar" data-testid="lancar" (click)="lancar()">
-    <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">add</mat-icon>
-    <span>Lançar</span>
+    <span class="lancar-circulo" aria-hidden="true"><app-icone nome="add" tamanho="1.5rem" /></span>
+    <span class="lancar-rotulo">Lançar</span>
   </button>
   <a
     class="item"
     [routerLink]="acertos.rota"
     routerLinkActive="ativo"
+    ariaCurrentWhenActive="page"
     [routerLinkActiveOptions]="{ exact: false }"
   >
-    <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{ acertos.icone }}</mat-icon>
+    <app-icone [nome]="acertos.icone" />
     <span>{{ acertos.rotulo }}</span>
   </a>
 
@@ -38,20 +56,23 @@
       [attr.aria-expanded]="maisAberto()"
       (click)="alternarMais()"
     >
-      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">more_horiz</mat-icon>
+      <app-icone nome="more_horiz" />
       <span>Mais</span>
     </button>
+    @if (maisAberto()) {
+      <div class="mais-fundo" aria-hidden="true" (click)="maisAberto.set(false)"></div>
+    }
     <div class="mais-painel" id="mais-painel">
+      <span class="mais-titulo" aria-hidden="true">Mais opções</span>
       @for (item of mais; track item.rota) {
         <a
           class="item"
           [routerLink]="item.rota"
           routerLinkActive="ativo"
+          ariaCurrentWhenActive="page"
           [routerLinkActiveOptions]="{ exact: false }"
         >
-          <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{
-            item.icone
-          }}</mat-icon>
+          <app-icone [nome]="item.icone" />
           <span>{{ item.rotulo }}</span>
         </a>
       }

@@ -13,7 +13,10 @@ import {
 
 import type { ClassValue } from 'clsx';
 
-import type { ZardDropdownAlign, ZardDropdownSide } from '@/shared/components/dropdown/dropdown-positions';
+import type {
+  ZardDropdownAlign,
+  ZardDropdownSide,
+} from '@/shared/components/dropdown/dropdown-positions';
 import { dropdownContentVariants } from '@/shared/components/dropdown/dropdown.variants';
 import { mergeClasses } from '@/shared/utils/merge-classes';
 
@@ -58,5 +61,7 @@ export class ZardDropdownMenuContentComponent {
   /** Gap between trigger and menu, in pixels. Same meaning as Radix's `sideOffset`. */
   readonly zSideOffset = input(4, { transform: numberAttribute });
 
-  protected readonly contentClasses = computed(() => mergeClasses(dropdownContentVariants(), this.class()));
+  protected readonly contentClasses = computed(() =>
+    mergeClasses(dropdownContentVariants(), this.class()),
+  );
 }

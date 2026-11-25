@@ -32,6 +32,9 @@ import {
 import { ExclusaoService } from '../lancamento/exclusao.service';
 import { LancamentoLauncher } from '../lancamento/lancamento.launcher';
 import { Transfer } from '../mes/month.models';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { CampoDirective } from '@/shared/ui/campo.directive';
+import { ZardNativeSelectDirective } from '@/shared/components/native-select';
 
 /** Tamanho da página da busca; as demais vêm pelo cursor (research R10). */
 export const TAMANHO_PAGINA = 50;
@@ -57,7 +60,16 @@ function dataBr(iso: string): string {
 @Component({
   selector: 'app-busca-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, BrlPipe, TagFilter, SeloViaClaude, SeloRecorrencia],
+  imports: [
+    ZardButtonComponent,
+    CampoDirective,
+    ZardNativeSelectDirective,
+    FormsModule,
+    BrlPipe,
+    TagFilter,
+    SeloViaClaude,
+    SeloRecorrencia,
+  ],
   templateUrl: './busca.page.html',
   styleUrl: './busca.page.scss',
 })

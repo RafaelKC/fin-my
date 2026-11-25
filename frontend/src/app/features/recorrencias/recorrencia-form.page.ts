@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { asProblem, problemMessage } from '../../core/errors/problem-details';
@@ -31,6 +30,10 @@ import {
   ReferenceMonthRule,
 } from './recurrence.models';
 import { RecurrencesService } from './recurrences.service';
+import { Dialogo } from '@/shared/ui/dialogo';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { CampoDirective } from '@/shared/ui/campo.directive';
+import { ZardNativeSelectDirective } from '@/shared/components/native-select';
 
 interface Opcao {
   id: string;
@@ -47,7 +50,15 @@ type Campo = 'description' | 'amount' | 'dayOfMonth' | 'origin' | 'startMonth' |
 @Component({
   selector: 'app-recorrencia-form-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, AmountInput, TagPicker],
+  imports: [
+    ZardButtonComponent,
+    CampoDirective,
+    ZardNativeSelectDirective,
+    ReactiveFormsModule,
+    RouterLink,
+    AmountInput,
+    TagPicker,
+  ],
   templateUrl: './recorrencia-form.page.html',
   styleUrl: './recorrencia-form.page.scss',
 })
@@ -56,7 +67,7 @@ export class RecorrenciaFormPage {
   private readonly wallets = inject(WalletsService);
   private readonly cards = inject(CardsService);
   private readonly router = inject(Router);
-  private readonly dialog = inject(MatDialog);
+  private readonly dialog = inject(Dialogo);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly rota = inject(ActivatedRoute).snapshot;
   private readonly id = this.rota.paramMap.get('id');

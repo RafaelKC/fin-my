@@ -17,9 +17,7 @@ import { dropdownItemVariants, type ZardDropdownItemTypeVariants } from './dropd
 
 @Component({
   selector: 'z-dropdown-menu-item, [z-dropdown-menu-item]',
-  template: `
-    <ng-content />
-  `,
+  template: ` <ng-content /> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -43,12 +41,12 @@ export class ZardDropdownMenuItemComponent {
   readonly zVariant = input<ZardDropdownItemTypeVariants | undefined>(undefined);
   readonly inset = input(false, { transform: booleanAttribute });
   readonly zInset = input<boolean | undefined, unknown>(undefined, {
-    transform: value => (value === undefined ? undefined : booleanAttribute(value)),
+    transform: (value) => (value === undefined ? undefined : booleanAttribute(value)),
   });
 
   readonly disabled = input(false, { transform: booleanAttribute });
   readonly zDisabled = input<boolean | undefined, unknown>(undefined, {
-    transform: value => (value === undefined ? undefined : booleanAttribute(value)),
+    transform: (value) => (value === undefined ? undefined : booleanAttribute(value)),
   });
 
   readonly class = input<ClassValue>('');
@@ -64,7 +62,9 @@ export class ZardDropdownMenuItemComponent {
   }
 
   protected readonly isDisabled = computed(() => this.zDisabled() ?? this.disabled());
-  protected readonly itemVariant = computed(() => this.zType() ?? this.zVariant() ?? this.variant());
+  protected readonly itemVariant = computed(
+    () => this.zType() ?? this.zVariant() ?? this.variant(),
+  );
   protected readonly isInset = computed(() => this.zInset() ?? this.inset());
 
   protected readonly classes = computed(() =>

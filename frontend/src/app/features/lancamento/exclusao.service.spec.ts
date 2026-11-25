@@ -1,9 +1,9 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subject } from 'rxjs';
 import { ExclusaoService } from './exclusao.service';
+import { Avisos } from '@/shared/ui/avisos';
 
 describe('ExclusaoService', () => {
   let service: ExclusaoService;
@@ -32,7 +32,7 @@ describe('ExclusaoService', () => {
 
   it('o aviso dura 8 s e, sem tocar em Desfazer, nada é restaurado', () => {
     const snack = vi
-      .spyOn(TestBed.inject(MatSnackBar), 'open')
+      .spyOn(TestBed.inject(Avisos), 'open')
       .mockReturnValue({ onAction: () => new Subject<void>() } as never);
     service.oferecerDesfazer('lote-1');
     expect(snack).toHaveBeenCalledWith(
@@ -45,7 +45,7 @@ describe('ExclusaoService', () => {
   it('desfazer expirado mostra a mensagem da API', () => {
     const acao$ = new Subject<void>();
     const snack = vi
-      .spyOn(TestBed.inject(MatSnackBar), 'open')
+      .spyOn(TestBed.inject(Avisos), 'open')
       .mockReturnValue({ onAction: () => acao$ } as never);
     service.oferecerDesfazer('lote-1');
     acao$.next();

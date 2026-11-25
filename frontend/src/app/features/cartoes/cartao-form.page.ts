@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Observable, forkJoin, of } from 'rxjs';
 import { startWith } from 'rxjs/operators';
@@ -13,6 +12,10 @@ import { Wallet } from '../carteiras/wallet.models';
 import { WalletsService } from '../carteiras/wallets.service';
 import { CARD_COLORS, CreditCard, CreditCardInput, NOME_CARTAO_MAX } from './card.models';
 import { CardsService } from './cards.service';
+import { Dialogo } from '@/shared/ui/dialogo';
+import { ZardButtonComponent } from '@/shared/components/button';
+import { CampoDirective } from '@/shared/ui/campo.directive';
+import { ZardNativeSelectDirective } from '@/shared/components/native-select';
 
 const TEM_COMPRAS = 'Este cartão tem compras ou pagamentos. Você pode arquivá-lo.';
 
@@ -20,7 +23,13 @@ const TEM_COMPRAS = 'Este cartão tem compras ou pagamentos. Você pode arquivá
 @Component({
   selector: 'app-cartao-form-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [
+    ZardButtonComponent,
+    CampoDirective,
+    ZardNativeSelectDirective,
+    ReactiveFormsModule,
+    RouterLink,
+  ],
   templateUrl: './cartao-form.page.html',
   styleUrl: './cartao-form.page.scss',
 })
@@ -28,7 +37,7 @@ export class CartaoFormPage {
   private readonly cards = inject(CardsService);
   private readonly wallets = inject(WalletsService);
   private readonly router = inject(Router);
-  private readonly dialog = inject(MatDialog);
+  private readonly dialog = inject(Dialogo);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id');
 

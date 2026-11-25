@@ -29,26 +29,54 @@
             <span class="nome" data-testid="tag-nome">{{ t.name }}</span>
             @if (t.isSettlement) {
               <span class="selo" data-testid="tag-acerto">
-                <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">person</mat-icon>
+                <app-icone nome="person" />
                 de acerto
               </span>
             }
             <span class="usos" data-testid="tag-usos">{{ t.uses90d }} usos em 90 dias</span>
           </div>
           <div class="acoes">
-            <button type="button" class="botao" data-testid="editar" (click)="abrirEdicao(t)">
+            <button
+              z-button
+              zType="outline"
+              type="button"
+              class="botao"
+              data-testid="editar"
+              (click)="abrirEdicao(t)"
+            >
               Editar
             </button>
-            <button type="button" class="botao" data-testid="arquivar" (click)="arquivar(t)">
+            <button
+              z-button
+              zType="outline"
+              type="button"
+              class="botao"
+              data-testid="arquivar"
+              (click)="arquivar(t)"
+            >
               {{ t.archived ? 'Desarquivar' : 'Arquivar' }}
             </button>
             @if (!t.archived) {
-              <button type="button" class="botao" data-testid="juntar" (click)="abrirJuncao(t)">
+              <button
+                z-button
+                zType="outline"
+                type="button"
+                class="botao"
+                data-testid="juntar"
+                (click)="abrirJuncao(t)"
+              >
                 Juntar em…
               </button>
             }
             @if (!t.inUse) {
-              <button type="button" class="botao" data-testid="excluir" (click)="abrirExclusao(t)">
+              <button
+                z-button
+                zType="outline"
+                type="button"
+                class="botao"
+                data-testid="excluir"
+                (click)="abrirExclusao(t)"
+              >
                 Excluir
               </button>
             }
@@ -61,6 +89,7 @@
                   @case ('editar') {
                     <label for="tag-nome">Nome</label>
                     <input
+                      appCampo
                       id="tag-nome"
                       class="campo"
                       data-testid="campo-nome"
@@ -90,6 +119,7 @@
                   @case ('juntar') {
                     <label for="tag-destino">Juntar “{{ p.tag.name }}” em</label>
                     <select
+                      z-native-select
                       id="tag-destino"
                       class="campo"
                       data-testid="campo-destino"
@@ -128,10 +158,13 @@
                 }
 
                 <div class="acoes">
-                  <button type="button" class="botao" (click)="fechar()">Cancelar</button>
+                  <button z-button zType="outline" type="button" class="botao" (click)="fechar()">
+                    Cancelar
+                  </button>
                   @switch (p.tipo) {
                     @case ('editar') {
                       <button
+                        z-button
                         type="button"
                         class="botao principal"
                         data-testid="salvar"
@@ -144,6 +177,7 @@
                     @case ('juntar') {
                       @if (p.confirmando) {
                         <button
+                          z-button
                           type="button"
                           class="botao principal"
                           data-testid="confirmar-juncao"
@@ -154,6 +188,7 @@
                         </button>
                       } @else {
                         <button
+                          z-button
                           type="button"
                           class="botao principal"
                           data-testid="continuar-juncao"
@@ -166,6 +201,7 @@
                     }
                     @case ('excluir') {
                       <button
+                        z-button
                         type="button"
                         class="botao principal"
                         data-testid="confirmar-exclusao"

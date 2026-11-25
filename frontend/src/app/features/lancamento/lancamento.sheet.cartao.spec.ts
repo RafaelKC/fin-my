@@ -1,14 +1,14 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { today } from '../../core/money';
 import { carteira } from '../carteiras/testing';
 import { cartao } from '../cartoes/testing';
 import { LancamentoSheet } from './lancamento.sheet';
+import { Dialogo, DialogoRef } from '@/shared/ui/dialogo';
+import { Avisos } from '@/shared/ui/avisos';
 
 const azul = cartao();
 const verde = cartao({ id: 'c-verde', name: 'Verde', closingDay: 1, dueDay: 10 });
@@ -28,11 +28,11 @@ describe('LancamentoSheet — aba Cartão (003 US2–US4)', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: MatDialogRef, useValue: { close: fechar } },
+        { provide: DialogoRef, useValue: { close: fechar } },
       ],
     });
     http = TestBed.inject(HttpTestingController);
-    aviso = vi.spyOn(TestBed.inject(MatSnackBar), 'open').mockReturnValue(undefined as never);
+    aviso = vi.spyOn(TestBed.inject(Avisos), 'open').mockReturnValue(undefined as never);
     fixture = TestBed.createComponent(LancamentoSheet);
     el = fixture.nativeElement;
     fixture.detectChanges();
@@ -267,7 +267,7 @@ describe('LancamentoSheet — aba Cartão (003 US2–US4)', () => {
   it('US5.7: 409 de fatura paga pede confirmação e repete com confirmPaidInvoice e outra chave', async () => {
     await abrir();
     const dialogo = vi
-      .spyOn(TestBed.inject(MatDialog), 'open')
+      .spyOn(TestBed.inject(Dialogo), 'open')
       .mockReturnValue({ afterClosed: () => of('') } as never);
     await preencher('50', 'Lanche', '2026-03-10');
     await clicar('[data-testid="salvar"]');
@@ -297,7 +297,7 @@ describe('LancamentoSheet — aba Cartão (003 US2–US4)', () => {
 
   it('cancelar a confirmação de fatura paga não lança nada e mantém o formulário', async () => {
     await abrir();
-    vi.spyOn(TestBed.inject(MatDialog), 'open').mockReturnValue({
+    vi.spyOn(TestBed.inject(Dialogo), 'open').mockReturnValue({
       afterClosed: () => of(null),
     } as never);
     await preencher('50', 'Lanche', '2026-03-10');
