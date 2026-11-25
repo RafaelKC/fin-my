@@ -43,7 +43,8 @@ class TestRig(
     val api = WidgetApi(baseUrl, http, session)
     val refresher = InvoiceRefresher(api, clock)
 
-    fun components() = WidgetComponents(baseUrl, session, tokenClient, api, refresher)
+    val connector = WidgetConnector(baseUrl, http, tokenClient, session)
+    fun components() = WidgetComponents(baseUrl, session, tokenClient, api, refresher, connector)
 
     companion object {
         fun valid() = Tokens("acesso-1", "refresh-1", Fixtures.NOW + 3_600_000)

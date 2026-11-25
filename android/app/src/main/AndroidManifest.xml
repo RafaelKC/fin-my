@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -14,35 +13,16 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FinMy">
 
-        <meta-data
-            android:name="asset_statements"
-            android:resource="@string/asset_statements" />
-
+        <!--
+            App Capacitor (010): a WebView carrega o site (server.url = finmy.appUrl), com o mesmo login por cookie.
+            Links do widget e dos atalhos chegam como VIEW com a URL do site.
+        -->
         <activity
-            android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
-            android:exported="true">
-
-            <meta-data
-                android:name="android.support.customtabs.trusted.DEFAULT_URL"
-                android:value="${appUrl}" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
-                android:resource="@color/finmy_background" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR"
-                android:resource="@color/finmy_background" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.SPLASH_IMAGE_DRAWABLE"
-                android:resource="@drawable/splash" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.SPLASH_SCREEN_BACKGROUND_COLOR"
-                android:resource="@color/finmy_background" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.SPLASH_SCREEN_FADE_OUT_DURATION"
-                android:value="300" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.FILE_PROVIDER_AUTHORITY"
-                android:value="br.app.finmy.fileprovider" />
+            android:name="br.app.finmy.MainActivity"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.FinMy">
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
@@ -70,38 +50,11 @@
         <activity
             android:name="br.app.finmy.widget.WidgetConfigActivity"
             android:exported="true"
-            android:excludeFromRecents="true"
-            android:taskAffinity="br.app.finmy.widget"
             android:label="@string/widget_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
         </activity>
 
-        <!--
-            Login do widget (AppAuth) na mesma "task" da configuração do widget, separada da TWA: senão o retorno
-            br.app.finmy:/oauth/callback traz a task da TWA para a frente e o resultado não chega à configuração.
-        -->
-        <activity
-            android:name="net.openid.appauth.AuthorizationManagementActivity"
-            android:excludeFromRecents="true"
-            android:taskAffinity="br.app.finmy.widget"
-            tools:node="merge" />
-        <activity
-            android:name="net.openid.appauth.RedirectUriReceiverActivity"
-            android:excludeFromRecents="true"
-            android:taskAffinity="br.app.finmy.widget"
-            tools:node="merge" />
-
-        <!-- Entrega a imagem do splash ao Chrome. -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="br.app.finmy.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/filepaths" />
-        </provider>
     </application>
 </manifest>

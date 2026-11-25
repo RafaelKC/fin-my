@@ -6,13 +6,12 @@
     <string name="widget_name">Fatura do cartão</string>
     <string name="widget_description">Atual e Planejado da fatura de um cartão.</string>
     <string name="widget_config_title">Fatura do cartão</string>
-    <string name="widget_config_login">Para mostrar a fatura, entre com a sua conta do Fin-My.</string>
-    <string name="widget_config_login_button">Entrar</string>
+    <string name="widget_config_login">Abra o app Fin-My e entre com a sua conta: o widget se conecta sozinho. Depois volte aqui para escolher o cartão.</string>
+    <string name="widget_config_open_app">Abrir o app</string>
     <string name="widget_config_loading">Buscando seus cartões…</string>
     <string name="widget_config_pick">Escolha o cartão do widget:</string>
     <string name="widget_config_empty">Nenhum cartão ativo. Cadastre um cartão no Fin-My e tente de novo.</string>
     <string name="widget_config_offline">Sem conexão. Verifique a internet e tente de novo.</string>
     <string name="widget_config_error">Não foi possível falar com o Fin-My agora.</string>
     <string name="widget_config_retry">Tentar de novo</string>
-    <string name="widget_config_login_failed">Não foi possível entrar. Tente de novo.</string>
 </resources>

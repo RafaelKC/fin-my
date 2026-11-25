@@ -1,12 +1,15 @@
 # App Android (009)
 
-APK que abre o Fin-My em tela cheia (TWA: o próprio site, mesma origem, mesmo login e atalhos).
+APK do Fin-My com **Capacitor** (desde a 010; antes era uma TWA): a WebView do app carrega o próprio site
+(`server.url` = `finmy.appUrl`), com o mesmo login por cookie, sem barra de endereço. O widget "Fatura do cartão"
+usa a sessão do app: estando logado, o app conecta o widget sozinho (sem segundo login).
 Sem Play Store: o APK é instalado à mão. O projeto fica em [`android/`](../../android) e usa o
 pacote fixo **`br.app.finmy`**.
 
 ## 1. Pré-requisitos
 
 - Java 21 e o Android SDK (variável `ANDROID_HOME`, plataforma 36).
+- `npm ci` em `frontend/` antes do Gradle: a biblioteca Android do Capacitor vem de `frontend/node_modules`.
 - O site publicado com **HTTPS** (`APP_URL`).
 
 ## 2. Compilar
@@ -39,13 +42,6 @@ Podem ficar em `~/.gradle/gradle.properties` para não repetir na linha de coman
 Os atalhos (segurar o ícone) abrem **Mês atual** e **Painel**. O APK debug do CI fica como artifact
 `fin-my-debug-apk` de cada execução do workflow.
 
-### Sem barra de endereço (verificação)
-
-A barra do Chrome só some se o site publicar `/.well-known/assetlinks.json` com o pacote e a impressão
-digital SHA-256 da chave que assinou o APK (`Android__PackageName=br.app.finmy` e
-`Android__CertSha256__0=<SHA-256>` no `.env` da API). Sem isso o app funciona, mas mostra a barra.
-Impressão digital do APK: `keytool -printcert -jarfile app-release.apk`.
-
 ## 4. Release assinado (local)
 
 A chave **nunca** vai para o repositório. Guarde-a fora dele, por exemplo em
@@ -76,7 +72,7 @@ em vez de recusar a instalação. A build release não inclui nenhum certificado
 
 ## 5. Certificado da VPN (HTTPS autoassinado) no celular
 
-Quando o servidor só é acessível pela VPN com certificado autoassinado, o Chrome (que roda a TWA) e o
+Quando o servidor só é acessível pela VPN com certificado autoassinado, o app (WebView) e o
 app nativo precisam confiar nele:
 
 1. Exporte o certificado da CA (ou do servidor) em PEM/CRT e leve ao celular.
@@ -88,5 +84,15 @@ app nativo precisam confiar nele:
    instalados no passo 2. Se preferir embutir o PEM no APK debug, compile com
    `-Pfinmy.devCert=/caminho/ca.pem`.
 
-> O Chrome só abre a TWA verificada com certificado confiável. Com certificado autoassinado a barra de
-> endereço continua aparecendo e isso é esperado.
+> O app (WebView) e o widget respeitam o `network_security_config` da build debug, que aceita os certificados
+> de usuário instalados no passo 2.
+
+## 6. Widget "Fatura do cartão"
+
+1. Abra o app e entre. Logado, o app conecta o widget: pede ao nativo um `code_challenge` (PKCE), cria o ticket de
+   consentimento do cliente `finmy-android` com a sessão do app e o nativo troca o ticket por tokens
+   (`/oauth/authorize` sem seguir o redirect e `/oauth/token`). Nenhum navegador é aberto.
+2. Na tela inicial: segurar → Widgets → **Fatura do cartão** → escolher o cartão. Se o widget ainda não estiver
+   conectado, a configuração mostra **Abrir o app**; ao voltar, lista os cartões.
+3. Sair do app desconecta o widget. Também dá para desconectar em Perfil → Aplicativos conectados
+   ("App Fin-My (Android)").

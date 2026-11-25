@@ -8,7 +8,7 @@
         <intent
             android:action="android.intent.action.VIEW"
             android:data="@string/shortcut_mes_url"
-            android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:targetClass="br.app.finmy.MainActivity"
             android:targetPackage="br.app.finmy" />
     </shortcut>
     <shortcut
@@ -19,7 +19,7 @@
         <intent
             android:action="android.intent.action.VIEW"
             android:data="@string/shortcut_painel_url"
-            android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:targetClass="br.app.finmy.MainActivity"
             android:targetPackage="br.app.finmy" />
     </shortcut>
 </shortcuts>

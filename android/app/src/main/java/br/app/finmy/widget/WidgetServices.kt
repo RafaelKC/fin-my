@@ -12,6 +12,7 @@ class WidgetComponents(
     val tokenClient: TokenClient,
     val api: WidgetApi,
     val refresher: InvoiceRefresher,
+    val connector: WidgetConnector,
 )
 
 object WidgetServices {
@@ -36,7 +37,7 @@ object WidgetServices {
         val tokenClient = TokenClient(baseUrl, http)
         val session = AuthSession(store, tokenClient)
         val api = WidgetApi(baseUrl, http, session)
-        return WidgetComponents(baseUrl, session, tokenClient, api, InvoiceRefresher(api))
+        return WidgetComponents(baseUrl, session, tokenClient, api, InvoiceRefresher(api), WidgetConnector(baseUrl, http, tokenClient, session))
     }
 
     private fun defaultHttp() = OkHttpClient.Builder()

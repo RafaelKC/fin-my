@@ -69,7 +69,7 @@ class FaturaWidget : GlanceAppWidget() {
     }
 
     companion object {
-        /** Abre a fatura na TWA (a LauncherActivity usa a URL do intent em vez da inicial). */
+        /** Abre a fatura no app (a MainActivity carrega a URL do intent). */
         fun openInvoiceIntent(appUrl: String, appPath: String): Intent =
             Intent(Intent.ACTION_VIEW, "$appUrl$appPath".toUri())
                 .setComponent(ComponentName(PACKAGE, LAUNCHER))
@@ -84,7 +84,7 @@ class FaturaWidget : GlanceAppWidget() {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
         private const val PACKAGE = "br.app.finmy"
-        private const val LAUNCHER = "com.google.androidbrowserhelper.trusted.LauncherActivity"
+        private const val LAUNCHER = "br.app.finmy.MainActivity"
     }
 }
 
