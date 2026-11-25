@@ -8,6 +8,8 @@
     "!/**/*__*/**",
     "!/api/**",
     "!/mcp/**",
+    "!/oauth/**",
+    "!/.well-known/**",
     "!/health"
   ],
   "assetGroups": [
