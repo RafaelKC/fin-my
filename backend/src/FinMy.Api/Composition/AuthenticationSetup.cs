@@ -81,7 +81,8 @@ public static class AuthenticationSetup
                 var problem = ProblemFactory.ForStatus(StatusCodes.Status401Unauthorized);
                 ProblemFactory.AddTraceId(problem, context);
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                context.Response.Headers.WWWAuthenticate = "Bearer error=\"invalid_token\", error_description=\"O token não vale para este recurso.\"";
+                // Cabeçalho HTTP só aceita ASCII (RFC 6750): com acento, o Kestrel lança e vira 500.
+                context.Response.Headers.WWWAuthenticate = "Bearer error=\"invalid_token\", error_description=\"The token is not valid for this resource.\"";
                 await context.Response.WriteAsJsonAsync(problem, options: null, contentType: "application/problem+json", context.RequestAborted);
                 return;
             }

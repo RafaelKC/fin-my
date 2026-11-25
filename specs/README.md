@@ -23,6 +23,7 @@ as duas versões têm o mesmo conteúdo). Lançamento rápido pelo celular + vis
 | 006 | [Painel e primeiros passos](006-painel-e-primeiros-passos/spec.md) | 005 | Painel do ano (aba Home), resumo de agora, guia inicial, exportar CSV | #7 |
 | 007 | [Planejamento do ano](007-planejamento-anual/spec.md) | 006 | Grade do ano editável como a planilha, estimativa de gasto por fatura, copiar o planejamento do ano anterior | #8 |
 | 008 | [Assistente no Claude](008-assistente-claude/spec.md) | 004 | Conector MCP + skill: lançar, consultar e acertar conversando com o Claude | #5 |
+| 009 | [App Android e widget](009-app-android-widget/spec.md) | 008 | APK (TWA do site) e widget "Fatura do cartão" (Atual × Planejado) com login próprio pelo OAuth da 008 | #214 |
 
 Com 001 + 002 + 003 o app já substitui a planilha no dia a dia (MVP). 004 a 008 completam (a 008 pode vir logo após a 004).
 

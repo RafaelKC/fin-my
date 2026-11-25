@@ -266,7 +266,9 @@ public class WidgetApiTests(PostgresFixture postgres) : ApiTestBase(postgres)
             (await GetAsync(null, path)).StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
             (await GetAsync("token-inventado", path)).StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
             (await GetAsync(account.AccessToken, path)).StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
-            (await GetAsync(claude.AccessToken, path)).StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+            using var comClaude = await GetAsync(claude.AccessToken, path);
+            comClaude.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+            ShouldBeAsciiHeaders(comClaude);
         }
     }
 
@@ -289,6 +291,19 @@ public class WidgetApiTests(PostgresFixture postgres) : ApiTestBase(postgres)
 
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
         response.Headers.WwwAuthenticate.ToString().ShouldContain("resource_metadata");
+        ShouldBeAsciiHeaders(response);
+    }
+
+    /// <summary>O TestServer aceita qualquer caractere em cabeçalho, mas o Kestrel só aceita ASCII e responderia 500 (achado na validação 009 contra a stack real).</summary>
+    private static void ShouldBeAsciiHeaders(HttpResponseMessage response)
+    {
+        foreach (var header in response.Headers)
+        {
+            foreach (var value in header.Value)
+            {
+                value.ShouldAllBe(c => c < 128, $"cabeçalho {header.Key} com caractere não-ASCII: {value}");
+            }
+        }
     }
 
     [Fact]
