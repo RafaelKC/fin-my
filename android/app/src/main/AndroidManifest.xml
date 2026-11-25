@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -69,11 +70,28 @@
         <activity
             android:name="br.app.finmy.widget.WidgetConfigActivity"
             android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity="br.app.finmy.widget"
             android:label="@string/widget_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
         </activity>
+
+        <!--
+            Login do widget (AppAuth) na mesma "task" da configuração do widget, separada da TWA: senão o retorno
+            br.app.finmy:/oauth/callback traz a task da TWA para a frente e o resultado não chega à configuração.
+        -->
+        <activity
+            android:name="net.openid.appauth.AuthorizationManagementActivity"
+            android:excludeFromRecents="true"
+            android:taskAffinity="br.app.finmy.widget"
+            tools:node="merge" />
+        <activity
+            android:name="net.openid.appauth.RedirectUriReceiverActivity"
+            android:excludeFromRecents="true"
+            android:taskAffinity="br.app.finmy.widget"
+            tools:node="merge" />
 
         <!-- Entrega a imagem do splash ao Chrome. -->
         <provider
