@@ -17,6 +17,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "fin-my-android"
 include(":app")
+include(":wear")
 
 // Capacitor (010): a biblioteca Android vem do npm do front (frontend/node_modules, `npm ci` antes do Gradle).
 include(":capacitor-android")

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mesmas cores do ícone do app do celular. -->
+    <color name="finmy_icon_start">#5B4FF0</color>
+    <color name="finmy_icon_end">#2A8F8A</color>
+    <color name="finmy_icon_bar">#FFFFFF</color>
+    <color name="finmy_icon_dot">#FFD166</color>
+</resources>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -45,6 +46,17 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/fatura_widget_info" />
         </receiver>
+
+        <!-- Relógio (010): atende os pedidos do app do Wear OS (Data Layer, RPC). -->
+        <service
+            android:name="br.app.finmy.wear.PhoneBridgeService"
+            android:exported="true"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.REQUEST_RECEIVED" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/finmy" />
+            </intent-filter>
+        </service>
 
         <!-- Widgets de resumo e o atalho Lançar (010). -->
         <receiver

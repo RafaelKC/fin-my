@@ -7,7 +7,7 @@ public enum Channel
     Claude,
     System,
 
-    /// <summary>Widget do app Android (009): só lê, nunca grava.</summary>
+    /// <summary>App Android (009/010): widgets leem; o relógio só faz lançamento rápido e marca como pago/recebido.</summary>
     AndroidWidget,
 }
 

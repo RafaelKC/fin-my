@@ -109,3 +109,27 @@ Todos usam a mesma conexão do widget (sessão do app) e atualizam juntos a cada
 | **Lançar** (2x1 ou 1x1) | Botão "+" | o app com o formulário rápido aberto (`/mes?lancar=1`) |
 
 Os três primeiros leem `GET /api/v1/widget/overview` (mesmos números das telas do mês, de agora e dos acertos).
+
+## 8. Relógio (Wear OS, 010)
+
+Módulo `android/wear/` (mesmo `applicationId` `br.app.finmy` e **a mesma chave de assinatura** do app do celular — exigência
+da Data Layer). O relógio não fala com o servidor: pede tudo ao app do celular (`PhoneBridgeService`, caminhos `/finmy/*`),
+que já tem a VPN, o certificado e a conexão do widget.
+
+- **App**: saldo previsto do mês, entradas/saídas, próximos vencimentos (tocar → marcar como pago/recebido), **Lançar**
+  (Saída/Entrada → valor no teclado → descrição falada, digitada ou das sugestões). Data = hoje; carteira e situação pelos
+  padrões do Claude.
+- **Tile**: mês, saldo previsto e "+ Lançar".
+- **Complicações**: *Saldo do mês* (texto curto) e *Lançar* (ícone "+" que abre direto o lançamento).
+- Servidor: `POST /api/v1/widget/entries` e `POST /api/v1/widget/entries/{id}/settle` (as únicas escritas do token do app
+  Android); `upcoming[].entryId` no overview.
+
+### Instalar no Galaxy Watch (sem Play Store)
+
+1. Relógio: Configurações → Sobre o relógio → Software → toque 5× em "Versão do software" (modo desenvolvedor).
+2. Configurações → Opções do desenvolvedor → **Depuração ADB** e **Depuração por Wi-Fi** (relógio e PC no mesmo Wi-Fi).
+3. Em "Depuração por Wi-Fi" → "Parear novo dispositivo": `adb pair <ip>:<porta>` (código) e depois `adb connect <ip>:<porta>`.
+4. `adb -s <ip>:<porta> install -r android/wear/build/outputs/apk/debug/wear-debug.apk`
+5. Instale o app do celular da mesma build (mesma chave), abra-o e entre: é a conexão dele que o relógio usa.
+6. No relógio: abra "Fin-My"; Tile: deslize até o fim → "+" → Fin-My; complicações: tocar e segurar o mostrador →
+   Personalizar → Complicações → Fin-My.
