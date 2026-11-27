@@ -25,8 +25,8 @@ export function textoDoCliente(clientId: string | null): TextoDeConsentimento {
     ? {
         titulo: 'Autorizar o App Fin-My (Android)',
         nome: 'O App Fin-My (Android)',
-        permissao: 'poderá ver seus cartões e faturas',
-        complemento: ' para mostrar no widget',
+        permissao: 'poderá ver o resumo das suas finanças e fazer lançamentos rápidos',
+        complemento: ' pelos widgets e pelo relógio',
       }
     : {
         titulo: 'Autorizar o Claude',

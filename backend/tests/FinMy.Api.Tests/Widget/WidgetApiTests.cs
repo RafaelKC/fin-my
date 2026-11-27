@@ -314,6 +314,71 @@ public class WidgetApiTests(PostgresFixture postgres) : ApiTestBase(postgres)
         (await GetAsync(lia.AccessToken, "/api/v1/widget/overview")).StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
+    // ---- Relógio (010): lançamento rápido e marcar como pago ----
+
+    private async Task<HttpResponseMessage> PostAsync(string? bearer, string path, object body)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = JsonContent.Create(body) };
+        if (bearer is not null)
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
+        }
+
+        return await Flow.Raw.SendAsync(request);
+    }
+
+    [Fact]
+    public async Task Lancamento_rapido_usa_hoje_a_carteira_padrao_e_a_regra_da_situacao()
+    {
+        var (app, _, azul, _, widget) = await NewLiaAsync();
+        var outra = await CardTestSupport.CreateWalletAsync(app, "Cofre");
+        await CreatedIdAsync(app, "/api/v1/entries", new { kind = "expense", description = "Padaria", amount = "12", date = "2026-03-01", walletId = outra.Id, status = "settled" });
+
+        var response = await PostAsync(widget, "/api/v1/widget/entries", new { kind = "expense", description = "Padaria", amount = "45,90" });
+        response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+        var created = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        created.GetProperty("date").GetString().ShouldBe("2026-03-20");
+        created.GetProperty("amount").GetProperty("cents").GetInt64().ShouldBe(4590);
+        created.GetProperty("wallet").GetString().ShouldBe("Cofre"); // a do lançamento mais recente com a mesma descrição
+        created.GetProperty("status").GetString().ShouldBe("settled"); // data de hoje: regra do app
+        var stored = await app.GetFromJsonAsync<JsonElement>($"/api/v1/entries/{created.GetProperty("id").GetGuid()}");
+        stored.GetProperty("description").GetString().ShouldBe("Padaria");
+        stored.GetProperty("walletId").GetGuid().ShouldBe(outra.Id);
+        _ = azul;
+    }
+
+    [Fact]
+    public async Task Lancamento_rapido_invalido_e_422_e_jwt_do_app_e_401()
+    {
+        var (_, lia, _, _, widget) = await NewLiaAsync();
+
+        ((int)(await PostAsync(widget, "/api/v1/widget/entries", new { kind = "expense", description = "X", amount = "abc" })).StatusCode).ShouldBe(422);
+        (await PostAsync(lia.AccessToken, "/api/v1/widget/entries", new { kind = "expense", description = "X", amount = "1" })).StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Marcar_como_pago_pelo_vencimento_e_so_no_proprio_espaco()
+    {
+        var (app, _, azul, _, widget) = await NewLiaAsync();
+        await CreatedIdAsync(app, "/api/v1/entries", new { kind = "expense", description = "Luz", amount = "120", date = "2026-03-25", walletId = azul, status = "planned" });
+        var luz = (await OkAsync(widget, "/api/v1/widget/overview")).GetProperty("upcoming").EnumerateArray()
+            .Single(u => u.GetProperty("description").GetString() == "Luz");
+        var id = luz.GetProperty("entryId").GetGuid();
+
+        (await PostAsync(widget, $"/api/v1/widget/entries/{id}/settle", new { })).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        (await app.GetFromJsonAsync<JsonElement>($"/api/v1/entries/{id}")).GetProperty("status").GetString().ShouldBe("settled");
+        (await OkAsync(widget, "/api/v1/widget/overview")).GetProperty("upcoming").EnumerateArray()
+            .ShouldNotContain(u => u.GetProperty("description").GetString() == "Luz");
+
+        var (bruna, _) = await CardTestSupport.NewSpaceAsync(Factory, "Bruna");
+        var verde = await CardTestSupport.CreateWalletAsync(bruna, "Verde");
+        var alheio = await CreatedIdAsync(bruna, "/api/v1/entries", new { kind = "expense", description = "Dela", amount = "9", date = "2026-03-25", walletId = verde.Id, status = "planned" });
+        (await PostAsync(widget, $"/api/v1/widget/entries/{alheio}/settle", new { })).StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await bruna.GetFromJsonAsync<JsonElement>($"/api/v1/entries/{alheio}")).GetProperty("status").GetString().ShouldBe("planned");
+    }
+
     [Fact]
     public async Task Cartao_arquivado_ou_excluido_ou_desconhecido_e_404_credit_card_not_found()
     {
@@ -352,7 +417,7 @@ public class WidgetApiTests(PostgresFixture postgres) : ApiTestBase(postgres)
     }
 
     [Fact]
-    public async Task Token_do_widget_tem_canal_android_widget_e_so_leitura()
+    public async Task Token_do_widget_tem_canal_android_widget_e_nao_grava_fora_das_rotas_do_relogio()
     {
         var (_, account, _, verde, widget) = await NewLiaAsync();
 

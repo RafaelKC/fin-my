@@ -145,7 +145,7 @@ test.describe('autorizar (US1.1) — API simulada', () => {
       page.getByRole('heading', { name: 'Autorizar o App Fin-My (Android)' }),
     ).toBeVisible();
     await expect(page.getByTestId('texto-consentimento')).toContainText(
-      'O App Fin-My (Android) poderá ver seus cartões e faturas no Espaço Casa da Lia para mostrar no widget.',
+      'O App Fin-My (Android) poderá ver o resumo das suas finanças e fazer lançamentos rápidos no Espaço Casa da Lia pelos widgets e pelo relógio.',
     );
     await expect(page.getByText('Claude')).toHaveCount(0);
 

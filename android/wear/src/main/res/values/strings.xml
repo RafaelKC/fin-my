@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Fin-My</string>
+    <string name="tile_label">Fin-My</string>
+    <string name="tile_description">Saldo previsto do mês e lançamento rápido.</string>
+    <string name="complication_saldo">Saldo do mês</string>
+    <string name="complication_lancar">Lançar</string>
+</resources>

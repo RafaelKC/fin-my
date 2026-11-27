@@ -145,7 +145,7 @@ describe('AutorizarPage (008 US1.1)', () => {
     expect(el.querySelector('h1')!.textContent).toBe('Autorizar o App Fin-My (Android)');
     const texto = el.querySelector('[data-testid="texto-consentimento"]')!.textContent!;
     expect(texto.replace(/\s+/g, ' ')).toBe(
-      ' O App Fin-My (Android) poderá ver seus cartões e faturas no Espaço Espaço da Ana para mostrar no widget. ',
+      ' O App Fin-My (Android) poderá ver o resumo das suas finanças e fazer lançamentos rápidos no Espaço Espaço da Ana pelos widgets e pelo relógio. ',
     );
     expect(el.textContent).not.toContain('Claude');
 

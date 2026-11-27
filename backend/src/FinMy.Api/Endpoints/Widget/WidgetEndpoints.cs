@@ -24,5 +24,17 @@ public sealed class WidgetEndpoints : IEndpointModule
         // Widgets "Mês atual", "Próximos vencimentos" e "Acertos" (010).
         group.MapGet("/overview", async (GetWidgetOverviewHandler handler, CancellationToken cancellationToken) =>
             Results.Ok(WidgetOverviewResponse.From(await handler.HandleAsync(cancellationToken))));
+
+        // Relógio (010): as duas únicas escritas do token do app Android — lançamento rápido e marcar como pago/recebido.
+        group.MapPost("/entries", async (WidgetCreateEntryRequest body, CreateWidgetEntryHandler handler, CancellationToken cancellationToken) =>
+        {
+            var created = await handler.HandleAsync(body.Kind, body.Description, body.Amount, cancellationToken);
+            return Results.Created($"/api/v1/entries/{created.Id}", WidgetCreatedEntryResponse.From(created));
+        });
+        group.MapPost("/entries/{id:guid}/settle", async (Guid id, SettleWidgetEntryHandler handler, CancellationToken cancellationToken) =>
+        {
+            await handler.HandleAsync(id, cancellationToken);
+            return Results.NoContent();
+        });
     }
 }

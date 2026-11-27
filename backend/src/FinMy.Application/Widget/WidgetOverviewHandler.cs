@@ -10,7 +10,8 @@ using FinMy.Domain.Monetary;
 namespace FinMy.Application.Widget;
 
 /// <summary>Próximo item a pagar/receber: lançamento previsto (<c>income</c>/<c>expense</c>) ou fatura (<c>invoice</c>).</summary>
-public sealed record WidgetUpcomingItem(string Kind, string Description, DateOnly Date, long AmountCents, bool Overdue);
+/// <remarks><c>EntryId</c> só para lançamentos (o relógio marca como pago/recebido); faturas não têm.</remarks>
+public sealed record WidgetUpcomingItem(string Kind, string Description, DateOnly Date, long AmountCents, bool Overdue, Guid? EntryId = null);
 
 /// <summary>Saldo acumulado de uma pessoa (Tag de acerto) até o mês de hoje; negativo é crédito dela.</summary>
 public sealed record WidgetSettlementItem(Guid TagId, string Name, string Color, long AmountCents);
@@ -58,10 +59,10 @@ public sealed class GetWidgetOverviewHandler(
         var people = await settlements.HandleAsync(current, cancellationToken);
 
         var upcoming = overdueEntries
-            .Select(e => new WidgetUpcomingItem(KindCode(e.Kind), e.Description, e.Date, e.AmountCents, Overdue: true))
+            .Select(e => new WidgetUpcomingItem(KindCode(e.Kind), e.Description, e.Date, e.AmountCents, Overdue: true, e.Id))
             .Concat(monthView.Entries
                 .Where(e => e.Status == EntryStatus.Planned)
-                .Select(e => new WidgetUpcomingItem(KindCode(e.Kind), e.Description, e.Date, e.AmountCents, Overdue: e.Date < today)))
+                .Select(e => new WidgetUpcomingItem(KindCode(e.Kind), e.Description, e.Date, e.AmountCents, Overdue: e.Date < today, e.Id)))
             .Concat(nowView.Invoices
                 .Where(i => i.RemainingCents > 0 && i.Status != InvoiceStatus.Paid)
                 .Select(i => new WidgetUpcomingItem(
