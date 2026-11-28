@@ -1,5 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, inject, signal } from '@angular/core';
+import { WIDGET_BRIDGE } from '../native/widget-bridge.service';
 
 /** Cor de destaque: matiz OKLCH dos tokens do tema e as duas cores (hex) do ícone do app. */
 export interface Acento {
@@ -36,6 +37,8 @@ export function iconeDoAcento(acento: Acento): string {
 @Injectable({ providedIn: 'root' })
 export class AcentoService {
   private readonly documento = inject(DOCUMENT);
+  /** No app Android: widgets e relógio seguem a mesma cor. */
+  private readonly nativo = inject(WIDGET_BRIDGE);
   readonly atual = signal<Acento>(this.ler());
 
   constructor() {
@@ -66,6 +69,7 @@ export class AcentoService {
     const html = this.documento.documentElement;
     html.style.setProperty('--acento-h', String(acento.matiz));
     html.setAttribute('data-acento', acento.id);
+    void this.nativo?.setAccent({ id: acento.id }).catch(() => undefined);
     this.documento
       .querySelectorAll<HTMLLinkElement>('link[rel="icon"]')
       .forEach((link) => link.remove());

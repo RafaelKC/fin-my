@@ -52,23 +52,23 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // Cores do app (modo escuro, como no relógio).
-private val Indigo = Color(0xFFB9B2FF)
-private val IndigoDeep = Color(0xFF4F46E5)
 private val Green = Color(0xFF7EE0A6)
 private val Red = Color(0xFFFF8A80)
 private val Muted = Color(0xFFA9A9B4)
 
-private val FinMyColors = Colors(primary = Indigo, primaryVariant = IndigoDeep, secondary = Green, error = Red, onPrimary = Color(0xFF17171C))
-
+/** Tema do relógio na cor de destaque escolhida no app do celular. */
 @Composable
-private fun FinMyTheme(content: @Composable () -> Unit) = MaterialTheme(colors = FinMyColors, content = content)
+private fun FinMyTheme(accent: WearAccent, content: @Composable () -> Unit) = MaterialTheme(
+    colors = Colors(primary = Color(accent.main), primaryVariant = Color(accent.deep), secondary = Green, error = Red, onPrimary = Color(0xFF17171C)),
+    content = content,
+)
 
 /** App do relógio (010): resumo do mês, próximos vencimentos (marcar como pago) e lançamento rápido. */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val startOnLaunch = intent?.getBooleanExtra(EXTRA_LANCAR, false) == true
-        setContent { FinMyTheme { App(startOnLaunch, onFinish = { finish() }) } }
+        setContent { App(startOnLaunch, onFinish = { finish() }) }
     }
 
     companion object {
@@ -108,19 +108,35 @@ private fun App(startOnLaunch: Boolean, onFinish: () -> Unit) {
 
     LaunchedEffect(Unit) { refresh() }
 
+    FinMyTheme(WearAccent.from(overview?.accent)) { Screen(route, startOnLaunch, onFinish, link, overview, status, loading, ::refresh) { route = it } }
+}
+
+@Composable
+private fun Screen(
+    route: Route,
+    startOnLaunch: Boolean,
+    onFinish: () -> Unit,
+    link: PhoneLink,
+    overview: Overview?,
+    status: Reply?,
+    loading: Boolean,
+    refresh: () -> Unit,
+    go: (Route) -> Unit,
+) {
+    val context = LocalContext.current
     when (val r = route) {
-        Route.Home -> Home(overview, status, loading, onRefresh = ::refresh, onLaunch = { route = Route.Kind }, link = link, onSettled = ::refresh)
-        Route.Kind -> KindStep { kind -> route = Route.Amount(kind) }
-        is Route.Amount -> AmountStep(r.kind) { amount -> route = Route.Describe(r.kind, amount) }
+        Route.Home -> Home(overview, status, loading, onRefresh = refresh, onLaunch = { go(Route.Kind) }, link = link, onSettled = refresh)
+        Route.Kind -> KindStep { kind -> go(Route.Amount(kind)) }
+        is Route.Amount -> AmountStep(r.kind) { amount -> go(Route.Describe(r.kind, amount)) }
         is Route.Describe -> DescribeStep(
             suggestions = Suggestions.merge(History(context).recent(r.kind), overview?.upcoming.orEmpty(), r.kind),
             preview = AmountInput.preview(r.amount),
-        ) { description -> route = Route.Sending(r.kind, r.amount, description) }
+        ) { description -> go(Route.Sending(r.kind, r.amount, description)) }
         is Route.Sending -> {
             Progress("Lançando…")
             LaunchedEffect(r) {
                 val reply = link.createEntry(r.kind, r.description, r.amount)
-                route = if (reply is Reply.Ok) {
+                go(if (reply is Reply.Ok) {
                     val created = runCatching { WearJson.decodeFromJsonElement(CreatedEntry.serializer(), reply.data) }.getOrNull()
                     Route.Done(
                         "Lançado",
@@ -129,7 +145,7 @@ private fun App(startOnLaunch: Boolean, onFinish: () -> Unit) {
                     )
                 } else {
                     Route.Done("Não lançado", reply.message(), ok = false)
-                }
+                })
             }
         }
         is Route.Done -> {
@@ -137,7 +153,7 @@ private fun App(startOnLaunch: Boolean, onFinish: () -> Unit) {
             LaunchedEffect(r) {
                 delay(if (r.ok) 1800 else 3500)
                 if (startOnLaunch && r.ok) onFinish() else {
-                    route = Route.Home
+                    go(Route.Home)
                     refresh()
                 }
             }

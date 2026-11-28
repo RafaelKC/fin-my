@@ -65,6 +65,7 @@ class FaturaWidget : GlanceAppWidget() {
         val night = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
             android.content.res.Configuration.UI_MODE_NIGHT_YES
         val density = context.resources.displayMetrics.density
+        AccentStore.load(context)
         provideContent {
             val prefs: Preferences = currentState()
             val ui = WidgetUi.from(WidgetState.decode(prefs[WidgetState.snapshotKey]))
@@ -134,7 +135,7 @@ private fun statusColors(code: String): Pair<ColorProviderType, ColorProviderTyp
     "paid" -> ColorProvider(day = Color(0xFFDDF5E6), night = Color(0xFF173A26)) to ColorProvider(day = Color(0xFF1B7A43), night = Color(0xFF7EE0A6))
     "overdue" -> ColorProvider(day = Color(0xFFFDE2E1), night = Color(0xFF4A1C1A)) to ColorProvider(day = Color(0xFFB3261E), night = Color(0xFFFF8A80))
     "closed" -> ColorProvider(day = Color(0xFFFFF1D6), night = Color(0xFF3F3110)) to ColorProvider(day = Color(0xFF8A5A00), night = Color(0xFFFFCF66))
-    else -> ColorProvider(day = Color(0xFFE9E7FE), night = Color(0xFF2A2652)) to ColorProvider(day = Color(0xFF4A3FD6), night = Color(0xFFB9B2FF))
+    else -> AccentStore.current.primarySoft to AccentStore.current.primary
 }
 
 @Composable

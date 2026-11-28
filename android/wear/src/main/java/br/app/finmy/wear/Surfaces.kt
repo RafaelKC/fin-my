@@ -78,12 +78,13 @@ class FinMyTileService : TileService() {
             )
             .build()
         val final = overview?.plannedFinal
+        val accent = WearAccent.from(overview?.accent)
         val layout = PrimaryLayout.Builder(device)
             .setResponsiveContentInsetEnabled(true)
             .setPrimaryLabelTextContent(
                 Text.Builder(this, overview?.let { WearFormat.monthName(it.month) } ?: "Fin-My")
                     .setTypography(Typography.TYPOGRAPHY_CAPTION1)
-                    .setColor(argb(0xFFB9B2FF.toInt()))
+                    .setColor(argb(accent.main.toInt()))
                     .build(),
             )
             .setContent(
@@ -101,7 +102,7 @@ class FinMyTileService : TileService() {
             )
             .setPrimaryChipContent(
                 CompactChip.Builder(this, "+ Lançar", lancar, device)
-                    .setChipColors(ChipColors(argb(0xFFB9B2FF.toInt()), argb(0xFF17171C.toInt())))
+                    .setChipColors(ChipColors(argb(accent.main.toInt()), argb(0xFF17171C.toInt())))
                     .build(),
             )
             .build()

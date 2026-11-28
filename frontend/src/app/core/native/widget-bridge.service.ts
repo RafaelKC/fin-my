@@ -10,6 +10,7 @@ export interface WidgetBridgePlugin {
   begin(): Promise<{ clientId: string; redirectUri: string; codeChallenge: string }>;
   complete(options: { ticket: string }): Promise<{ connected: boolean }>;
   disconnect(): Promise<void>;
+  setAccent(options: { id: string }): Promise<void>;
 }
 
 /** O plugin quando o front roda dentro do app Android; `null` no navegador. */
