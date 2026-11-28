@@ -8,6 +8,8 @@ export interface CreditCard {
   dueDay: number;
   paymentWalletId: string;
   color: string;
+  /** Banco (código COMPE) para o logo; `null` = sem banco. */
+  bank?: string | null;
   limitCents?: number | null;
   archived: boolean;
   hasPurchases: boolean;
@@ -21,6 +23,8 @@ export interface CreditCardInput {
   dueDay: number;
   paymentWalletId: string;
   color: string;
+  /** Banco (código COMPE) para o logo; `null` = sem banco. */
+  bank?: string | null;
   limit: string | null;
 }
 

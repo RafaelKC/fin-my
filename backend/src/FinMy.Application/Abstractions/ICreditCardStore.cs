@@ -15,7 +15,8 @@ public sealed record CreditCardView(
     long? LimitCents,
     bool Archived,
     bool HasPurchases,
-    long Version);
+    long Version,
+    string? Bank = null);
 
 /// <summary>Resumo de uma fatura (contrato <c>InvoiceSummary</c>); <see cref="Id"/> é <c>null</c> quando a linha ainda não existe (research R2).</summary>
 public sealed record InvoiceSummaryView(

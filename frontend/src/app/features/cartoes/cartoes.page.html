@@ -36,9 +36,13 @@
       @for (c of cartoes(); track c.id) {
         <li class="cartao" data-testid="cartao" [style.--cor-cartao]="c.color">
           <div class="topo">
-            <span class="cor chip-cartao" [style.background]="c.color" aria-hidden="true"
-              ><app-icone nome="credit_card" tamanho="1.25rem"
-            /></span>
+            @if (c.bank) {
+              <app-banco-logo [codigo]="c.bank" [tamanho]="36" />
+            } @else {
+              <span class="cor chip-cartao" [style.background]="c.color" aria-hidden="true"
+                ><app-icone nome="credit_card" tamanho="1.25rem"
+              /></span>
+            }
             <h2 class="nome">
               {{ c.name }}
               @if (c.archived) {

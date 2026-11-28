@@ -4,7 +4,7 @@ using FinMy.Domain.Monetary;
 namespace FinMy.Application.Cards;
 
 /// <summary>Campos editáveis de um cartão, como chegam da API (contrato <c>CreditCardInput</c>). <c>Limit</c> é expressão RT-05; vazio = sem limite.</summary>
-public sealed record CreditCardInput(string? Name, int? ClosingDay, int? DueDay, Guid? PaymentWalletId, string? Color, string? Limit);
+public sealed record CreditCardInput(string? Name, int? ClosingDay, int? DueDay, Guid? PaymentWalletId, string? Color, string? Limit, string? Bank = null);
 
 /// <summary>Entrada já convertida (as regras de nome, cor e dias ficam nas entidades).</summary>
 internal sealed record ParsedCreditCardInput(string Name, string Color, int ClosingDay, int DueDay, Guid PaymentWalletId, Money? Limit);

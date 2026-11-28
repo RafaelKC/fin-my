@@ -12,6 +12,7 @@ public sealed class CreateWalletHandler(IWalletStore wallets)
 
         var isPrimary = !await wallets.AnyActiveAsync(null, cancellationToken);
         var wallet = Wallet.Create(parsed.Name, parsed.Type, parsed.Color, parsed.InitialBalance, parsed.InitialBalanceDate, isPrimary);
+        wallet.ChangeBank(input.Bank);
         wallets.Add(wallet);
         await wallets.SaveAsync(cancellationToken);
 

@@ -15,7 +15,8 @@ public sealed record WalletView(
     bool Archived,
     long CurrentBalanceCents,
     bool HasEntries,
-    long Version);
+    long Version,
+    string? Bank = null);
 
 /// <summary>Quais carteiras a lista devolve (<c>archived</c>).</summary>
 public enum WalletArchivedFilter

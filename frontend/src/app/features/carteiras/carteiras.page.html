@@ -36,9 +36,13 @@
       @for (c of carteiras(); track c.id) {
         <li>
           <a class="linha" [routerLink]="['/carteiras', c.id]" data-testid="carteira">
-            <span class="cor" [style.background]="c.color" aria-hidden="true"
-              ><app-icone nome="account_balance_wallet" tamanho="1.125rem"
-            /></span>
+            @if (c.bank) {
+              <app-banco-logo [codigo]="c.bank" [tamanho]="36" />
+            } @else {
+              <span class="cor" [style.background]="c.color" aria-hidden="true"
+                ><app-icone nome="account_balance_wallet" tamanho="1.125rem"
+              /></span>
+            }
             <span class="nome">
               {{ c.name }}
               @if (c.isPrimary) {

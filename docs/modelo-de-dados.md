@@ -385,6 +385,7 @@ PK `(tenant_id, key)` (`key uuid`, o valor do cabeçalho `Idempotency-Key`); `us
 | name_normalized | varchar(40) | não | `UNIQUE (tenant_id, name_normalized) WHERE deleted_at IS NULL` |
 | type | text | não | `checking, digital, savings, cash, meal_voucher, other` |
 | color | varchar(7) | não | |
+| bank | text | sim | Código COMPE do banco (logo no app); ex. `077` Inter |
 | initial_balance_cents | bigint | não | qualquer sinal (exceção RT-02) |
 | initial_balance_date | date | não | |
 | is_primary | boolean | não | `UNIQUE (tenant_id) WHERE is_primary AND archived_at IS NULL AND deleted_at IS NULL` |
@@ -430,6 +431,7 @@ PK `(tenant_id, key)` (`key uuid`, o valor do cabeçalho `Idempotency-Key`); `us
 | [padrão] | | | |
 | name / name_normalized | varchar(40) | não | unicidade como `wallets` |
 | color | varchar(7) | não | |
+| bank | text | sim | Código COMPE do banco (logo no app); ex. `077` Inter |
 | closing_day | smallint | não | 1–31 |
 | due_day | smallint | não | 1–31 |
 | payment_wallet_id | uuid | não | FK → wallets |

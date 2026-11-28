@@ -15,6 +15,7 @@ public sealed class CreateCreditCardHandler(ICreditCardStore cards, IWalletStore
         await CreditCardWallets.EnsureActiveAsync(wallets, parsed.PaymentWalletId, cancellationToken);
 
         var card = CreditCard.Create(parsed.Name, parsed.Color, parsed.ClosingDay, parsed.DueDay, parsed.PaymentWalletId, parsed.Limit);
+        card.ChangeBank(input.Bank);
         cards.Add(card);
         await cards.SaveAsync(cancellationToken);
 

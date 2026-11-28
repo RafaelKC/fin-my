@@ -1,3 +1,4 @@
+import { ACENTOS, AcentoService, iconeDoAcento } from '../../core/tema/acento.service';
 import { EDarkModes, ZardDarkMode } from '@/shared/services/dark-mode';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -34,6 +35,9 @@ type CampoSenha = 'currentPassword' | 'newPassword';
   styleUrl: './perfil.page.scss',
 })
 export class PerfilPage {
+  protected readonly acento = inject(AcentoService);
+  protected readonly acentos = ACENTOS;
+  protected readonly iconeDoAcento = iconeDoAcento;
   /** Tema claro/escuro/sistema (Zard), guardado no aparelho. */
   protected readonly tema = inject(ZardDarkMode);
   protected readonly temas = [

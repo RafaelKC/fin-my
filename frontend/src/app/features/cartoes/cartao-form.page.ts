@@ -1,3 +1,5 @@
+import { Banco } from '../../shared/bancos/bancos';
+import { BancoPicker } from '../../shared/bancos/banco-picker';
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -24,6 +26,7 @@ const TEM_COMPRAS = 'Este cartão tem compras ou pagamentos. Você pode arquivá
   selector: 'app-cartao-form-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    BancoPicker,
     ZardButtonComponent,
     CampoDirective,
     ZardNativeSelectDirective,
@@ -55,6 +58,7 @@ export class CartaoFormPage {
     dueDay: [25 as number | null, [Validators.required, Validators.min(1), Validators.max(31)]],
     paymentWalletId: ['', [Validators.required]],
     color: [CARD_COLORS[0].value],
+    bank: [null as string | null],
     limit: [''],
   });
 
@@ -101,6 +105,7 @@ export class CartaoFormPage {
               dueDay: cartao.dueDay,
               paymentWalletId: cartao.paymentWalletId,
               color: cartao.color,
+              bank: cartao.bank ?? null,
               limit:
                 cartao.limitCents === null || cartao.limitCents === undefined
                   ? ''
@@ -147,6 +152,14 @@ export class CartaoFormPage {
     return this.erroCarteira();
   }
 
+  /** Escolher o banco sugere a cor da marca e, se o nome estiver vazio, o nome do banco. */
+  protected escolherBanco(banco: Banco | null): void {
+    this.form.controls.bank.setValue(banco?.codigo ?? null);
+    if (!banco) return;
+    this.form.controls.color.setValue(banco.cor);
+    if (!this.form.controls.name.value.trim()) this.form.controls.name.setValue(banco.nome);
+  }
+
   protected escolherCor(cor: string): void {
     this.form.controls.color.setValue(cor);
   }
@@ -167,6 +180,7 @@ export class CartaoFormPage {
       dueDay: Number(v.dueDay),
       paymentWalletId: v.paymentWalletId,
       color: v.color,
+      bank: v.bank,
       limit: limite === '' ? null : limite,
     };
     const atual = this.cartao();

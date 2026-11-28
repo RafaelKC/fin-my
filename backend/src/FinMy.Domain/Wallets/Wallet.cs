@@ -36,6 +36,11 @@ public sealed partial class Wallet : TenantEntity, IArchivable
     /// <summary>Cor no formato <c>#RRGGBB</c>.</summary>
     public string Color { get; private set; } = string.Empty;
 
+    /// <summary>Banco da instituição (código COMPE, 3 dígitos) para mostrar o logo; opcional.</summary>
+    public string? Bank { get; private set; }
+
+    public void ChangeBank(string? bank) => Bank = BankCode.Normalize(bank);
+
     /// <summary>Saldo inicial em centavos, de qualquer sinal (exceção à RT-02), no máximo R$ 9.999.999,99 em módulo.</summary>
     public long InitialBalanceCents { get; private set; }
 

@@ -1,3 +1,5 @@
+import { Banco } from '../../shared/bancos/bancos';
+import { BancoPicker } from '../../shared/bancos/banco-picker';
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -39,6 +41,7 @@ export function centavosParaCampo(cents: number): string {
   selector: 'app-carteira-form-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    BancoPicker,
     ZardButtonComponent,
     CampoDirective,
     ZardNativeSelectDirective,
@@ -69,6 +72,7 @@ export class CarteiraFormPage {
     name: ['', [Validators.required, Validators.maxLength(NOME_CARTEIRA_MAX)]],
     type: ['checking' as WalletInput['type']],
     color: [WALLET_COLORS[0].value],
+    bank: [null as string | null],
     initialBalance: ['0', [Validators.required]],
     initialBalanceDate: [today(), [Validators.required]],
   });
@@ -108,6 +112,7 @@ export class CarteiraFormPage {
               name: w.name,
               type: w.type,
               color: w.color,
+              bank: w.bank ?? null,
               initialBalance: centavosParaCampo(w.initialBalanceCents),
               initialBalanceDate: w.initialBalanceDate,
             });
@@ -133,6 +138,14 @@ export class CarteiraFormPage {
         : `O nome pode ter até ${NOME_CARTEIRA_MAX} caracteres.`;
     }
     return this.erroNome();
+  }
+
+  /** Escolher o banco sugere a cor da marca e, se o nome estiver vazio, o nome do banco. */
+  protected escolherBanco(banco: Banco | null): void {
+    this.form.controls.bank.setValue(banco?.codigo ?? null);
+    if (!banco) return;
+    this.form.controls.color.setValue(banco.cor);
+    if (!this.form.controls.name.value.trim()) this.form.controls.name.setValue(banco.nome);
   }
 
   protected escolherCor(cor: string): void {

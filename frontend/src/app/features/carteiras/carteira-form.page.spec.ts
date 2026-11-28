@@ -101,9 +101,25 @@ describe('CarteiraFormPage', () => {
       color: '#E53935',
       initialBalance: '500',
       initialBalanceDate: '2026-03-01',
+      bank: null,
     });
     req.flush(carteira(), { status: 201, statusText: 'Created' });
     expect(navegar).toHaveBeenCalledWith('/carteiras');
+  });
+
+  it('nova: escolher o banco sugere nome e cor da marca e envia o código', () => {
+    abrir(null);
+    el.querySelector<HTMLButtonElement>('[data-banco="077"]')!.click();
+    fixture.detectChanges();
+    expect(el.querySelector<HTMLInputElement>('#nome')!.value).toBe('Inter');
+    preencher('#saldo', '0');
+    el.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+
+    const req = http.expectOne('/api/v1/wallets');
+    expect(req.request.body).toEqual(
+      expect.objectContaining({ name: 'Inter', color: '#FF7A00', bank: '077' }),
+    );
+    req.flush(carteira(), { status: 201, statusText: 'Created' });
   });
 
   it('nome vazio ou expressão inválida não chama a API', () => {
