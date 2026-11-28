@@ -1,5 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
+import { WIDGET_BRIDGE, WidgetBridgePlugin } from '../native/widget-bridge.service';
 import { ACENTOS, AcentoService, CHAVE_ACENTO } from './acento.service';
 
 describe('AcentoService', () => {
@@ -34,5 +35,22 @@ describe('AcentoService', () => {
     servico.escolher('xadrez');
     expect(servico.atual().id).toBe('indigo');
     expect(new Set(ACENTOS.map((a) => a.matiz)).size).toBe(ACENTOS.length);
+  });
+
+  it('no app Android avisa o nativo (widgets e relógio) a cada escolha', () => {
+    const enviados: string[] = [];
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: WIDGET_BRIDGE,
+          useValue: {
+            setAccent: async ({ id }: { id: string }) => void enviados.push(id),
+          } as unknown as WidgetBridgePlugin,
+        },
+      ],
+    });
+    const servico = TestBed.inject(AcentoService);
+    servico.escolher('rosa');
+    expect(enviados).toEqual(['indigo', 'rosa']);
   });
 });

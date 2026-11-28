@@ -43,6 +43,8 @@ data class Overview(
     val plannedFinal: Money,
     val actualExpense: Money,
     val upcoming: List<Upcoming> = emptyList(),
+    /** Cor de destaque escolhida no app do celular (Perfil › Aparência). */
+    val accent: String? = null,
 )
 
 @Serializable

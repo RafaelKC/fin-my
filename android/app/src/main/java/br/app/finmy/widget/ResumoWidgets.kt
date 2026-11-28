@@ -56,7 +56,8 @@ import java.time.Instant
 import java.time.ZoneId
 
 // ---------- Cores do app ----------
-internal val Primary = ColorProvider(day = Color(0xFF4F46E5), night = Color(0xFFB9B2FF))
+/** Cor de destaque escolhida no app ([AccentStore]). */
+internal val Primary get() = AccentStore.current.primary
 internal val OnPrimary = ColorProvider(day = Color(0xFFFFFFFF), night = Color(0xFF17171C))
 internal val Income = ColorProvider(day = Color(0xFF1B7A43), night = Color(0xFF7EE0A6))
 internal val Expense = ColorProvider(day = Color(0xFFB3261E), night = Color(0xFFFF8A80))
@@ -318,6 +319,7 @@ abstract class OverviewWidget : GlanceAppWidget() {
     abstract fun Content(snapshot: OverviewSnapshot?)
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        AccentStore.load(context)
         provideContent {
             val prefs: Preferences = currentState()
             Content(OverviewState.decode(prefs[OverviewState.key]))
@@ -343,6 +345,7 @@ class AcertosWidget : OverviewWidget() {
 class LancarWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Responsive(setOf(DpSize(48.dp, 48.dp), DpSize(110.dp, 48.dp)))
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        AccentStore.load(context)
         provideContent { LancarContent() }
     }
 }

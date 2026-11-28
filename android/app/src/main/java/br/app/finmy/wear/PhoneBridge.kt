@@ -31,12 +31,15 @@ object WearProtocol {
     const val SETTLE = "/finmy/settle"
 
     /** Resposta: `{"ok":true,"data":...}` ou `{"ok":false,"error":"needs_login|offline|invalid|not_found|failed"}`. */
-    suspend fun handle(api: WidgetApi, path: String, request: ByteArray): ByteArray {
+    suspend fun handle(api: WidgetApi, path: String, request: ByteArray, accent: String = "indigo"): ByteArray {
         val body = runCatching { Json.parseToJsonElement(request.decodeToString()).jsonObject }.getOrDefault(JsonObject(emptyMap()))
         fun field(name: String) = body[name]?.jsonPrimitive?.content.orEmpty()
         val result: ApiResult<String> = when (path) {
             OVERVIEW -> when (val r = api.overview()) {
-                is ApiResult.Ok -> ApiResult.Ok(WidgetJson.encodeToString(OverviewResponse.serializer(), r.value))
+                // A cor de destaque vai junto para o relógio pintar o app, o Tile e as complicações.
+                is ApiResult.Ok -> ApiResult.Ok(
+                    WidgetJson.encodeToString(OverviewResponse.serializer(), r.value).removeSuffix("}") + ",\"accent\":\"$accent\"}",
+                )
                 ApiResult.NeedsLogin -> ApiResult.NeedsLogin
                 ApiResult.Offline -> ApiResult.Offline
                 ApiResult.CardUnavailable -> ApiResult.Failure("failed")
@@ -69,7 +72,8 @@ class PhoneBridgeService : WearableListenerService() {
 
     override fun onRequest(nodeId: String, path: String, request: ByteArray): Task<ByteArray> =
         scope.async {
-            val response = WearProtocol.handle(WidgetServices.get(applicationContext).api, path, request)
+            val accent = br.app.finmy.widget.AccentStore.load(applicationContext).id
+            val response = WearProtocol.handle(WidgetServices.get(applicationContext).api, path, request, accent)
             if (path != WearProtocol.OVERVIEW) OverviewState.refreshAll(applicationContext)
             response
         }.asTask()

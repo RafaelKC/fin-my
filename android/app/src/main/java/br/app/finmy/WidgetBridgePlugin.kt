@@ -67,6 +67,16 @@ class WidgetBridgePlugin : Plugin() {
         }
     }
 
+    /** Cor de destaque escolhida no app (Perfil › Aparência): widgets e relógio passam a usá-la. */
+    @PluginMethod
+    fun setAccent(call: PluginCall) {
+        val id = call.getString("id")
+        scope.launch {
+            br.app.finmy.widget.AccentStore.save(context, id.orEmpty())
+            call.resolve()
+        }
+    }
+
     @PluginMethod
     fun disconnect(call: PluginCall) {
         scope.launch {
