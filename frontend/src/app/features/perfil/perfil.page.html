@@ -199,6 +199,54 @@
     </div>
   </section>
 
+  <section class="secao" aria-labelledby="titulo-navegacao">
+    <h2 id="titulo-navegacao">Barra de navegação</h2>
+    <p class="ajuda">
+      Marque até {{ maxNaBarra }} telas para a barra (duas de cada lado do “+”); as outras ficam em
+      “Mais”, nesta ordem. Vale só para este aparelho.
+    </p>
+    <ol class="nav-lista" data-testid="nav-lista">
+      @for (item of navegacao.itens(); track item.id; let i = $index; let ultimo = $last) {
+        <li class="nav-item" [attr.data-nav]="item.id">
+          <app-icone [nome]="item.icone" />
+          <span class="nav-rotulo">{{ item.rotulo }}</span>
+          <label class="nav-barra">
+            <input
+              type="checkbox"
+              [checked]="navegacao.naBarra(item.id)"
+              [disabled]="
+                !navegacao.naBarra(item.id) && navegacao.config().naBarra.length >= maxNaBarra
+              "
+              (change)="navegacao.alternarBarra(item.id)"
+            />
+            Na barra
+          </label>
+          <button
+            type="button"
+            class="nav-mover"
+            [disabled]="i === 0"
+            [attr.aria-label]="'Subir ' + item.rotulo"
+            (click)="navegacao.mover(item.id, -1)"
+          >
+            <app-icone nome="expand_less" />
+          </button>
+          <button
+            type="button"
+            class="nav-mover"
+            [disabled]="ultimo"
+            [attr.aria-label]="'Descer ' + item.rotulo"
+            (click)="navegacao.mover(item.id, 1)"
+          >
+            <app-icone nome="expand_more" />
+          </button>
+        </li>
+      }
+    </ol>
+    <button type="button" class="nav-restaurar" (click)="navegacao.restaurar()">
+      Restaurar padrão
+    </button>
+  </section>
+
   <app-exportar-lancamentos />
 
   <app-aplicativos-conectados />

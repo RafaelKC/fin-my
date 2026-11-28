@@ -1,3 +1,4 @@
+import { MAX_NA_BARRA, NavegacaoService } from '../../core/navegacao/navegacao.service';
 import { ACENTOS, AcentoService, iconeDoAcento } from '../../core/tema/acento.service';
 import { EDarkModes, ZardDarkMode } from '@/shared/services/dark-mode';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
@@ -36,6 +37,8 @@ type CampoSenha = 'currentPassword' | 'newPassword';
 })
 export class PerfilPage {
   protected readonly acento = inject(AcentoService);
+  protected readonly navegacao = inject(NavegacaoService);
+  protected readonly maxNaBarra = MAX_NA_BARRA;
   protected readonly acentos = ACENTOS;
   protected readonly iconeDoAcento = iconeDoAcento;
   /** Tema claro/escuro/sistema (Zard), guardado no aparelho. */

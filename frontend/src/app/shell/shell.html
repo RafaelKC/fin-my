@@ -34,13 +34,14 @@
 </header>
 
 <nav class="menu" aria-label="Principal">
-  @for (item of itens; track item.rota) {
+  @for (item of navegacao.esquerda(); track item.id) {
     <a
       class="item"
       [routerLink]="item.rota"
       routerLinkActive="ativo"
       ariaCurrentWhenActive="page"
       [routerLinkActiveOptions]="{ exact: false }"
+      [attr.data-menu]="item.id"
     >
       <app-icone [nome]="item.icone" />
       <span>{{ item.rotulo }}</span>
@@ -50,16 +51,19 @@
     <span class="lancar-circulo" aria-hidden="true"><app-icone nome="add" tamanho="1.5rem" /></span>
     <span class="lancar-rotulo">Lançar</span>
   </button>
-  <a
-    class="item"
-    [routerLink]="acertos.rota"
-    routerLinkActive="ativo"
-    ariaCurrentWhenActive="page"
-    [routerLinkActiveOptions]="{ exact: false }"
-  >
-    <app-icone [nome]="acertos.icone" />
-    <span>{{ acertos.rotulo }}</span>
-  </a>
+  @for (item of navegacao.direita(); track item.id) {
+    <a
+      class="item"
+      [routerLink]="item.rota"
+      routerLinkActive="ativo"
+      ariaCurrentWhenActive="page"
+      [routerLinkActiveOptions]="{ exact: false }"
+      [attr.data-menu]="item.id"
+    >
+      <app-icone [nome]="item.icone" />
+      <span>{{ item.rotulo }}</span>
+    </a>
+  }
 
   <div class="mais" [class.aberto]="maisAberto()" routerLinkActive="mais-ativo">
     <button
@@ -78,7 +82,7 @@
     }
     <div class="mais-painel" id="mais-painel">
       <span class="mais-titulo" aria-hidden="true">Mais opções</span>
-      @for (item of mais; track item.rota) {
+      @for (item of navegacao.mais(); track item.id) {
         <a
           class="item"
           [routerLink]="item.rota"
