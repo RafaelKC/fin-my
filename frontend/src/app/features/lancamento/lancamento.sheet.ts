@@ -112,6 +112,15 @@ export interface EntradaPreenchida {
   date: string;
   referenceMonth: string;
   tagIds: string[];
+  /**
+   * Sugestão de notificação de banco (010): tipo, cartão/carteira e situação pela regra do app. Sem `kind` é o
+   * "Gerar cobrança" (Entrada Prevista na carteira principal).
+   */
+  kind?: LancamentoKind;
+  cardId?: string | null;
+  walletId?: string | null;
+  /** Chamado ao salvar (id da entrada; compra no cartão não devolve id). */
+  aoSalvar?: (id: string | null) => void;
 }
 
 /** Rascunho em `localStorage` (`finmy.draft.lancamento`, research R12). */
@@ -1450,6 +1459,7 @@ export class LancamentoSheet {
   ): void {
     this.prefs.rememberSaved(kind, walletId);
     this.prefs.clearDraft();
+    this.preenchida?.aoSalvar?.(entry?.id ?? null);
     this.avisos.open(mensagem, undefined, { duration: 4000, verticalPosition: 'top' });
 
     if (!lancarOutro) {
@@ -1531,11 +1541,19 @@ export class LancamentoSheet {
 
   /** US3.1: Entrada Prevista com a tag, o mês de referência e a data da cobrança; sem rascunho. */
   private aplicarPreenchimento(p: EntradaPreenchida): void {
-    this.kind.set('income');
+    this.kind.set(p.kind ?? 'income');
     this.amount.set(centavosParaExpressao(p.amountCents));
     this.description.set(p.description);
     this.date.set(p.date);
-    this.statusManual.set('planned');
+    if (p.kind === undefined) this.statusManual.set('planned');
+    if (p.cardId) {
+      this.cardId.set(p.cardId);
+      this.cardManual.set(true);
+    }
+    if (p.walletId) {
+      this.walletId.set(p.walletId);
+      this.walletManual.set(true);
+    }
     this.refManual.set(p.referenceMonth);
     this.tagIds.set([...p.tagIds]);
     this.tagsManual.set(true);
@@ -1544,7 +1562,7 @@ export class LancamentoSheet {
 
   /** A carteira da cobrança é a principal, e não a última usada em Entradas (US3.1). */
   private usarCarteiraPrincipalDaCobranca(): void {
-    if (this.preenchida === null) return;
+    if (this.preenchida === null || this.preenchida.kind !== undefined) return;
     const principal = this.carteiras().find((w) => w.isPrimary);
     if (principal === undefined) return;
     this.walletId.set(principal.id);

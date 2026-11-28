@@ -11,6 +11,13 @@ export interface WidgetBridgePlugin {
   complete(options: { ticket: string }): Promise<{ connected: boolean }>;
   disconnect(): Promise<void>;
   setAccent(options: { id: string }): Promise<void>;
+  /** Leitura de notificações de banco (010). */
+  notificationStatus(): Promise<{
+    listenerEnabled: boolean;
+    apps: { package: string; label: string; bank: string | null; enabled: boolean }[];
+  }>;
+  openNotificationAccess(): Promise<void>;
+  setBankApp(options: { package: string; enabled: boolean }): Promise<void>;
 }
 
 /** O plugin quando o front roda dentro do app Android; `null` no navegador. */

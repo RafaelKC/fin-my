@@ -22,4 +22,6 @@
     <string name="widget_acertos_description">Quanto cada pessoa deve para você.</string>
     <string name="widget_lancar_name">Lançar</string>
     <string name="widget_lancar_description">Abre o formulário de lançamento.</string>
+    <string name="channel_sugestoes">Sugestões de lançamento</string>
+    <string name="listener_label">Ler notificações do banco</string>
 </resources>

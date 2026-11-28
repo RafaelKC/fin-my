@@ -38,6 +38,8 @@ public static class TenantDataFactories
                 return [wallet, Entry.Create(EntryKind.Expense, label, Money.FromCents(4499), Today, wallet.Id, null, null, null, Today)];
             },
             [typeof(Tag)] = label => [Tag.Create(label, "#E53935", isSettlement: true)],
+            [typeof(FinMy.Domain.Suggestions.Suggestion)] = label => [FinMy.Domain.Suggestions.Suggestion.Create(
+                "Banco", "077", "expense", label, 1000, DateTimeOffset.UnixEpoch, null, label, $"k-{label}")],
             [typeof(Recurrence)] = label =>
             {
                 var wallet = NewWallet(label, primary: false);

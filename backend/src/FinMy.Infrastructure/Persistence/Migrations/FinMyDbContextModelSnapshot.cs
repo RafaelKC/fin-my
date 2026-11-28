@@ -1408,6 +1408,137 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                     b.ToTable("recurrence_tags", (string)null);
                 });
 
+            modelBuilder.Entity("FinMy.Domain.Suggestions.Suggestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<long>("AmountCents")
+                        .HasColumnType("bigint")
+                        .HasColumnName("amount_cents");
+
+                    b.Property<string>("Bank")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("bank");
+
+                    b.Property<string>("CardLast4")
+                        .HasMaxLength(4)
+                        .HasColumnType("character varying(4)")
+                        .HasColumnName("card_last4");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("CreatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("created_via");
+
+                    b.Property<string>("DedupeKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("dedupe_key");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid?>("DeletionBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deletion_batch_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid?>("LinkedId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("linked_id");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<string>("RawText")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("raw_text");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("UpdatedVia")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("updated_via");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_suggestions");
+
+                    b.HasAlternateKey("TenantId", "Id")
+                        .HasName("ak_suggestions_tenant_id_id");
+
+                    b.HasIndex("TenantId", "DedupeKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_suggestions_tenant_id_dedupe_key");
+
+                    b.HasIndex("TenantId", "Status")
+                        .HasDatabaseName("ix_suggestions_tenant_id_status");
+
+                    b.ToTable("suggestions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_suggestions_amount", "amount_cents > 0");
+                        });
+                });
+
             modelBuilder.Entity("FinMy.Domain.Tags.CardPurchaseTag", b =>
                 {
                     b.Property<Guid>("CardPurchaseId")
@@ -2334,6 +2465,16 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_recurrence_tags_tag_tenant_id_tag_id");
+                });
+
+            modelBuilder.Entity("FinMy.Domain.Suggestions.Suggestion", b =>
+                {
+                    b.HasOne("FinMy.Domain.Identity.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_suggestions_tenant_tenant_id");
                 });
 
             modelBuilder.Entity("FinMy.Domain.Tags.CardPurchaseTag", b =>

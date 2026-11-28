@@ -77,6 +77,43 @@ class WidgetBridgePlugin : Plugin() {
         }
     }
 
+    /** Leitura de notificações de banco (010): acesso liberado e apps de banco instalados (lidos ou não). */
+    @PluginMethod
+    fun notificationStatus(call: PluginCall) {
+        val enabled = androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
+        val apps = com.getcapacitor.JSArray()
+        br.app.finmy.notifications.BankApps.installed(context).forEach { app ->
+            apps.put(
+                JSObject()
+                    .put("package", app.packageName)
+                    .put("label", app.label)
+                    .put("bank", app.bank)
+                    .put("enabled", br.app.finmy.notifications.BankApps.isEnabled(context, app.packageName)),
+            )
+        }
+        call.resolve(JSObject().put("listenerEnabled", enabled).put("apps", apps))
+    }
+
+    /** Abre a tela do Android "Acesso a notificações" para liberar o Fin-My. */
+    @PluginMethod
+    fun openNotificationAccess(call: PluginCall) {
+        val intent = android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+        call.resolve()
+    }
+
+    @PluginMethod
+    fun setBankApp(call: PluginCall) {
+        val pkg = call.getString("package")
+        if (pkg.isNullOrBlank()) {
+            call.reject("package obrigatório")
+            return
+        }
+        br.app.finmy.notifications.BankApps.setEnabled(context, pkg, call.getBoolean("enabled", true) == true)
+        call.resolve()
+    }
+
     @PluginMethod
     fun disconnect(call: PluginCall) {
         scope.launch {

@@ -1,3 +1,4 @@
+import { NavegacaoService } from '../core/navegacao/navegacao.service';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Icone, NomeIcone } from '@/shared/ui/icone';
@@ -8,17 +9,11 @@ import { filter } from 'rxjs/operators';
 import { AuthService } from '../core/auth/auth.service';
 import { LancamentoLauncher } from '../features/lancamento/lancamento.launcher';
 
-interface ItemDeMenu {
-  rotulo: string;
-  icone: NomeIcone;
-  rota: string;
-}
-
 /**
  * Casca do app logado: nome do Espaço no topo; navegação na barra inferior (celular) ou no menu
- * lateral (≥ 1024 px). Uma única `<nav>`; o CSS muda a disposição. No celular a barra é
- * Mês · Cartões · + · Acertos · Mais, e "Mais" abre Painel, Planejamento, Carteiras, Recorrências, Busca, Tags e Perfil; no menu lateral todos
- * aparecem direto (contracts/ui-rotas.md).
+ * lateral (≥ 1024 px). Uma única `<nav>`; o CSS muda a disposição. Quais telas ficam na barra (até 4, duas de cada lado
+ * do "+") e a ordem vêm de [NavegacaoService] (padrão: Mês · Cartões · + · Acertos · Mais); no menu lateral todos aparecem
+ * direto, na mesma ordem.
  */
 @Component({
   selector: 'app-shell',
@@ -35,27 +30,8 @@ export class Shell {
 
   private readonly router = inject(Router);
 
-  protected readonly itens: readonly ItemDeMenu[] = [
-    { rotulo: 'Mês', icone: 'calendar_month', rota: '/mes' },
-    { rotulo: 'Cartões', icone: 'credit_card', rota: '/cartoes' },
-  ];
-
-  protected readonly acertos: ItemDeMenu = {
-    rotulo: 'Acertos',
-    icone: 'handshake',
-    rota: '/acertos',
-  };
-
-  /** Itens de "Mais" no celular; no menu lateral aparecem como os demais. */
-  protected readonly mais: readonly ItemDeMenu[] = [
-    { rotulo: 'Painel', icone: 'dashboard', rota: '/painel' },
-    { rotulo: 'Planejamento', icone: 'event_note', rota: '/planejamento' },
-    { rotulo: 'Carteiras', icone: 'account_balance_wallet', rota: '/carteiras' },
-    { rotulo: 'Recorrências', icone: 'repeat', rota: '/recorrencias' },
-    { rotulo: 'Busca', icone: 'search', rota: '/busca' },
-    { rotulo: 'Tags', icone: 'sell', rota: '/tags' },
-    { rotulo: 'Perfil', icone: 'person', rota: '/perfil' },
-  ];
+  /** Barra/menu personalizável (Perfil › Navegação): itens antes e depois do "+" e os do "Mais". */
+  protected readonly navegacao = inject(NavegacaoService);
 
   protected readonly maisAberto = signal(false);
 

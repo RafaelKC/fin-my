@@ -34,6 +34,9 @@ class WidgetApi(
         return send("/api/v1/widget/entries", body)
     }
 
+    /** Notificação de banco lida no celular vira sugestão (010); devolve o JSON da sugestão. */
+    suspend fun submitSuggestion(json: String): ApiResult<String> = send("/api/v1/widget/suggestions", json)
+
     /** Marca uma prevista como recebida/paga (relógio, 010). */
     suspend fun settleEntry(entryId: String): ApiResult<String> = send("/api/v1/widget/entries/$entryId/settle", "{}")
 
