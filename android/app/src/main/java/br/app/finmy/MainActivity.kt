@@ -27,7 +27,7 @@ class MainActivity : BridgeActivity() {
                 override fun onPageLoaded(webView: WebView) {
                     val link = pendingLink ?: return
                     pendingLink = null
-                    if (webView.url != link) webView.loadUrl(link)
+                    navigate(webView, link)
                 }
             },
         )
@@ -38,7 +38,23 @@ class MainActivity : BridgeActivity() {
         // App já aberto: a página inicial já carregou, abre o link direto.
         val link = linkOf(intent) ?: return
         val webView = bridge?.webView ?: return
-        webView.post { webView.loadUrl(link) }
+        webView.post { navigate(webView, link) }
+    }
+
+    /**
+     * Abre o link dentro do app já carregado (o roteador do Angular reage ao `popstate`), sem recarregar a página:
+     * uma recarga renovaria a sessão de novo e, com o refresh token rotativo, podia derrubar o login.
+     */
+    private fun navigate(webView: WebView, link: String) {
+        val path = link.removePrefix(BuildConfig.APP_URL).ifEmpty { "/" }
+        val js = "history.pushState(null,'',${org.json.JSONObject.quote(path)});dispatchEvent(new PopStateEvent('popstate'));"
+        webView.evaluateJavascript(js, null)
+    }
+
+    /** Grava os cookies (refresh token renovado) ao sair: se o Android matar o app, a sessão não se perde. */
+    override fun onPause() {
+        android.webkit.CookieManager.getInstance().flush()
+        super.onPause()
     }
 
     private fun linkOf(intent: Intent?): String? = intent?.dataString?.takeIf { it.startsWith(BuildConfig.APP_URL) }
