@@ -166,7 +166,7 @@ test.describe('cartões (US1, US6) — API simulada', () => {
 
     await page.getByRole('link', { name: 'Novo cartão' }).click();
     await expect(page).toHaveURL(/\/cartoes\/novo$/);
-    await expect(page.getByRole('radio')).toHaveCount(10);
+    await expect(page.getByRole('radiogroup', { name: 'Cor' }).getByRole('radio')).toHaveCount(10);
     await page.getByLabel('Nome', { exact: true }).fill('Azul');
     await page.getByLabel('Dia de fechamento').fill('18');
     await page.getByLabel('Dia de vencimento').fill('25');

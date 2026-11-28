@@ -1,3 +1,4 @@
+import { BancoLogo } from '../../shared/bancos/banco-logo';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ZardButtonComponent } from '@/shared/components/button';
@@ -22,7 +23,7 @@ export function diaEMes(data: string): string {
 @Component({
   selector: 'app-cartoes-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ZardButtonComponent, Icone, RouterLink, BrlPipe],
+  imports: [BancoLogo, ZardButtonComponent, Icone, RouterLink, BrlPipe],
   templateUrl: './cartoes.page.html',
   styleUrl: './cartoes.page.scss',
 })

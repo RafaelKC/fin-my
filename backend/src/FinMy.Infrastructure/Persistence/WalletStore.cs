@@ -133,7 +133,7 @@ public sealed class WalletStore(FinMyDbContext db) : IWalletStore
 
             return new WalletView(
                 w.Id, w.Name, w.Type, w.Color, w.InitialBalanceCents, w.InitialBalanceDate,
-                w.IsPrimary, w.IsArchived, balance, withEntries.Contains(w.Id), r.Version);
+                w.IsPrimary, w.IsArchived, balance, withEntries.Contains(w.Id), r.Version, w.Bank);
         }).ToList();
     }
 

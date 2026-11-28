@@ -33,6 +33,11 @@ public sealed partial class CreditCard : TenantEntity, IArchivable
     /// <summary>Cor no formato <c>#RRGGBB</c>.</summary>
     public string Color { get; private set; } = string.Empty;
 
+    /// <summary>Banco da instituição (código COMPE, 3 dígitos) para mostrar o logo; opcional.</summary>
+    public string? Bank { get; private set; }
+
+    public void ChangeBank(string? bank) => Bank = BankCode.Normalize(bank);
+
     public int ClosingDay { get; private set; }
 
     public int DueDay { get; private set; }

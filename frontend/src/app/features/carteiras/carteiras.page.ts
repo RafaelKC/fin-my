@@ -1,3 +1,4 @@
+import { BancoLogo } from '../../shared/bancos/banco-logo';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Icone } from '@/shared/ui/icone';
@@ -11,7 +12,7 @@ import { WalletsService } from './wallets.service';
 @Component({
   selector: 'app-carteiras-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, BrlPipe, Icone, ZardButtonComponent],
+  imports: [BancoLogo, RouterLink, BrlPipe, Icone, ZardButtonComponent],
   templateUrl: './carteiras.page.html',
   styleUrl: './carteiras.page.scss',
 })

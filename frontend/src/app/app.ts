@@ -9,6 +9,7 @@ import { ZardDarkMode } from '@/shared/services/dark-mode';
 import { Avisos } from '@/shared/ui/avisos';
 import { Icone } from '@/shared/ui/icone';
 import { WidgetBridgeService } from './core/native/widget-bridge.service';
+import { AcentoService } from './core/tema/acento.service';
 
 /** Cor da barra do sistema (PWA) em cada tema; a mesma do fundo do app. */
 const COR_TEMA = { light: '#f9f9fb', dark: '#151519' } as const;
@@ -28,6 +29,8 @@ export class App {
   private readonly documento = inject(DOCUMENT);
   /** Dentro do app Android, conecta o widget à sessão (010); no navegador não faz nada. */
   private readonly widget = inject(WidgetBridgeService);
+  /** Cor de destaque escolhida no Perfil: matiz do tema e ícone da aba. */
+  private readonly acento = inject(AcentoService);
 
   constructor() {
     effect(() => {

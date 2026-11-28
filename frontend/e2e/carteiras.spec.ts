@@ -154,7 +154,7 @@ test.describe('carteiras (US1) — API simulada', () => {
 
     await page.getByRole('link', { name: 'Nova carteira' }).click();
     await expect(page).toHaveURL(/\/carteiras\/nova$/);
-    await expect(page.getByRole('radio')).toHaveCount(10);
+    await expect(page.getByRole('radiogroup', { name: 'Cor' }).getByRole('radio')).toHaveCount(10);
     await page.getByLabel('Nome', { exact: true }).fill('Azul');
     await page.getByLabel('Saldo inicial', { exact: true }).fill('400+100');
     await expect(page.getByTestId('saldo-previa')).toHaveText('= R$ 500,00');

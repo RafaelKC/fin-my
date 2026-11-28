@@ -6,7 +6,7 @@ using FluentValidation;
 namespace FinMy.Application.Wallets;
 
 /// <summary>Campos editáveis de uma carteira, como chegam da API (contracts/openapi.yaml <c>WalletInput</c>).</summary>
-public sealed record WalletInput(string? Name, string? Type, string? Color, string? InitialBalance, DateOnly? InitialBalanceDate);
+public sealed record WalletInput(string? Name, string? Type, string? Color, string? InitialBalance, DateOnly? InitialBalanceDate, string? Bank = null);
 
 /// <summary>Entrada já validada e convertida.</summary>
 public sealed record ParsedWalletInput(string Name, WalletType Type, string Color, Money InitialBalance, DateOnly InitialBalanceDate);

@@ -94,6 +94,7 @@ describe('CartaoFormPage', () => {
       paymentWalletId: 'w-azul',
       color: '#1E88E5',
       limit: '3000',
+      bank: null,
     });
     req.flush(cartao(), { status: 201, statusText: 'Created' });
     expect(navegar).toHaveBeenCalledWith('/cartoes');

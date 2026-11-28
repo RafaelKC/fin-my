@@ -27,6 +27,7 @@ public sealed class UpdateWalletHandler(IWalletStore wallets)
         wallet.Rename(parsed.Name);
         wallet.ChangeType(parsed.Type);
         wallet.ChangeColor(parsed.Color);
+        wallet.ChangeBank(input.Bank);
         wallet.ChangeInitialBalance(parsed.InitialBalance, parsed.InitialBalanceDate);
         await wallets.SaveAsync(cancellationToken);
 

@@ -178,6 +178,25 @@
         </label>
       }
     </div>
+
+    <h3 id="titulo-acento" class="subtitulo">Cor de destaque</h3>
+    <div class="acentos" role="radiogroup" aria-labelledby="titulo-acento">
+      @for (a of acentos; track a.id) {
+        <button
+          type="button"
+          role="radio"
+          class="acento"
+          [attr.aria-checked]="acento.atual().id === a.id"
+          [class.escolhido]="acento.atual().id === a.id"
+          [attr.data-testid]="'acento-' + a.id"
+          [style.--amostra]="'oklch(0.55 0.19 ' + a.matiz + ')'"
+          (click)="acento.escolher(a.id)"
+        >
+          <img [src]="iconeDoAcento(a)" alt="" width="28" height="28" />
+          <span>{{ a.nome }}</span>
+        </button>
+      }
+    </div>
   </section>
 
   <app-exportar-lancamentos />

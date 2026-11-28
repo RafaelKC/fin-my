@@ -127,7 +127,7 @@ public sealed class CreditCardStore(FinMyDbContext db) : ICreditCardStore
     }
 
     private static CreditCardView ToView(CreditCard c, uint version, bool hasPurchases) =>
-        new(c.Id, c.Name, c.ClosingDay, c.DueDay, c.PaymentWalletId, c.Color, c.LimitCents, c.IsArchived, hasPurchases, version);
+        new(c.Id, c.Name, c.ClosingDay, c.DueDay, c.PaymentWalletId, c.Color, c.LimitCents, c.IsArchived, hasPurchases, version, c.Bank);
 
     private async Task<IReadOnlyList<CreditCardOverviewView>> OverviewsAsync(IQueryable<CreditCard> cards, DateOnly today, CancellationToken cancellationToken)
     {

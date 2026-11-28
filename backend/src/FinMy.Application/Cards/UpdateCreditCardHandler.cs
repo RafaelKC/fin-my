@@ -39,6 +39,7 @@ public sealed class UpdateCreditCardHandler(ICreditCardStore cards, IWalletStore
         cards.ExpectVersion(card, version.Value);
         card.Rename(parsed.Name);
         card.ChangeColor(parsed.Color);
+        card.ChangeBank(input.Bank);
         card.ChangeDays(parsed.ClosingDay, parsed.DueDay);
         card.ChangePaymentWallet(parsed.PaymentWalletId);
         card.ChangeLimit(parsed.Limit);

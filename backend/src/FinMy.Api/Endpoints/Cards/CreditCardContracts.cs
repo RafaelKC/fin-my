@@ -5,16 +5,16 @@ using FinMy.Domain.Cards;
 namespace FinMy.Api.Endpoints.Cards;
 
 /// <summary>Corpo de <c>POST /credit-cards</c> (<c>CreditCardInput</c> do contrato). <c>limit</c> é texto avaliado pelo servidor.</summary>
-public sealed record CreditCardRequest(string? Name, int? ClosingDay, int? DueDay, Guid? PaymentWalletId, string? Color, string? Limit)
+public sealed record CreditCardRequest(string? Name, int? ClosingDay, int? DueDay, Guid? PaymentWalletId, string? Color, string? Limit, string? Bank = null)
 {
-    public CreditCardInput ToInput() => new(Name, ClosingDay, DueDay, PaymentWalletId, Color, Limit);
+    public CreditCardInput ToInput() => new(Name, ClosingDay, DueDay, PaymentWalletId, Color, Limit, Bank);
 }
 
 /// <summary>Corpo de <c>PUT /credit-cards/{id}</c>: os campos de <see cref="CreditCardRequest"/> mais <c>version</c>.</summary>
 public sealed record UpdateCreditCardRequest(
-    string? Name, int? ClosingDay, int? DueDay, Guid? PaymentWalletId, string? Color, string? Limit, long? Version)
+    string? Name, int? ClosingDay, int? DueDay, Guid? PaymentWalletId, string? Color, string? Limit, long? Version, string? Bank = null)
 {
-    public CreditCardInput ToInput() => new(Name, ClosingDay, DueDay, PaymentWalletId, Color, Limit);
+    public CreditCardInput ToInput() => new(Name, ClosingDay, DueDay, PaymentWalletId, Color, Limit, Bank);
 }
 
 /// <summary>Resposta <c>CreditCard</c> do contrato.</summary>
@@ -28,10 +28,11 @@ public record CreditCardResponse(
     long? LimitCents,
     bool Archived,
     bool HasPurchases,
-    long Version)
+    long Version,
+    string? Bank = null)
 {
     public static CreditCardResponse From(CreditCardView c) => new(
-        c.Id, c.Name, c.ClosingDay, c.DueDay, c.PaymentWalletId, c.Color, c.LimitCents, c.Archived, c.HasPurchases, c.Version);
+        c.Id, c.Name, c.ClosingDay, c.DueDay, c.PaymentWalletId, c.Color, c.LimitCents, c.Archived, c.HasPurchases, c.Version, c.Bank);
 }
 
 /// <summary>Resposta <c>InvoiceSummary</c> do contrato.</summary>
@@ -68,8 +69,9 @@ public sealed record CreditCardOverviewResponse(
     InvoiceSummaryResponse CurrentInvoice,
     InvoiceSummaryResponse NextInvoice,
     IReadOnlyList<InvoiceSummaryResponse> OpenPastInvoices,
-    long? AvailableLimitCents)
-    : CreditCardResponse(Id, Name, ClosingDay, DueDay, PaymentWalletId, Color, LimitCents, Archived, HasPurchases, Version)
+    long? AvailableLimitCents,
+    string? Bank)
+    : CreditCardResponse(Id, Name, ClosingDay, DueDay, PaymentWalletId, Color, LimitCents, Archived, HasPurchases, Version, Bank)
 {
     public static CreditCardOverviewResponse From(CreditCardOverviewView o) => new(
         o.Card.Id, o.Card.Name, o.Card.ClosingDay, o.Card.DueDay, o.Card.PaymentWalletId, o.Card.Color, o.Card.LimitCents,
@@ -77,7 +79,8 @@ public sealed record CreditCardOverviewResponse(
         InvoiceSummaryResponse.From(o.CurrentInvoice),
         InvoiceSummaryResponse.From(o.NextInvoice),
         o.OpenPastInvoices.Select(InvoiceSummaryResponse.From).ToList(),
-        o.AvailableLimitCents);
+        o.AvailableLimitCents,
+        o.Card.Bank);
 }
 
 /// <summary>Resposta <c>InvoiceRef</c> do contrato.</summary>

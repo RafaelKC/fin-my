@@ -97,6 +97,12 @@
         }
       </div>
 
+      <app-banco-picker
+        class="campo"
+        [valor]="form.controls.bank.value"
+        (escolher)="escolherBanco($event)"
+      />
+
       <fieldset class="campo cores">
         <legend>Cor</legend>
         <div class="paleta" role="radiogroup" aria-label="Cor">

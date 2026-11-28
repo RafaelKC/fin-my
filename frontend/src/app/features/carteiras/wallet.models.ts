@@ -6,6 +6,8 @@ export interface Wallet {
   name: string;
   type: WalletType;
   color: string;
+  /** Banco (código COMPE) para o logo; `null` = sem banco. */
+  bank?: string | null;
   initialBalanceCents: number;
   initialBalanceDate: string;
   isPrimary: boolean;
@@ -20,6 +22,8 @@ export interface WalletInput {
   name: string;
   type: WalletType;
   color: string;
+  /** Banco (código COMPE) para o logo; `null` = sem banco. */
+  bank?: string | null;
   initialBalance: string;
   initialBalanceDate: string;
 }

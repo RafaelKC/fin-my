@@ -236,6 +236,10 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("archived_at");
 
+                    b.Property<string>("Bank")
+                        .HasColumnType("text")
+                        .HasColumnName("bank");
+
                     b.Property<short>("ClosingDay")
                         .HasColumnType("smallint")
                         .HasColumnName("closing_day");
@@ -1676,6 +1680,10 @@ namespace FinMy.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("ArchivedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("archived_at");
+
+                    b.Property<string>("Bank")
+                        .HasColumnType("text")
+                        .HasColumnName("bank");
 
                     b.Property<string>("Color")
                         .IsRequired()
