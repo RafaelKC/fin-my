@@ -104,3 +104,12 @@ public sealed record WidgetCreatedEntryResponse(Guid Id, string Kind, string Des
     public static WidgetCreatedEntryResponse From(WidgetCreatedEntry e) =>
         new(e.Id, e.Kind, e.Description, WidgetMoney.Of(e.AmountCents), e.Date, e.Status, e.WalletName);
 }
+
+/// <summary>Corpo de <c>POST /api/v1/widget/suggestions</c>: notificação de banco lida no celular (010).</summary>
+public sealed record WidgetSuggestionRequest(
+    string? Source, string? Bank, string? Kind, string? Description, long AmountCents, DateTimeOffset? OccurredAt,
+    string? CardLast4, string? RawText, string? DedupeKey)
+{
+    public FinMy.Application.Suggestions.SubmitSuggestionInput ToInput() =>
+        new(Source, Bank, Kind, Description, AmountCents, OccurredAt, CardLast4, RawText, DedupeKey);
+}

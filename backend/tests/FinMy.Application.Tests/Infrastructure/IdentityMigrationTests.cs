@@ -68,7 +68,7 @@ public class IdentityMigrationTests(PostgresFixture postgres)
         tables.ShouldBe(
             [
                 "card_purchase_tags", "card_purchases", "credit_cards", "entries", "entry_tags", "idempotency_keys", "installment_plans",
-                "invoice_payments", "invoices", "login_throttles", "oauth_authorization_usage", "oauth_consent_tickets", "openiddict_applications", "openiddict_authorizations", "openiddict_scopes", "openiddict_tokens", "password_reset_tokens", "recurrence_tags", "recurrences", "refresh_tokens", "tags", "tenant_members",
+                "invoice_payments", "invoices", "login_throttles", "oauth_authorization_usage", "oauth_consent_tickets", "openiddict_applications", "openiddict_authorizations", "openiddict_scopes", "openiddict_tokens", "password_reset_tokens", "recurrence_tags", "recurrences", "refresh_tokens", "suggestions", "tags", "tenant_members",
                 "tenants", "transfers", "users", "wallets",
             ]);
     }

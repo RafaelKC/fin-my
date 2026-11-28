@@ -31,6 +31,13 @@ public sealed class WidgetEndpoints : IEndpointModule
             var created = await handler.HandleAsync(body.Kind, body.Description, body.Amount, cancellationToken);
             return Results.Created($"/api/v1/entries/{created.Id}", WidgetCreatedEntryResponse.From(created));
         });
+        // Notificações de banco lidas no celular (010) viram sugestões de lançamento.
+        group.MapPost("/suggestions", async (WidgetSuggestionRequest body, FinMy.Application.Suggestions.SubmitSuggestionHandler handler, CancellationToken cancellationToken) =>
+        {
+            var (view, created) = await handler.HandleAsync(body.ToInput(), cancellationToken);
+            var response = FinMy.Api.Endpoints.Suggestions.SuggestionResponse.From(view);
+            return created ? Results.Created($"/api/v1/suggestions/{view.Id}", response) : Results.Ok(response);
+        });
         group.MapPost("/entries/{id:guid}/settle", async (Guid id, SettleWidgetEntryHandler handler, CancellationToken cancellationToken) =>
         {
             await handler.HandleAsync(id, cancellationToken);
