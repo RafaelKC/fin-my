@@ -6,6 +6,7 @@ import br.app.finmy.widget.Pkce
 import br.app.finmy.widget.WidgetServices
 import br.app.finmy.widget.WidgetState
 import br.app.finmy.widget.WidgetWork
+import androidx.core.content.edit
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
@@ -23,13 +24,20 @@ import kotlinx.coroutines.launch
  */
 @CapacitorPlugin(name = "WidgetBridge")
 class WidgetBridgePlugin : Plugin() {
+    private companion object {
+        const val PREFS = "finmy_widget_bridge"
+        const val KEY_TENANT = "tenant_id"
+    }
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var pending: Pkce? = null
 
     @PluginMethod
     fun status(call: PluginCall) {
         scope.launch {
-            call.resolve(JSObject().put("connected", WidgetServices.get(context).session.hasSession()))
+            val connected = WidgetServices.get(context).session.hasSession()
+            val tenant = context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).getString(KEY_TENANT, null)
+            call.resolve(JSObject().put("connected", connected).put("tenantId", if (connected) tenant else null))
         }
     }
 
@@ -47,6 +55,7 @@ class WidgetBridgePlugin : Plugin() {
     @PluginMethod
     fun complete(call: PluginCall) {
         val ticket = call.getString("ticket")
+        val tenantId = call.getString("tenantId")
         val pkce = pending
         if (ticket.isNullOrBlank() || pkce == null) {
             call.reject("Chame begin antes de complete, com o ticket.")
@@ -56,6 +65,8 @@ class WidgetBridgePlugin : Plugin() {
         scope.launch {
             when (val result = WidgetServices.get(context).connector.connect(ticket, pkce)) {
                 is ApiResult.Ok -> {
+                    // De qual Espaço é a conexão: se o app entrar em outra conta, o front reconecta.
+                    context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).edit { putString(KEY_TENANT, tenantId) }
                     WidgetWork.schedule(context)
                     WidgetState.refreshAll(context)
                     br.app.finmy.widget.OverviewState.refreshAll(context)
