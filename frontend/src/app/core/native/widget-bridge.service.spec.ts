@@ -9,10 +9,14 @@ import { WIDGET_BRIDGE, WidgetBridgePlugin, WidgetBridgeService } from './widget
 describe('WidgetBridgeService (010)', () => {
   let chamadas: string[];
   let conectado: boolean;
+  let espacoConectado: string | null;
 
   function plugin(): WidgetBridgePlugin {
     return {
-      status: async () => (chamadas.push('status'), { connected: conectado }),
+      status: async () => (
+        chamadas.push('status'),
+        { connected: conectado, tenantId: espacoConectado }
+      ),
       begin: async () => (
         chamadas.push('begin'),
         {
@@ -21,7 +25,10 @@ describe('WidgetBridgeService (010)', () => {
           codeChallenge: 'desafio',
         }
       ),
-      complete: async ({ ticket }) => (chamadas.push(`complete:${ticket}`), { connected: true }),
+      complete: async ({ ticket, tenantId }) => (
+        chamadas.push(`complete:${ticket}:${tenantId}`),
+        { connected: true }
+      ),
       disconnect: async () => void chamadas.push('disconnect'),
       setAccent: async () => undefined,
       notificationStatus: async () => ({ listenerEnabled: false, apps: [] }),
@@ -48,6 +55,7 @@ describe('WidgetBridgeService (010)', () => {
   beforeEach(() => {
     chamadas = [];
     conectado = false;
+    espacoConectado = null;
   });
 
   it('logado no app: pede o desafio, cria o ticket com a sessão e entrega ao nativo', async () => {
@@ -65,13 +73,15 @@ describe('WidgetBridgeService (010)', () => {
     req.flush({ ticket: 'tk-1', expiresAt: '2026-11-25T10:02:00Z' });
     await pronto;
 
-    expect(chamadas).toEqual(['status', 'begin', 'complete:tk-1']);
+    expect(chamadas).toEqual(['status', 'begin', 'complete:tk-1:t1']);
     http.verify();
   });
 
-  it('já conectado: não cria ticket', async () => {
+  it('já conectado ao Espaço de quem está logado: não cria ticket', async () => {
     conectado = true;
+    espacoConectado = 't1';
     const { http, servico } = configurar(plugin());
+    TestBed.inject(AuthService).startSession(sessao());
 
     await servico.conectar();
 
@@ -114,5 +124,22 @@ describe('WidgetBridgeService (010)', () => {
     await new Promise((r) => setTimeout(r));
 
     expect(chamadas).toContain('disconnect');
+  });
+
+  it('conectado a outra conta: desconecta e reconecta no Espaço de quem está logado', async () => {
+    conectado = true;
+    espacoConectado = 'outro';
+    const { http, servico } = configurar(plugin());
+    TestBed.inject(AuthService).startSession(sessao());
+
+    const pronto = servico.conectar();
+    await new Promise((r) => setTimeout(r));
+    http
+      .expectOne('/api/v1/oauth/consent-tickets')
+      .flush({ ticket: 'tk-2', expiresAt: '2026-11-25T10:02:00Z' });
+    await pronto;
+
+    expect(chamadas).toEqual(['status', 'disconnect', 'begin', 'complete:tk-2:t1']);
+    http.verify();
   });
 });

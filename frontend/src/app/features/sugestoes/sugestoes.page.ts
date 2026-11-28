@@ -78,10 +78,12 @@ export class SugestoesPage {
         this.itens.set(lista);
         this.carregando.set(false);
         const alvo = abrirId ? lista.find((s) => s.id === abrirId) : undefined;
-        if (alvo) {
-          void this.router.navigate(['/sugestoes'], { replaceUrl: true });
-          this.lancar(alvo);
-        }
+        if (abrirId) void this.router.navigate(['/sugestoes'], { replaceUrl: true });
+        if (alvo) this.lancar(alvo);
+        else if (abrirId)
+          this.erro.set(
+            'Essa sugestão não está aqui: já foi lançada ou descartada, ou é de outra conta.',
+          );
       },
       error: (error: unknown) => {
         this.carregando.set(false);

@@ -6,9 +6,9 @@ import { AuthService } from '../auth/auth.service';
 
 /** Plugin nativo do app Android (010, `WidgetBridgePlugin.kt`). */
 export interface WidgetBridgePlugin {
-  status(): Promise<{ connected: boolean }>;
+  status(): Promise<{ connected: boolean; tenantId?: string | null }>;
   begin(): Promise<{ clientId: string; redirectUri: string; codeChallenge: string }>;
-  complete(options: { ticket: string }): Promise<{ connected: boolean }>;
+  complete(options: { ticket: string; tenantId?: string }): Promise<{ connected: boolean }>;
   disconnect(): Promise<void>;
   setAccent(options: { id: string }): Promise<void>;
   /** Leitura de notificações de banco (010). */
@@ -66,7 +66,11 @@ export class WidgetBridgeService {
     const bridge = this.bridge;
     if (!bridge) return;
     try {
-      if ((await bridge.status()).connected) return;
+      const espaco = this.auth.tenant()?.id;
+      const status = await bridge.status();
+      // Conectado ao Espaço de quem está logado: nada a fazer. Conectado a outra conta (ou sem saber qual): reconecta.
+      if (status.connected && status.tenantId && status.tenantId === espaco) return;
+      if (status.connected) await bridge.disconnect();
       const pedido = await bridge.begin();
       const { ticket } = await firstValueFrom(
         this.api.post<{ ticket: string }>('/oauth/consent-tickets', {
@@ -75,7 +79,7 @@ export class WidgetBridgeService {
           codeChallenge: pedido.codeChallenge,
         }),
       );
-      await bridge.complete({ ticket });
+      await bridge.complete({ ticket, tenantId: espaco });
     } catch {
       // Sem rede ou sessão expirada: tenta de novo na próxima vez que a sessão começar.
     }
