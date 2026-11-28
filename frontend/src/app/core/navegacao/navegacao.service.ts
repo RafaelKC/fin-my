@@ -19,6 +19,7 @@ export const ITENS_DE_MENU: readonly ItemDeMenu[] = [
   { id: 'recorrencias', rotulo: 'Recorrências', icone: 'repeat', rota: '/recorrencias' },
   { id: 'busca', rotulo: 'Busca', icone: 'search', rota: '/busca' },
   { id: 'tags', rotulo: 'Tags', icone: 'sell', rota: '/tags' },
+  { id: 'sugestoes', rotulo: 'Sugestões', icone: 'inbox', rota: '/sugestoes' },
 ];
 
 export const PERFIL: ItemDeMenu = {

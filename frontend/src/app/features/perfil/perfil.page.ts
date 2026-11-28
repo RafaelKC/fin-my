@@ -1,3 +1,4 @@
+import { NotificacoesBanco } from './notificacoes-banco';
 import { MAX_NA_BARRA, NavegacaoService } from '../../core/navegacao/navegacao.service';
 import { ACENTOS, AcentoService, iconeDoAcento } from '../../core/tema/acento.service';
 import { EDarkModes, ZardDarkMode } from '@/shared/services/dark-mode';
@@ -31,6 +32,7 @@ type CampoSenha = 'currentPassword' | 'newPassword';
     Icone,
     AplicativosConectados,
     ExportarLancamentos,
+    NotificacoesBanco,
   ],
   templateUrl: './perfil.page.html',
   styleUrl: './perfil.page.scss',

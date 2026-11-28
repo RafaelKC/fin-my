@@ -170,6 +170,16 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'sugestoes',
+        loadComponent: () =>
+          import('./features/sugestoes/sugestoes.page').then((m) => m.SugestoesPage),
+      },
+      {
+        path: 'sugestoes/:id',
+        loadComponent: () =>
+          import('./features/sugestoes/sugestoes.page').then((m) => m.SugestoesPage),
+      },
+      {
         path: 'busca',
         loadComponent: () => import('./features/busca/busca.page').then((m) => m.BuscaPage),
       },

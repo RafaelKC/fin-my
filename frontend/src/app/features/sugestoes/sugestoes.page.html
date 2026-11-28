@@ -1,0 +1,49 @@
+<main class="pagina">
+  <h1>Sugestões</h1>
+  <p class="ajuda">
+    Lançamentos lidos das notificações do banco no celular. Confira e lance, ou descarte.
+  </p>
+
+  @if (erro(); as mensagem) {
+    <div class="aviso" role="alert">{{ mensagem }}</div>
+  }
+
+  @if (carregando()) {
+    <p class="vazio">Carregando…</p>
+  } @else if (itens().length === 0) {
+    <div class="vazio" data-testid="sugestoes-vazio">
+      <app-icone nome="inbox" tamanho="2rem" />
+      <p>Nenhuma sugestão pendente.</p>
+    </div>
+  } @else {
+    <ul class="lista">
+      @for (s of itens(); track s.id) {
+        <li class="sugestao" data-testid="sugestao">
+          <div class="topo">
+            @if (s.bank) {
+              <app-banco-logo [codigo]="s.bank" [tamanho]="36" />
+            } @else {
+              <span class="sem-banco" aria-hidden="true"><app-icone nome="receipt" /></span>
+            }
+            <div class="texto">
+              <span class="descricao">{{ s.description }}</span>
+              <span class="meta">
+                {{ rotuloData(s.occurredAt) }} · {{ s.source }}
+                @if (s.cardLast4) {
+                  · final {{ s.cardLast4 }}
+                }
+              </span>
+            </div>
+            <span class="valor" [class.entrada]="s.kind === 'income'"
+              >{{ s.kind === 'income' ? '+' : '' }}{{ s.amountText }}</span
+            >
+          </div>
+          <div class="acoes">
+            <button type="button" class="descartar" (click)="descartar(s)">Descartar</button>
+            <button type="button" class="lancar" (click)="lancar(s)">Lançar</button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</main>

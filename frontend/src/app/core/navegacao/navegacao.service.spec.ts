@@ -17,6 +17,7 @@ describe('NavegacaoService', () => {
       'recorrencias',
       'busca',
       'tags',
+      'sugestoes',
       'perfil',
     ]);
   });
@@ -49,7 +50,7 @@ describe('NavegacaoService', () => {
       naBarra: ['tags', 'mes', 'busca', 'painel', 'cartoes', 'xyz'],
     });
     expect(n.ordem[0]).toBe('tags');
-    expect(n.ordem).toHaveLength(9);
+    expect(n.ordem).toHaveLength(10);
     expect(n.naBarra).toHaveLength(4);
     expect(n.naBarra).not.toContain('xyz');
   });

@@ -24,6 +24,9 @@ describe('WidgetBridgeService (010)', () => {
       complete: async ({ ticket }) => (chamadas.push(`complete:${ticket}`), { connected: true }),
       disconnect: async () => void chamadas.push('disconnect'),
       setAccent: async () => undefined,
+      notificationStatus: async () => ({ listenerEnabled: false, apps: [] }),
+      openNotificationAccess: async () => undefined,
+      setBankApp: async () => undefined,
     };
   }
 
