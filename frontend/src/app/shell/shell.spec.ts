@@ -97,6 +97,32 @@ describe('Shell', () => {
     expect(abrir).toHaveBeenCalledOnce();
   });
 
+  it('?lancar=1 também funciona quando a rota redireciona e perde o parâmetro (/mes → /mes/AAAA-MM)', async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [Shell],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([
+          { path: 'mes', redirectTo: 'mes/2026-11' },
+          { path: 'mes/:mes', children: [] },
+        ]),
+      ],
+    });
+    TestBed.inject(AuthService).startSession(sessao());
+    const abrir = vi
+      .spyOn(TestBed.inject(LancamentoLauncher), 'abrir')
+      .mockReturnValue(undefined as never);
+    const fixture = TestBed.createComponent(Shell);
+    fixture.detectChanges();
+
+    await TestBed.inject(Router).navigateByUrl('/mes?lancar=1');
+    await fixture.whenStable();
+
+    expect(abrir).toHaveBeenCalledOnce();
+  });
+
   it('?lancar=1 (widget Lançar do app Android) abre o formulário rápido e limpa a URL', async () => {
     const abrir = vi
       .spyOn(TestBed.inject(LancamentoLauncher), 'abrir')

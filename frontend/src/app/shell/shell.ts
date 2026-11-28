@@ -72,9 +72,9 @@ export class Shell {
         filter((e) => e instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
-      .subscribe(() => {
+      .subscribe((e) => {
         this.maisAberto.set(false);
-        this.abrirLancamentoPedidoPeloWidget();
+        this.abrirLancamentoPedidoPeloWidget(e as NavigationEnd);
       });
   }
 
@@ -82,14 +82,16 @@ export class Shell {
    * Widget "Lançar" do app Android (010): abre o app em `?lancar=1`. Abre o formulário rápido e tira o parâmetro da URL
    * (voltar não reabre o formulário).
    */
-  private abrirLancamentoPedidoPeloWidget(): void {
-    const tree = this.router.parseUrl(this.router.url);
-    if (tree.queryParams['lancar'] !== '1') return;
-    void this.router.navigate([], {
-      queryParams: { lancar: null },
-      queryParamsHandling: 'merge',
-      replaceUrl: true,
-    });
+  private abrirLancamentoPedidoPeloWidget(e: NavigationEnd): void {
+    // URL pedida (antes dos redirecionamentos): `/mes?lancar=1` vira `/mes/AAAA-MM` e o parâmetro se perde.
+    if (this.router.parseUrl(e.url).queryParams['lancar'] !== '1') return;
+    if (this.router.parseUrl(e.urlAfterRedirects).queryParams['lancar'] === '1') {
+      void this.router.navigate([], {
+        queryParams: { lancar: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    }
     this.lancamento.abrir();
   }
 
